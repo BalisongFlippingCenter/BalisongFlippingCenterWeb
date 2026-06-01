@@ -125,3 +125,32 @@ Also claude needs to remember that alot of the functionality will need to be imp
 - **Connected Accounts** — Add a Connected Accounts section showing whether Google OAuth is linked, with the ability to link/unlink. Relevant since Google login already exists via `GoogleLoginComponent.tsx`.
 - **Terms of Service page** — `/terms` route currently leads to 404. A static `TermsOfServicePage.tsx` needs to be created and added to the router in `App.tsx`.
 - **Privacy Policy page** — `/privacy` route currently leads to 404. A static `PrivacyPolicyPage.tsx` needs to be created and added to the router in `App.tsx`.
+
+## Legal TODOs (Pre-Launch)
+
+### Priority 1 — Terms of Service & Disclaimers
+- **Draft Terms of Service** — must include: user responsibility for local law compliance (balisongs are illegal/restricted in some U.S. states and countries), assumption of risk clause for trick/tutorial content, minimum age requirement (recommend 18+), and a clear statement that all transactions are off-platform and the site is not a party to any sale or exchange.
+- **Buy/Sell post disclaimer** — add a visible notice on Buy/Sell posts: *"All transactions occur off-platform. Balisong Flipping Center is not a party to any sale and assumes no responsibility for off-platform exchanges."*
+- **Tutorial/Combo post disclaimer** — add a visible notice on Tutorial/Trick Tutorial/Combo posts: *"Attempting these tricks involves risk of serious injury. Always use safety gear and train responsibly."*
+
+### Priority 2 — Report / Flag System
+- **"Report this post" button** on all user-generated content (posts, comments). Backend review queue required.
+- **Flagged content policy** — remove posts flagged as illegal sales in restricted jurisdictions. Document the policy publicly.
+- A working report system demonstrates good-faith moderation and strengthens Section 230 coverage.
+- *The Discord bot flag system is partially in place — this needs a full backend review queue to be complete.*
+
+### Priority 3 — Attorney Review (~$500–$1,500 one-time)
+- Hire a business or internet law attorney to draft/review the ToS. Bundle a Privacy Policy review at the same time.
+- Services like Clerky or a local business attorney are cost-effective options.
+- Only needs to happen once unless the platform changes significantly.
+
+### Priority 4 — Privacy Policy (Legally Required)
+- Required by law since the platform collects user data (email at minimum).
+- Must address: **COPPA** (U.S. users under 13), **GDPR** (any EU users), **CCPA** (any California users).
+- Bundle with attorney ToS review to keep costs down.
+- Once drafted, the `/privacy` page needs to be built and linked in the footer and registration flow.
+
+### Notes
+- Platform model (neutral connector, no payment processing) is legally similar to Reddit/Instagram and well protected under Section 230.
+- No payment processing = no PCI compliance, fraud liability, or money transmission laws to worry about.
+- Good ToS + a working report system are the two most important protections before going public.
