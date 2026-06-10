@@ -5,6 +5,7 @@ import { AppDispatch, RootState } from "../../../redux/store";
 import { login } from "../../../redux/auth/authActions";
 import { setToRememberLoginInfo, toggleOffRememberLoginInfo } from "../../../redux/auth/authSlice";
 import { setCollection } from "../../../redux/collection/collectionSlice";
+import { mapCollection } from "../../../redux/collection/collectionActions";
 import GoogleLoginComponent from "./GoogleLoginComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
@@ -54,7 +55,7 @@ const LoginForm = () => {
       .unwrap()
       .then((res) => {
         if (rememberInfo) localStorage.setItem("saved-user-email", email);
-        dispatch(setCollection(res.collection));
+        dispatch(setCollection(mapCollection(res.collection)));
         navigate("/community");
       })
       .catch((err: string) => {

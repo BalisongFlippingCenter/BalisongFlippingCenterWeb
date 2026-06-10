@@ -1,83 +1,71 @@
 import axios from "axios";
-import { store } from "../redux/store";
+import type { AppStore } from "../redux/store";
 import { setNewAccessToken } from "../redux/auth/authSlice";
+import { logout } from "../redux/auth/authActions";
+import { clearCollection } from "../redux/collection/collectionSlice";
 
-// export const axiosApiInstance = axios.create({
-//   baseURL: "http://localhost:8080",
-//   withCredentials: true,
-// });
+// Store is injected after creation to avoid circular dep:
+// axios → store → authSlice → authActions → axios
+let store: AppStore;
+export const setStore = (s: AppStore) => { store = s; };
 
-// export const axiosApiInstanceAuth = axios.create({
-//   baseURL: "http://localhost:8080",
-//   withCredentials: true,
-// });
+const BASE_URL = "http://localhost:8080";
+// const PRODUCTION_URL = "http://ec2-3-217-173-234.compute-1.amazonaws.com:8080";
 
+// Unauthenticated instance — for login, register, refresh-token-login
 export const axiosApiInstance = axios.create({
-  baseURL: "http://ec2-3-217-173-234.compute-1.amazonaws.com:8080",
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
+// Authenticated instance — attaches Bearer token on every request
 export const axiosApiInstanceAuth = axios.create({
-  baseURL: "http://ec2-3-217-173-234.compute-1.amazonaws.com:8080",
+  baseURL: BASE_URL,
   withCredentials: true,
 });
- 
-/*Axios auth request interceptor to set auth token before every request*/ 
+
+// Attach access token to every authenticated request
 axiosApiInstanceAuth.interceptors.request.use((config) => {
   const accessToken = store.getState().auth.accessToken;
-  config.headers.Authorization = `Bearer ${accessToken}`; 
-
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
   return config;
 });
 
-/*Interceptor for every auth request to check for a failed accesst token.*/
+// Handle 401s — try to refresh the access token, force logout if refresh also fails
 axiosApiInstanceAuth.interceptors.response.use(
-  // return successful response
   (response) => response,
   async (error) => {
-    // get error request
-    const originRequest = error.config;
+    const originalRequest = error.config;
 
-    console.log("error: ", error); 
-    // check for error status if retried
-    if (
-      (error.response.status === 403 || !error.response) && 
-      !originRequest._retry 
-    ) {
-      // set retry to true to prevent infinite loop 
-      originRequest._retry = true;
-
-      if (!error.response) {
-        if (error.config.data === FormData)
-          originRequest.headers["Content-Type"] = "multipart/form-data";
-      }
+    // Only attempt refresh on 401 and only once per request
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
       try {
-        // attempt to retrieve a new access token using passed refresh token
-
-        const response = await axios.get(
-          "http://localhost:8080/auth/refresh-access-token",
-          {
-            withCredentials: true,
-          }
+        // GET /auth/refresh-access-token — cookie sent automatically, no body needed
+        const refreshResponse = await axiosApiInstance.get(
+          "/auth/refresh-access-token"
         );
 
-        // update state with new access token
-        store.dispatch(setNewAccessToken(response.data));
+        const newAccessToken: string = refreshResponse.data;
 
-        // update auth header
-        originRequest.headers["Authorization"] = `Bearer ${response.data}`;
+        // Store new access token in Redux
+        store.dispatch(setNewAccessToken(newAccessToken));
 
-        // retry original request with new auth
-        return axiosApiInstanceAuth(originRequest);
-      } catch (refreshError) {
-        // catch error or failed attempt to get new access token
-        // return refresh error
-        return Promise.reject(refreshError);
+        // Update the Authorization header and retry the original request
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        return axiosApiInstanceAuth(originalRequest);
+
+      } catch {
+        // Refresh token also expired or invalid — force full logout
+        store.dispatch(logout());
+        store.dispatch(clearCollection());
+        return Promise.reject(error);
       }
     }
 
-    // return original error
     return Promise.reject(error);
   }
 );

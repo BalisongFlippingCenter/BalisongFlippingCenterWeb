@@ -4,64 +4,93 @@ import Image from "../Image";
 import { useAppSelector } from "../../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { formatCurrency } from "../../utils/unitConversions";
 
 interface params {
   knife: CollectionKnife;
+  isFeatured?: boolean;
+  /** Override the profile owner in the nav URL — used when viewing another user's collection */
+  ownerDisplayName?: string;
+  ownerIdentifierCode?: string;
 }
 
-const OwnedKnifeCard = ({ knife }: params) => {
+const OwnedKnifeCard = ({ knife, isFeatured = false, ownerDisplayName, ownerIdentifierCode }: params) => {
   const navigate = useNavigate();
   const user     = useAppSelector((state) => state.auth.user);
+  const profileName = ownerDisplayName ?? user?.displayName;
+  const profileCode = ownerIdentifierCode ?? user?.identifierCode;
+
+  const isFavorite = knife.favoriteKnife === true || String(knife.favoriteKnife) === "true";
 
   return (
+    // Outer wrapper holds the border — separated from overflow-hidden so it isn't clipped
     <div
-      className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-white/8 hover:border-white/25 transition-all duration-300"
+      style={isFeatured ? { boxShadow: "0 0 18px 4px rgba(230,184,0,0.25), 0 8px 24px rgba(0,0,0,0.6)" } : { boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}
+      className={`relative aspect-[2/3] rounded-xl cursor-pointer transition-all duration-300 ${
+        isFeatured
+          ? "border-2 border-gold hover:border-gold/60 p-[1px]"
+          : "border border-white/8 hover:border-white/25"
+      }`}
       onClick={() =>
-        navigate(
-          `/${user?.displayName}/${user?.identifierCode}/collection/${knife.displayName}`
-        )
+        navigate(`/${profileName}/${profileCode}/collection/${knife.displayName}`)
       }
     >
+      {/* Inner wrapper clips content */}
+      <div className="relative w-full h-full rounded-[10px] overflow-hidden group">
 
-      {/* Cover image or dark placeholder */}
-      {knife.coverPhoto && knife.coverPhoto !== "" ? (
-        <div className="w-full h-full">
-          <Image imageId={knife.coverPhoto} />
+        {/* Cover image or dark placeholder */}
+        {knife.coverPhoto && knife.coverPhoto !== "" ? (
+          <div className="w-full h-full">
+            <Image imageId={knife.coverPhoto} />
+          </div>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+        )}
+
+        {/* Score badge — top right */}
+        {knife.averageScore !== null && (
+          <div className={`absolute top-3 right-3 flex items-center gap-1 bg-black/60 text-gold border px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm ${
+            isFeatured ? "text-xs border-gold/60" : "text-[10px] border-gold/30"
+          }`}>
+            <FontAwesomeIcon icon={faStar} className={isFeatured ? "text-xs" : "text-[8px]"} />
+            {knife.averageScore.toFixed(1)}
+          </div>
+        )}
+
+        {/* Bottom gradient + name + maker + msrp */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 via-[35%] to-transparent px-3 pb-4 pt-20">
+          <p className="text-white font-bold text-base truncate leading-tight">
+            {knife.displayName}
+          </p>
+          <div className="flex items-center justify-between gap-2 mt-1 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              {isFavorite && (
+                <FontAwesomeIcon icon={faStar} className="text-gold text-[10px] flex-shrink-0" />
+              )}
+              {knife.knifeMaker && (
+                <p className="text-white/60 text-xs truncate font-medium">{knife.knifeMaker}</p>
+              )}
+              {knife.baseKnifeModel && knife.knifeMaker && (
+                <span className="text-white/25 text-xs flex-shrink-0">·</span>
+              )}
+              {knife.baseKnifeModel && (
+                <span className="text-white/50 text-xs truncate">{knife.baseKnifeModel}</span>
+              )}
+            </div>
+            {formatCurrency(knife.msrp, user?.currency) && (
+              <span className="text-white/50 text-xs font-medium flex-shrink-0">{formatCurrency(knife.msrp, user?.currency)}</span>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
-      )}
 
-      {/* Score badge — top right, always visible */}
-      {knife.averageScore !== null && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] bg-black/60 text-gold border border-gold/30 px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm">
-          <FontAwesomeIcon icon={faStar} className="text-[8px]" />
-          {knife.averageScore.toFixed(1)}
-        </div>
-      )}
-
-      {/* Bottom gradient + name + type */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-10">
-        {knife.knifeType && (
-          <span className="inline-block text-[9px] text-white/40 bg-white/10 border border-white/10 px-1.5 py-0.5 rounded-full mb-1">
-            {knife.knifeType}
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <span className="text-white/90 text-sm font-medium px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 backdrop-blur-sm">
+            View Details
           </span>
-        )}
-        <p className="text-white font-semibold text-sm truncate leading-tight">
-          {knife.displayName}
-        </p>
-        {knife.knifeMaker && (
-          <p className="text-white/50 text-xs truncate mt-0.5">{knife.knifeMaker}</p>
-        )}
-      </div>
+        </div>
 
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-        <span className="text-white/90 text-sm font-medium px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 backdrop-blur-sm">
-          View Details
-        </span>
       </div>
-
     </div>
   );
 };

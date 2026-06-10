@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { PostCover, mapPostCover } from "../modals/Post";
 import { axiosApiInstance } from "../api/axios";
 import ProfilePostCover from "./ProfilePostCover";
-import { useAppSelector } from "../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faTableCells, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown, faTableCells } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -22,7 +21,11 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 const PAGE_SIZE = 20;
 
-const UserProfilePostsComponent = () => {
+interface Props {
+  accountId: string;
+}
+
+const PublicProfilePostsComponent = ({ accountId }: Props) => {
   const [activeFilter, setActiveFilter] = useState<FilterOption>("All");
   const [sortBy, setSortBy]             = useState<SortOption>("newest");
   const [filterOpen, setFilterOpen]     = useState(false);
@@ -33,10 +36,9 @@ const UserProfilePostsComponent = () => {
   const [isLoading, setIsLoading]       = useState(false);
   const [fetchError, setFetchError]     = useState(false);
 
-  const user       = useAppSelector((state) => state.auth.user);
-  const navigate   = useNavigate();
-  const filterRef  = useRef<HTMLDivElement>(null);
-  const sortRef    = useRef<HTMLDivElement>(null);
+  const navigate  = useNavigate();
+  const filterRef = useRef<HTMLDivElement>(null);
+  const sortRef   = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -49,11 +51,11 @@ const UserProfilePostsComponent = () => {
   }, []);
 
   const fetchPosts = (pageIndex: number, replace = false) => {
-    if (!user?.id) return;
+    if (!accountId) return;
     setIsLoading(true);
     setFetchError(false);
     axiosApiInstance
-      .get(`/posts/any`, { params: { accountId: user.id, page: pageIndex, size: PAGE_SIZE } })
+      .get(`/posts/any`, { params: { accountId, page: pageIndex, size: PAGE_SIZE } })
       .then((res) => {
         const mapped: PostCover[] = (res.data?.content ?? []).map(mapPostCover);
         setPosts((prev) => replace ? mapped : [...prev, ...mapped]);
@@ -63,8 +65,7 @@ const UserProfilePostsComponent = () => {
       .finally(() => setIsLoading(false));
   };
 
-  // Initial load
-  useEffect(() => { fetchPosts(0, true); }, [user?.id]);
+  useEffect(() => { if (accountId) fetchPosts(0, true); }, [accountId]);
 
   const handleLoadMore = () => {
     const next = page + 1;
@@ -82,7 +83,6 @@ const UserProfilePostsComponent = () => {
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === "likes")    return b.likes    - a.likes;
     if (sortBy === "comments") return b.comments - a.comments;
-    // newest / oldest: requires creationDate on PostCover — preserve fetch order for now
     return 0;
   });
 
@@ -94,7 +94,6 @@ const UserProfilePostsComponent = () => {
 
         {/* Filter dropdown */}
         <div ref={filterRef} className="relative justify-self-start">
-
           <button
             type="button"
             onClick={() => { setFilterOpen((p) => !p); setSortOpen(false); }}
@@ -136,7 +135,7 @@ const UserProfilePostsComponent = () => {
           </AnimatePresence>
         </div>
 
-        {/* Center cell — lines + count */}
+        {/* Center — dividers + count */}
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-3">
             <div className="w-20 h-px bg-white/10" />
@@ -200,7 +199,7 @@ const UserProfilePostsComponent = () => {
         </div>
       </div>
 
-      {/* ── Posts grid / empty state ── */}
+      {/* ── Posts grid / states ── */}
       {isLoading && posts.length === 0 ? (
         <div className="w-full flex justify-center py-24">
           <div className="w-6 h-6 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
@@ -224,7 +223,6 @@ const UserProfilePostsComponent = () => {
             ))}
           </div>
 
-          {/* Load More */}
           {hasMore && (
             <div className="flex justify-center pt-2">
               <button
@@ -245,24 +243,9 @@ const UserProfilePostsComponent = () => {
           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
             <FontAwesomeIcon icon={faTableCells} className="text-white/20 text-2xl" />
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-white/50 text-sm font-medium">
-              {activeFilter === "All" ? "No posts yet." : `No ${activeFilter} posts yet.`}
-            </p>
-            {activeFilter === "All" && (
-              <p className="text-white/25 text-xs">Share your first flip with the community.</p>
-            )}
-          </div>
-          {activeFilter === "All" && (
-            <button
-              type="button"
-              onClick={() => navigate("/create-post")}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white/50 hover:text-white text-sm transition-all duration-200"
-            >
-              <FontAwesomeIcon icon={faPlus} className="text-xs" />
-              Create a post
-            </button>
-          )}
+          <p className="text-white/50 text-sm font-medium">
+            {activeFilter === "All" ? "No posts yet." : `No ${activeFilter} posts yet.`}
+          </p>
         </div>
       )}
 
@@ -270,4 +253,4 @@ const UserProfilePostsComponent = () => {
   );
 };
 
-export default UserProfilePostsComponent;
+export default PublicProfilePostsComponent;

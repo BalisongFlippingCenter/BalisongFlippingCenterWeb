@@ -79,7 +79,9 @@ const HeaderProfileDisplay = () => {
         className="flex items-center gap-2 py-1.5 px-2 rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
       >
         {user?.profileImg && user.profileImg !== "" ? (
-          <ProfileImageDisplay />
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+            <ProfileImageDisplay />
+          </div>
         ) : (
           <FontAwesomeIcon icon={faCircleUser} size="xl" className="text-white/80" />
         )}

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useAppSelector } from "../../redux/hooks";
 
 interface params {
   setKnifeWeightOnChange: Function;
@@ -6,34 +7,48 @@ interface params {
 }
 
 const KnifeWeightInput = ({ setKnifeWeightOnChange, parentWeight }: params) => {
-  const weightInputRef = useRef<HTMLInputElement>(null);
-  const [weight, setWeight]         = useState(parentWeight);
-  const [weightType, setWeightType] = useState("oz");
+  const measurementUnit = useAppSelector((state) => state.auth.user?.measurementUnit) ?? "imperial";
+  const isMetric        = measurementUnit === "metric";
 
-  const checkDecimalValue = (value: string) => {
-    let i = value.indexOf(".");
-    if (value[i + 2] === "0") return (+value).toFixed(1).toString();
+  const weightInputRef = useRef<HTMLInputElement>(null);
+
+  // Weight is always stored in oz. Initialise display value in the user's preferred unit.
+  const [weightType, setWeightType] = useState<string>(isMetric ? "g" : "oz");
+  const [weight, setWeight]         = useState<string>(() => {
+    if (!parentWeight || isNaN(+parentWeight) || +parentWeight <= 0) return parentWeight;
+    return isMetric
+      ? checkDecimalValue((+parentWeight * 28.3495).toFixed(1).toString())
+      : parentWeight;
+  });
+
+  function checkDecimalValue(value: string) {
+    const i = value.indexOf(".");
+    if (i !== -1 && value[i + 2] === "0") return (+value).toFixed(1).toString();
     return value;
-  };
+  }
 
   const onWeightChange = (value: string) => {
     setWeight(value);
+    // Always persist in oz
     setKnifeWeightOnChange(
       weightType !== "oz"
-        ? checkDecimalValue((+value / 28.35).toFixed(2).toString())
-        : checkDecimalValue((+value).toFixed(2).toString())
+        ? checkDecimalValue((+value / 28.3495).toFixed(2).toString())  // g → oz
+        : checkDecimalValue((+value).toFixed(2).toString())             // oz → oz
     );
   };
 
   const onWeightTypeChange = (value: string) => {
-    if (weightType !== "oz" && weight !== "") setWeight((prev) => checkDecimalValue((+prev / 28.35).toFixed(2).toString()));
-    if (weightType !== "g"  && weight !== "") setWeight((prev) => checkDecimalValue((+prev * 28.35).toFixed(2).toString()));
+    // Convert the current display value to the new unit
+    if (weightType === "g" && value === "oz" && weight !== "")
+      setWeight((prev) => checkDecimalValue((+prev / 28.3495).toFixed(2).toString()));
+    if (weightType === "oz" && value === "g" && weight !== "")
+      setWeight((prev) => checkDecimalValue((+prev * 28.3495).toFixed(1).toString()));
     setWeightType(value);
   };
 
   const handleOnBlur = () => {
-    if (weight !== checkDecimalValue((+weight).toFixed(2).toString()))
-      setWeight((prev) => checkDecimalValue((+prev).toFixed(2).toString()));
+    const decimals = weightType === "g" ? 1 : 2;
+    setWeight((prev) => checkDecimalValue((+prev).toFixed(decimals).toString()));
   };
 
   return (

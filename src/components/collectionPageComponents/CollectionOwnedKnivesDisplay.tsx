@@ -10,58 +10,63 @@ const CollectionOwnedKnivesDisplay = () => {
   const ownedKnives: Array<CollectionKnife> = useAppSelector(
     (state) => state.collection.collectionKnives
   );
-  const user     = useAppSelector((state) => state.auth.user);
-  const navigate = useNavigate();
+  const collectionData = useAppSelector((state) => state.collection.collection);
+  const user           = useAppSelector((state) => state.auth.user);
+  const navigate       = useNavigate();
 
-  const favoriteKnife = ownedKnives?.find((k) => k.isFavoriteKnife) ?? null;
+  const featuredKnifeId = collectionData?.featuredKnifeId ?? null;
+  const featuredKnife   = featuredKnifeId
+    ? (ownedKnives?.find((k) => String(k.id) === String(featuredKnifeId)) ?? null)
+    : null;
 
   return (
     <div className="flex-1 min-w-0 flex flex-col px-6 pt-5 xsm:pb-4 md:pb-8">
 
-      {/* ── Favorite knife spotlight ── */}
-      {favoriteKnife && (
+      {/* ── Featured knife spotlight ── */}
+      {featuredKnife && (
         <div
-          className="w-full mb-6 rounded-xl overflow-hidden border border-blue-primary/30 bg-gradient-to-r from-blue-primary/10 to-transparent cursor-pointer hover:border-blue-primary/50 transition-all duration-200"
+          className="w-full mb-5 rounded-2xl overflow-hidden border border-gold/30 bg-gradient-to-r from-gold/8 to-transparent cursor-pointer hover:border-gold/50 transition-all duration-200 group"
+          style={{ boxShadow: "0 0 24px 2px rgba(230,184,0,0.08)" }}
           onClick={() =>
             navigate(
-              `/${user?.displayName}/${user?.identifierCode}/collection/${favoriteKnife.displayName}`
+              `/${user?.displayName}/${user?.identifierCode}/collection/${featuredKnife.displayName}`
             )
           }
         >
           <div className="flex items-stretch">
 
             {/* Cover image */}
-            <div className="xsm:w-20 xsm:h-28 md:w-28 md:h-36 flex-shrink-0 overflow-hidden">
-              {favoriteKnife.coverPhoto && favoriteKnife.coverPhoto !== "" ? (
-                <Image imageId={favoriteKnife.coverPhoto} />
+            <div className="xsm:w-44 xsm:h-44 md:w-64 md:h-56 flex-shrink-0 overflow-hidden">
+              {featuredKnife.coverPhoto && featuredKnife.coverPhoto !== "" ? (
+                <Image imageId={featuredKnife.coverPhoto} />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
               )}
             </div>
 
             {/* Details */}
-            <div className="flex flex-col justify-center px-4 py-3 gap-1 min-w-0">
-              <span className="text-blue-primary text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+            <div className="flex flex-col justify-center px-5 py-4 gap-2 min-w-0">
+              <span className="text-gold text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
                 <FontAwesomeIcon icon={faStar} className="text-[9px]" />
-                Favorite Knife
+                Featured Knife
               </span>
-              <h3 className="text-white font-bold xsm:text-base md:text-lg leading-tight truncate">
-                {favoriteKnife.displayName}
+              <h3 className="text-white font-bold xsm:text-xl md:text-2xl leading-tight">
+                {featuredKnife.displayName}
               </h3>
-              <p className="text-white/50 text-sm truncate">
-                {favoriteKnife.knifeMaker}
-                {favoriteKnife.baseKnifeModel ? ` · ${favoriteKnife.baseKnifeModel}` : ""}
+              <p className="text-white/50 text-sm">
+                {featuredKnife.knifeMaker}
+                {featuredKnife.baseKnifeModel ? ` · ${featuredKnife.baseKnifeModel}` : ""}
               </p>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {favoriteKnife.averageScore !== null && (
-                  <span className="flex items-center gap-1 text-[11px] text-gold bg-gold/10 border border-gold/25 px-2 py-0.5 rounded-full font-medium">
-                    <FontAwesomeIcon icon={faStar} className="text-[9px]" />
-                    {favoriteKnife.averageScore.toFixed(1)}
+                {featuredKnife.averageScore !== null && (
+                  <span className="flex items-center gap-1 text-xs text-gold bg-gold/10 border border-gold/25 px-2.5 py-1 rounded-full font-medium">
+                    <FontAwesomeIcon icon={faStar} className="text-[10px]" />
+                    {featuredKnife.averageScore.toFixed(1)}
                   </span>
                 )}
-                {favoriteKnife.knifeType && (
-                  <span className="text-[11px] text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                    {favoriteKnife.knifeType}
+                {featuredKnife.knifeType && (
+                  <span className="text-xs text-white/40 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                    {{ liveblade: "Live Blade", trainer: "Trainer", both: "Both" }[featuredKnife.knifeType.toLowerCase().replace(/_/g, "")] ?? featuredKnife.knifeType}
                   </span>
                 )}
               </div>
@@ -72,8 +77,8 @@ const CollectionOwnedKnivesDisplay = () => {
       )}
 
       {/* ── Section header ── */}
-      <div className="mb-4">
-        <h3 className="text-white font-semibold text-lg">Knives</h3>
+      <div className="mb-3">
+        <h3 className="text-white/50 text-xs font-semibold uppercase tracking-widest">Knives</h3>
       </div>
 
       {/* ── Grid ── */}
@@ -83,7 +88,7 @@ const CollectionOwnedKnivesDisplay = () => {
         <button
           type="button"
           onClick={() => navigate("/add-collection-knife")}
-          className="aspect-[3/4] rounded-xl border border-dashed border-white/20 hover:border-white/40 bg-white/[0.03] hover:bg-white/[0.06] flex flex-col items-center justify-center gap-2 transition-all duration-200 group"
+          className="aspect-[2/3] rounded-xl border border-dashed border-white/20 hover:border-white/40 bg-white/[0.03] hover:bg-white/[0.06] flex flex-col items-center justify-center gap-2 transition-all duration-200 group"
         >
           <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-200">
             <FontAwesomeIcon icon={faPlus} className="text-white/40 group-hover:text-white/70 text-sm" />
@@ -94,7 +99,7 @@ const CollectionOwnedKnivesDisplay = () => {
         </button>
 
         {ownedKnives?.map((knife, i) => (
-          <OwnedKnifeCard knife={knife} key={i} />
+          <OwnedKnifeCard knife={knife} isFeatured={String(knife.id) === String(featuredKnifeId)} key={i} />
         ))}
 
       </div>

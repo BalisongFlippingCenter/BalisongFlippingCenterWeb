@@ -13,7 +13,11 @@ const KnifeTypeInput = ({ setKnifeTypeOnChange, parentKnifeType }: params) => {
     setKnifeTypeOnChange(value);
   };
 
-  const options = ["Live Blade", "Trainer", "Both"] as const;
+  const options = [
+    { label: "Live Blade", value: "liveblade" },
+    { label: "Trainer",    value: "trainer"   },
+    { label: "Both",       value: "both"      },
+  ];
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -21,16 +25,16 @@ const KnifeTypeInput = ({ setKnifeTypeOnChange, parentKnifeType }: params) => {
       <div className="flex rounded-lg overflow-hidden border border-white/10">
         {options.map((option) => (
           <button
-            key={option}
+            key={option.value}
             type="button"
-            onClick={() => handleOnChange(option)}
+            onClick={() => handleOnChange(option.value)}
             className={`flex-1 py-2 text-sm font-medium transition-colors duration-150 ${
-              parentKnifeType === option
+              parentKnifeType === option.value
                 ? "bg-blue-primary text-white"
                 : "bg-white/5 text-white/40 hover:text-white/70"
             }`}
           >
-            {option}
+            {option.label}
           </button>
         ))}
       </div>

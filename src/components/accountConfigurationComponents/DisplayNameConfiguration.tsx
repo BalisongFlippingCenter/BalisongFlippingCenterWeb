@@ -47,20 +47,20 @@ const DisplayNameConfiguration = () => {
         url: "/accounts/me/change-display-name",
         method: "post",
         data: trimmed,
+        headers: { "Content-Type": "text/plain" },
       })
       .then((res) => {
-        dispatch(
-          setNewUser({
-            ...user,
-            displayName: res.data.displayName,
-            identifierCode: res.data.identifierCode,
-          } as Profile)
-        );
-        navigate(-1);
+        console.log("Display name update response:", res.data);
+        // backend may return full user object or just the new display name string
+        const updatedName = typeof res.data === "object" ? res.data.displayName : res.data;
+        const updatedCode = typeof res.data === "object" ? res.data.identifierCode : user?.identifierCode;
+        dispatch(setNewUser({ ...user, displayName: updatedName, identifierCode: updatedCode } as Profile));
+        navigate(`/${updatedName}/${updatedCode}`, { replace: true });
       })
       .catch((err) => {
+        console.log("Display name update error:", err);
         setIsError(true);
-        setErrMsg("Failed to update display name. Please try again.");
+        setErrMsg(err.response?.data?.message ?? "Failed to update display name. Please try again.");
         if (err.response?.status === 401) {
           dispatch(clearCollection());
           dispatch(logout());

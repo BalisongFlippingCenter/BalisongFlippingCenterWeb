@@ -2,6 +2,8 @@ import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CollectionKnifeDTO } from "../../modals/CollectionKnife";
 import GalleryInputSelectedFilesFileCoverDisplay from "./GalleryInputSelectedFilesFileCoverDisplay";
+import { useAppSelector } from "../../redux/hooks";
+import { formatCurrency, formatWeight, formatLength } from "../../utils/unitConversions";
 
 interface params {
   galleryFiles: Array<File> | null;
@@ -14,6 +16,8 @@ const NewCollectionKnifeSummary = ({
   newKnifeObj,
   setStepManually,
 }: params) => {
+  const currency        = useAppSelector((state) => state.auth.user?.currency) ?? "USD";
+  const measurementUnit = useAppSelector((state) => state.auth.user?.measurementUnit) ?? "imperial";
   const getBalancePoint = () => {
     console.log(newKnifeObj?.balanceValue);
     switch (newKnifeObj?.balanceValue?.toString()) {
@@ -87,9 +91,9 @@ const NewCollectionKnifeSummary = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <SummaryField label="Knife Type" value={newKnifeObj?.knifeType || ""} />
                 <SummaryField label="Date Acquired" value={newKnifeObj?.aqquiredDate || ""} />
-                <SummaryField label="MSRP" value={newKnifeObj?.msrp && +newKnifeObj.msrp > 0 ? "$" + newKnifeObj.msrp : "—"} />
-                <SummaryField label="Overall Length" value={newKnifeObj?.overallLength && +newKnifeObj.overallLength > 0 ? newKnifeObj.overallLength + '"' : "—"} />
-                <SummaryField label="Weight" value={newKnifeObj?.weight && +newKnifeObj.weight > 0 ? newKnifeObj.weight + "g" : "—"} />
+                <SummaryField label="MSRP" value={formatCurrency(newKnifeObj?.msrp, currency) || "—"} />
+                <SummaryField label="Overall Length" value={formatLength(newKnifeObj?.overallLength, measurementUnit) || "—"} />
+                <SummaryField label="Weight" value={formatWeight(newKnifeObj?.weight, measurementUnit) || "—"} />
                 <SummaryField label="Balance" value={newKnifeObj?.hasModularBalance ? "Modular" : getBalancePoint()} />
               </div>
 

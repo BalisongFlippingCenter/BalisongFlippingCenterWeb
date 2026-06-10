@@ -25,12 +25,16 @@ import ProfileConfigurationProfileBannerPage from "./pages/configuration/Profile
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import { setCredentials, setToRememberLoginInfo } from "./redux/auth/authSlice";
+// import { Profile } from "./modals/User";
 import { loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
+import { mapCollection } from "./redux/collection/collectionActions";
 import ProfileConfigurationCollectionBannerImagePage from "./pages/configuration/ProfileConfigurationCollectionBannerImagePage";
+import ProfileConfigurationCollectionKnifeCoverPage from "./pages/configuration/ProfileConfigurationCollectionKnifeCoverPage";
 import CollectionKnifePage from "./pages/CollectionKnifePage";
 import TestPage from "./pages/TestPage";
 import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
+import PostPage from "./pages/PostPage";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,32 +45,45 @@ const App = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    setIsLoading(true);
-    // configure app on mount
     // get remember login state
     const toRememberLogin = localStorage.getItem("save-user-info");
     if (toRememberLogin === "true") {
       dispatch(setToRememberLoginInfo());
     }
 
-    // attempt to login user with valid refresh token
+    // attempt to restore session with valid refresh token cookie
     if (!user && !accessToken) {
+      setIsLoading(true);
       dispatch(loginWithRefreshToken())
         .unwrap()
         .then((res) => {
-          console.log("Response from refresh token login ->: " + res)
-          dispatch(
-            setCredentials({
-              newUser: res.account,
-              newAccessToken: res.accessToken,
-            })
-          );
-          dispatch(setCollection(res.collection));
+          dispatch(setCredentials({
+            newUser: res.account,
+            newAccessToken: res.accessToken,
+          }));
+          dispatch(setCollection(mapCollection(res.collection)));
         })
-        .catch((error) => console.log("Error caught attempting to login with existing refresh token: " + error));
+        .catch(() => {
+          // no valid session — user stays logged out, show login
+        })
+        .finally(() => setIsLoading(false));
     }
 
-    setIsLoading(false);
+    // dispatch(
+    //   setCredentials({
+    //     newUser: {
+    //       id: "1",
+    //       displayName: "Test",
+    //       identifierCode: "4444",
+    //       role: "USER",
+    //       email: "test@gmail.com",
+    //       collectionId: "1123",
+    //       accountCreationDate: null,
+    //       lastLogin: null,
+    //     } as Profile,
+    //     newAccessToken: "1234",
+    //   })
+    // );
   }, []);
 
   if (isLoading) {
@@ -83,6 +100,7 @@ const App = () => {
           {/*Public Routes*/}
           <Route path="/" element={<HomePage />} />
           <Route path="/community" element={<CommunityPage />} />
+          <Route path="/post/:postId" element={<PostPage />} />
 
           <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/product-world" element={<ProductWorldPage />} />
@@ -169,6 +187,11 @@ const App = () => {
             <Route
               path="/configure/collection-banner-image"
               element={<ProfileConfigurationCollectionBannerImagePage />}
+            />
+
+            <Route
+              path="/configure/collection-knife-cover/:knifeId"
+              element={<ProfileConfigurationCollectionKnifeCoverPage />}
             />
 
             <Route

@@ -87,12 +87,24 @@ const Navbar = () => {
                 <FontAwesomeIcon icon={faBarsStaggered} />
               </div>
             )}
-            <h1
-              onClick={() => navigate("/")}
-              className="hover:cursor-pointer font-bold lg:text-2xl xsm:text-lg whitespace-nowrap"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 540 110"
+              onClick={() => navigate(user ? "/community" : "/")}
+              className="hover:cursor-pointer h-9 md:h-14 w-auto"
+              aria-label="Balisong Flipping Center"
             >
-              <span className="text-blue-primary">Balisong</span> Flipping Center
-            </h1>
+              <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
+              <path d="M 52,55 L 6,12 L 10,8 L 56,51 Z" fill="white" opacity="0.3"/>
+              <path d="M 52,55 L 6,98 L 0,92 L 4,84 L 44,51 Z" fill="white" opacity="0.95"/>
+              <path d="M 52,55 L 6,98 L 10,102 L 56,59 Z" fill="white" opacity="0.3"/>
+              <path d="M 52,55 C 70,54 92,50 112,46 C 130,42 142,38 148,35 C 142,41 130,47 112,52 C 92,57 70,58 52,57 Z" fill="white" opacity="0.95"/>
+              <circle cx="52" cy="55" r="4.5" fill="white"/>
+              <circle cx="52" cy="55" r="2" fill="black"/>
+              <text x="178" y="52" fontFamily="'Bebas Neue','Impact',sans-serif" fontSize="44" letterSpacing="4" fill="white">BALISONG</text>
+              <rect x="182" y="61" width="240" height="1.5" rx="0.75" fill="white" opacity="0.75"/>
+              <text x="182" y="84" fontFamily="'Barlow','Arial Narrow',sans-serif" fontSize="20" fontWeight="600" letterSpacing="4" fill="white" opacity="0.7">FLIPPING CENTER</text>
+            </svg>
           </div>
 
           {/* Center — nav links (desktop only) */}

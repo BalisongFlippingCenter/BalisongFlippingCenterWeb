@@ -103,9 +103,8 @@ const UserRegistrationForm = () => {
       })
     )
       .unwrap()
-      .then((res) => {
-        console.log(res);
-        navigate("/register/verify/tzenisekj@gmail.com");
+      .then(() => {
+        navigate("/login");
       })
       .catch(() => {});
   };

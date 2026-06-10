@@ -16,6 +16,8 @@ import {
   faComment,
   faBoxOpen,
   faEarthAmericas,
+  faCrown,
+  faGlobe,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppSelector } from "../redux/hooks";
 import { axiosApiInstanceAuth } from "../api/axios";
@@ -36,6 +38,45 @@ const VIDEO_ONLY_LAYOUTS: PostLayout[] = ["tutorial", "combo"];
 const SINGLE_FILE_LAYOUTS: PostLayout[] = ["tutorial", "combo"];
 const MAX_FILES = 10;
 const MAX_TAGS = 5;
+
+// ─── Backend field mappings ────────────────────────────────────────────────
+const POST_TYPE_MAP: Record<PostLayout, string> = {
+  generic:  "GENERIC",
+  buysell:  "BUY_SELL",
+  trade:    "TRADE",
+  tutorial: "TRICK_TUTORIAL",
+  combo:    "COMBO",
+};
+
+const GENERIC_TAG_MAP: Record<string, string> = {
+  "Buy/Sell":   "BUY_SELL",
+  "Trade":      "TRADE",
+  "Flipping":   "FLIPPING",
+  "Show-Off":   "SHOW_OFF",
+  "Mod-Work":   "MOD_WORK",
+  "Help":       "HELP",
+  "Discussion": "DISCUSSION",
+  "Hot-Topic":  "HOT_TOPIC",
+};
+
+const DIFFICULTY_TAG_MAP: Record<string, string> = {
+  "Beginner":     "BEGINNER",
+  "Intermediate": "INTERMEDIATE",
+  "Advanced":     "ADVANCED",
+  "Expert":       "EXPERT",
+};
+
+const TECHNIQUE_TAG_MAP: Record<string, string> = {
+  "Aerial":    "AERIAL",
+  "Transfer":  "TRANSFER",
+  "Fan":       "FAN",
+  "Rollover":  "ROLLOVER",
+  "Twirl":     "TWIRL",
+  "Chaplin":   "CHAPLIN",
+  "Combo":     "COMBO",
+  "Ladder":    "LADDER",
+  "Tech":      "TECH",
+};
 
 const GENERIC_TAGS: string[] = [
   "Buy/Sell", "Trade", "Flipping", "Show-Off", "Mod-Work", "Help", "Discussion", "Hot-Topic",
@@ -88,6 +129,20 @@ interface PostPreviewOverlayProps {
   onEdit: () => void;
   onConfirm: () => void;
 }
+
+// ── Tag colour helper — same logic as PostPage ────────────────────────────────
+const TAG_PALETTE_PREVIEW = [
+  "bg-blue-primary/10 border-blue-primary/25 text-blue-primary",
+  "bg-green/10 border-green/25 text-green",
+  "bg-gold/10 border-gold/25 text-gold",
+  "bg-light-blue/10 border-light-blue/25 text-light-blue",
+] as const;
+
+const tagColorPreview = (tag: string): string => {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return TAG_PALETTE_PREVIEW[h % TAG_PALETTE_PREVIEW.length];
+};
 
 const PostPreviewOverlay = ({
   layout, caption, description, tags, selectedFiles,
@@ -147,25 +202,21 @@ const PostPreviewOverlay = ({
                   : <span className="text-blue-primary text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
                 }
               </div>
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-white text-sm font-semibold">{displayName}</span>
-                  {identifier && <span className="text-white/30 text-xs">{identifier}</span>}
-                </div>
-                <span className="text-white/30 text-xs">Just now</span>
+              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                <span className="text-white text-sm font-semibold leading-none">{displayName}</span>
+                {identifier && <span className="text-white/30 text-xs leading-none">{identifier}</span>}
               </div>
             </div>
-            {/* Right side: layout badge + product world indicator */}
+            {/* Right side: section icon + layout badge */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {layout === "generic" && (
+                <FontAwesomeIcon icon={faGlobe} className="text-white/25 text-xs" title="Community" />
+              )}
               {(layout === "buysell" || layout === "trade") && (
-                <div className="flex items-center gap-1 text-white/30" title="Product World">
-                  <FontAwesomeIcon icon={faEarthAmericas} className="text-xs" />
-                </div>
+                <FontAwesomeIcon icon={faEarthAmericas} className="text-white/25 text-xs" title="Product World" />
               )}
               {(layout === "tutorial" || layout === "combo") && (
-                <div className="flex items-center gap-1 text-white/30" title="Tutorial Center">
-                  <FontAwesomeIcon icon={faHubspot} className="text-xs" />
-                </div>
+                <FontAwesomeIcon icon={faHubspot} className="text-white/25 text-xs" title="Tutorial Center" />
               )}
               <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
                 {badge.label}
@@ -175,7 +226,7 @@ const PostPreviewOverlay = ({
 
           {/* Caption */}
           <div className="px-4 pt-3 pb-2">
-            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{caption}</p>
+            <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{caption}</p>
           </div>
 
           {/* Media */}
@@ -217,17 +268,18 @@ const PostPreviewOverlay = ({
               </div>
             </div>
           ) : mediaFiles.length > 0 ? (
-            /* Standard media grid */
-            <div className={`px-4 pb-3 grid gap-1.5 ${mediaFiles.length === 1 ? "grid-cols-1" : mediaFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+            /* Standard media grid — full-width, no horizontal padding */
+            <div className={`pb-0 grid gap-0.5 ${mediaFiles.length === 1 ? "grid-cols-1" : mediaFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
               {mediaFiles.map((file, i) => {
                 const isVideo = file.type.startsWith("video/");
                 const url = URL.createObjectURL(file);
+                const aspectCls = mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
                 return (
-                  <div key={i} className={`relative overflow-hidden rounded-xl bg-[#0d0f14] border border-white/10 ${mediaFiles.length === 1 ? "aspect-video" : "aspect-square"}`}>
+                  <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
                     {isVideo
                       ? <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/30">
                           <FontAwesomeIcon icon={faVideo} className="text-2xl" />
-                          <span className="text-[10px] px-2 text-center truncate w-full px-3">{file.name}</span>
+                          <span className="text-[10px] text-center truncate w-full px-3">{file.name}</span>
                         </div>
                       : <img src={url} alt="" className="w-full h-full object-cover" />
                     }
@@ -237,12 +289,17 @@ const PostPreviewOverlay = ({
             </div>
           ) : null}
 
+          {/* Posted date — sits just below media */}
+          <div className="px-4 pt-1 pb-0">
+            <span className="text-white/25 text-[11px]">Just now</span>
+          </div>
+
           {/* Tags */}
           {tags.length > 0 && (
             <div className="px-4 pb-2 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-primary/10 border border-blue-primary/25 text-blue-primary text-[11px] font-semibold">
-                  <span className="text-blue-primary/50">#</span>{tag}
+                <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColorPreview(tag)}`}>
+                  <span className="opacity-50">#</span>{tag}
                 </span>
               ))}
             </div>
@@ -253,7 +310,7 @@ const PostPreviewOverlay = ({
             <div className="px-4 pb-3 flex flex-col gap-1">
               <p
                 ref={descRef}
-                className={`text-white/50 text-xs leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-2"}`}
+                className={`text-white/50 text-xs leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
               >
                 {description}
               </p>
@@ -289,7 +346,7 @@ const PostPreviewOverlay = ({
               <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs flex-shrink-0" />
               <span className="text-white/60 text-xs">{taggedKnife.displayName}</span>
               <span className="text-white/30 text-xs">·</span>
-              <span className="text-white/40 text-xs">{taggedKnife.knifeMaker}</span>
+              <span className="text-white/40 text-xs">{taggedKnife.knifeMaker}{taggedKnife.baseKnifeModel ? ` · ${taggedKnife.baseKnifeModel}` : ""}</span>
             </div>
           )}
 
@@ -301,31 +358,18 @@ const PostPreviewOverlay = ({
             </div>
           )}
 
-          {/* Interaction bar */}
-          <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Like */}
-              <button type="button" className="flex items-center gap-2 text-white/30 hover:text-red transition-colors duration-200 group">
-                <FontAwesomeIcon icon={faHeart} className="text-base group-hover:scale-110 transition-transform duration-150" />
-                <span className="text-xs font-medium">Like</span>
-              </button>
-              {/* Comment */}
-              <button type="button" className="flex items-center gap-2 text-white/30 hover:text-blue-primary transition-colors duration-200 group">
-                <FontAwesomeIcon icon={faComment} className="text-base group-hover:scale-110 transition-transform duration-150" />
-                <span className="text-xs font-medium">Comment</span>
-              </button>
-            </div>
-            {/* Counts */}
-            <div className="flex items-center gap-3 text-white/25 text-xs">
-              <span className="flex items-center gap-1">
-                <FontAwesomeIcon icon={faHeart} className="text-[10px]" />
-                0
-              </span>
-              <span className="flex items-center gap-1">
-                <FontAwesomeIcon icon={faComment} className="text-[10px]" />
-                0
-              </span>
-            </div>
+          {/* Engagement counts — read-only, matches PostPage */}
+          <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-white/30 text-xs">
+              <FontAwesomeIcon icon={faHeart} className="text-[11px]" />
+              <span className="font-medium">0</span>
+              <span className="text-white/20">likes</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-white/30 text-xs">
+              <FontAwesomeIcon icon={faComment} className="text-[11px]" />
+              <span className="font-medium">0</span>
+              <span className="text-white/20">comments</span>
+            </span>
           </div>
 
         </div>
@@ -364,6 +408,7 @@ const CreatePostPage = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const collectionKnives = useAppSelector((state) => state.collection.collectionKnives);
+  const collectionData   = useAppSelector((state) => state.collection.collection);
 
   const [layout, setLayout] = useState<PostLayout>("generic");
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
@@ -400,12 +445,18 @@ const CreatePostPage = () => {
   const tradeBlocked = layout === "trade" && collectionKnives.length === 0;
   const sellBlocked = layout === "buysell" && buySellTag === "Selling" && collectionKnives.length === 0;
 
+  // tutorial/combo require exactly one difficulty tag
+  const hasDifficultyTag = (layout === "tutorial" || layout === "combo")
+    ? tags.some((t) => getTrickTagGroup(t) === "Difficulty")
+    : true;
+
   const canSubmit =
     !tradeBlocked &&
     !sellBlocked &&
+    hasDifficultyTag &&
     caption.trim() !== "" &&
     (layout === "trade"
-      ? tradeSoughtFile !== null
+      ? tradeSoughtFile !== null && tradeOfferingKnifeId !== null
       : selectedFiles.length > 0) &&
     (layout !== "buysell" || (buySellTag !== null && (buySellTag !== "Selling" || (price.trim() !== "" && sellingKnifeId !== null))));
 
@@ -477,27 +528,44 @@ const CreatePostPage = () => {
     setError("");
 
     const fd = new FormData();
+
+    // Common fields
+    fd.append("postType", POST_TYPE_MAP[layout]);
     fd.append("caption", caption.trim());
-    fd.append("description", description.trim());
-    fd.append("layout", layout);
-    fd.append("creatorId", user?.id ?? "");
-    if (taggedKnifeId) fd.append("taggedKnifeId", taggedKnifeId);
+    if (description.trim()) fd.append("description", description.trim());
+
+    if (layout === "generic") {
+      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
+      if (taggedKnifeId) fd.append("referenceKnifeId", taggedKnifeId);
+      tags.forEach((t) => fd.append("tags", GENERIC_TAG_MAP[t] ?? t));
+    }
+
     if (layout === "buysell") {
-      fd.append("price", price.trim());
-      if (buySellTag) fd.append("buySellTag", buySellTag);
-      if (sellingKnifeId) fd.append("sellingKnifeId", sellingKnifeId);
+      fd.append("mode", buySellTag === "Buying" ? "BUYING" : "SELLING");
+      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
+      if (buySellTag === "Selling") {
+        if (sellingKnifeId) fd.append("offeringKnifeId", sellingKnifeId);
+        if (price.trim()) fd.append("price", price.trim());
+      }
     }
+
     if (layout === "trade") {
-      if (tradeOfferingKnifeId) fd.append("tradeOfferingKnifeId", tradeOfferingKnifeId);
-      fd.append("lookingFor", lookingFor.trim());
-      if (tradeSoughtFile) fd.append("tradeSoughtImage", tradeSoughtFile);
-    } else {
-      selectedFiles.forEach((f) => fd.append("files", f));
+      if (tradeOfferingKnifeId) fd.append("offeringKnifeId", tradeOfferingKnifeId);
+      fd.append("lookingForText", lookingFor.trim());
+      if (tradeSoughtFile) fd.append("mediaFiles", tradeSoughtFile);
     }
-    if (layout === "generic") tags.forEach((t) => fd.append("tags", t));
+
+    if (layout === "tutorial" || layout === "combo") {
+      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
+      const difficultyTag = tags.find((t) => getTrickTagGroup(t) === "Difficulty");
+      if (difficultyTag) fd.append("difficultyTag", DIFFICULTY_TAG_MAP[difficultyTag] ?? difficultyTag.toUpperCase());
+      tags
+        .filter((t) => getTrickTagGroup(t) === "Technique")
+        .forEach((t) => fd.append("techniqueTags", TECHNIQUE_TAG_MAP[t] ?? t.toUpperCase()));
+    }
 
     await axiosApiInstanceAuth
-      .request({ url: "/posts/create-post", method: "post", data: fd })
+      .request({ url: "/posts/create", method: "post", data: fd })
       .then(() => navigate(-1))
       .catch((err) => {
         console.log(err);
@@ -629,20 +697,35 @@ const CreatePostPage = () => {
             </p>
             {(() => {
               const sellingKnife = collectionKnives.find((k) => k.id === sellingKnifeId) ?? null;
-              return sellingKnife ? (
-                <div className="flex items-center justify-between bg-[#13161d] border border-blue-primary/30 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs flex-shrink-0" />
-                    <div className="flex flex-col min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{sellingKnife.displayName}</p>
-                      <p className="text-white/40 text-xs truncate">{sellingKnife.knifeMaker}</p>
+              return sellingKnife ? (() => {
+                const isFeatured = !!collectionData?.featuredKnifeId && String(sellingKnife.id) === String(collectionData.featuredKnifeId);
+                return (
+                  <div
+                    style={isFeatured ? { boxShadow: "0 0 14px 2px rgba(230,184,0,0.15)" } : undefined}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${isFeatured ? "bg-gold/8 border border-gold/30" : "bg-[#13161d] border border-blue-primary/30"}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                        {sellingKnife.coverPhoto && sellingKnife.coverPhoto !== "" ? (
+                          <img src={sellingKnife.coverPhoto} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[10px]" />}
+                          <p className="text-white text-sm font-medium truncate">{sellingKnife.displayName}</p>
+                        </div>
+                        <p className="text-white/40 text-xs truncate">{sellingKnife.knifeMaker}{sellingKnife.baseKnifeModel ? ` · ${sellingKnife.baseKnifeModel}` : ""}</p>
+                      </div>
                     </div>
+                    <button type="button" onClick={() => setSellingKnifeId(null)} className="text-white/30 hover:text-white/70 transition-colors duration-200 flex-shrink-0 ml-3">
+                      <FontAwesomeIcon icon={faXmark} />
+                    </button>
                   </div>
-                  <button type="button" onClick={() => setSellingKnifeId(null)} className="text-white/30 hover:text-white/70 transition-colors duration-200 flex-shrink-0 ml-3">
-                    <FontAwesomeIcon icon={faXmark} />
-                  </button>
-                </div>
-              ) : (
+                );
+              })() : (
                 <div className="relative">
                   <button
                     type="button"
@@ -653,18 +736,34 @@ const CreatePostPage = () => {
                     <FontAwesomeIcon icon={faChevronDown} className={`text-xs transition-transform duration-200 ${sellingPickerOpen ? "rotate-180" : ""}`} />
                   </button>
                   {sellingPickerOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-48 overflow-y-auto">
-                      {collectionKnives.map((knife) => (
-                        <button
-                          key={knife.id}
-                          type="button"
-                          onClick={() => { setSellingKnifeId(knife.id); setSellingPickerOpen(false); }}
-                          className="w-full flex flex-col px-4 py-3 hover:bg-white/5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0"
-                        >
-                          <span className="text-white text-sm font-medium">{knife.displayName}</span>
-                          <span className="text-white/40 text-xs">{knife.knifeMaker}</span>
-                        </button>
-                      ))}
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-56 overflow-y-auto">
+                      {collectionKnives.map((knife) => {
+                        const isFeatured = !!collectionData?.featuredKnifeId && String(knife.id) === String(collectionData.featuredKnifeId);
+                        return (
+                          <button
+                            key={knife.id}
+                            type="button"
+                            onClick={() => { setSellingKnifeId(knife.id); setSellingPickerOpen(false); }}
+                            style={isFeatured ? { boxShadow: "inset 0 0 12px 0px rgba(230,184,0,0.08)" } : undefined}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0 ${isFeatured ? "hover:bg-gold/10" : "hover:bg-white/5"}`}
+                          >
+                            <div className={`w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                              {knife.coverPhoto && knife.coverPhoto !== "" ? (
+                                <img src={knife.coverPhoto} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                              )}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[9px] flex-shrink-0" />}
+                                <span className={`text-sm font-medium truncate ${isFeatured ? "text-gold" : "text-white"}`}>{knife.displayName}</span>
+                              </div>
+                              <span className="text-white/40 text-xs truncate">{knife.knifeMaker}{knife.baseKnifeModel ? ` · ${knife.baseKnifeModel}` : ""}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -764,17 +863,35 @@ const CreatePostPage = () => {
                 <p className="text-[11px] text-white/35 font-semibold uppercase tracking-wider">Offering</p>
                 {(() => {
                   const offeringKnife = collectionKnives.find((k) => k.id === tradeOfferingKnifeId) ?? null;
-                  return offeringKnife ? (
-                    <div className="flex items-center justify-between bg-[#13161d] border border-blue-primary/30 rounded-xl px-3 py-2.5 gap-2">
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-white text-xs font-medium truncate">{offeringKnife.displayName}</span>
-                        <span className="text-white/40 text-[11px] truncate">{offeringKnife.knifeMaker}</span>
+                  return offeringKnife ? (() => {
+                    const isFeatured = !!collectionData?.featuredKnifeId && String(offeringKnife.id) === String(collectionData.featuredKnifeId);
+                    return (
+                      <div
+                        style={isFeatured ? { boxShadow: "0 0 14px 2px rgba(230,184,0,0.15)" } : undefined}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2.5 gap-2 ${isFeatured ? "bg-gold/8 border border-gold/30" : "bg-[#13161d] border border-blue-primary/30"}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-8 h-8 rounded-md overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                            {offeringKnife.coverPhoto && offeringKnife.coverPhoto !== "" ? (
+                              <img src={offeringKnife.coverPhoto} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1">
+                              {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[9px] flex-shrink-0" />}
+                              <span className={`text-xs font-medium truncate ${isFeatured ? "text-gold" : "text-white"}`}>{offeringKnife.displayName}</span>
+                            </div>
+                            <span className="text-white/40 text-[11px] truncate">{offeringKnife.knifeMaker}{offeringKnife.baseKnifeModel ? ` · ${offeringKnife.baseKnifeModel}` : ""}</span>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => setTradeOfferingKnifeId(null)} className="text-white/30 hover:text-white/70 transition-colors flex-shrink-0">
+                          <FontAwesomeIcon icon={faXmark} className="text-xs" />
+                        </button>
                       </div>
-                      <button type="button" onClick={() => setTradeOfferingKnifeId(null)} className="text-white/30 hover:text-white/70 transition-colors flex-shrink-0">
-                        <FontAwesomeIcon icon={faXmark} className="text-xs" />
-                      </button>
-                    </div>
-                  ) : (
+                    );
+                  })() : (
                     <div className="relative">
                       <button
                         type="button"
@@ -787,17 +904,33 @@ const CreatePostPage = () => {
                       </button>
                       {tradeOfferingPickerOpen && collectionKnives.length > 0 && (
                         <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-40 overflow-y-auto">
-                          {collectionKnives.map((knife) => (
-                            <button
-                              key={knife.id}
-                              type="button"
-                              onClick={() => { setTradeOfferingKnifeId(knife.id); setTradeOfferingPickerOpen(false); }}
-                              className="w-full flex flex-col px-3 py-2.5 hover:bg-white/5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0"
-                            >
-                              <span className="text-white text-xs font-medium truncate">{knife.displayName}</span>
-                              <span className="text-white/40 text-[11px] truncate">{knife.knifeMaker}</span>
-                            </button>
-                          ))}
+                          {collectionKnives.map((knife) => {
+                            const isFeatured = !!collectionData?.featuredKnifeId && String(knife.id) === String(collectionData.featuredKnifeId);
+                            return (
+                              <button
+                                key={knife.id}
+                                type="button"
+                                onClick={() => { setTradeOfferingKnifeId(knife.id); setTradeOfferingPickerOpen(false); }}
+                                style={isFeatured ? { boxShadow: "inset 0 0 12px 0px rgba(230,184,0,0.08)" } : undefined}
+                                className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0 ${isFeatured ? "hover:bg-gold/10" : "hover:bg-white/5"}`}
+                              >
+                                <div className={`w-8 h-8 rounded-md overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                                  {knife.coverPhoto && knife.coverPhoto !== "" ? (
+                                    <img src={knife.coverPhoto} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                                  )}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-1">
+                                    {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[9px] flex-shrink-0" />}
+                                    <span className={`text-xs font-medium truncate ${isFeatured ? "text-gold" : "text-white"}`}>{knife.displayName}</span>
+                                  </div>
+                                  <span className="text-white/40 text-[11px] truncate">{knife.knifeMaker}{knife.baseKnifeModel ? ` · ${knife.baseKnifeModel}` : ""}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1046,24 +1179,44 @@ const CreatePostPage = () => {
             Reference Your Knife <span className="normal-case text-white/25 font-normal">— optional</span>
           </p>
 
-          {taggedKnife ? (
-            <div className="flex items-center justify-between bg-[#13161d] border border-blue-primary/30 rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs" />
-                <div>
-                  <p className="text-white text-sm font-medium">{taggedKnife.displayName}</p>
-                  <p className="text-white/40 text-xs">{taggedKnife.knifeMaker}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTaggedKnifeId(null)}
-                className="text-white/30 hover:text-white/70 transition-colors duration-200"
+          {taggedKnife ? (() => {
+            const taggedIsFeatured = !!collectionData?.featuredKnifeId && String(taggedKnife.id) === String(collectionData.featuredKnifeId);
+            return (
+              <div
+                style={taggedIsFeatured ? { boxShadow: "0 0 14px 2px rgba(230,184,0,0.15)" } : undefined}
+                className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${
+                  taggedIsFeatured
+                    ? "bg-gold/8 border border-gold/30"
+                    : "bg-[#13161d] border border-blue-primary/30"
+                }`}
               >
-                <FontAwesomeIcon icon={faXmark} />
-              </button>
-            </div>
-          ) : (
+                <div className="flex items-center gap-3">
+                  {/* Cover photo thumbnail */}
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 border border-white/10">
+                    {taggedKnife.coverPhoto && taggedKnife.coverPhoto !== "" ? (
+                      <img src={taggedKnife.coverPhoto} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      {taggedIsFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[10px]" />}
+                      <p className="text-white text-sm font-medium">{taggedKnife.displayName}</p>
+                    </div>
+                    <p className="text-white/40 text-xs">{taggedKnife.knifeMaker}{taggedKnife.baseKnifeModel ? ` · ${taggedKnife.baseKnifeModel}` : ""}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTaggedKnifeId(null)}
+                  className="text-white/30 hover:text-white/70 transition-colors duration-200 pl-2"
+                >
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              </div>
+            );
+          })() : (
             <div className="relative">
               <button
                 type="button"
@@ -1076,23 +1229,40 @@ const CreatePostPage = () => {
               </button>
 
               {knifePickerOpen && collectionKnives.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-48 overflow-y-auto">
-                  {collectionKnives.map((knife) => (
-                    <button
-                      key={knife.id}
-                      type="button"
-                      onClick={() => {
-                        setTaggedKnifeId(knife.id);
-                        setKnifePickerOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0"
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-white text-sm font-medium">{knife.displayName}</span>
-                        <span className="text-white/40 text-xs">{knife.knifeMaker}</span>
-                      </div>
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-56 overflow-y-auto">
+                  {collectionKnives.map((knife) => {
+                    const isFeatured = !!collectionData?.featuredKnifeId && String(knife.id) === String(collectionData.featuredKnifeId);
+                    return (
+                      <button
+                        key={knife.id}
+                        type="button"
+                        onClick={() => {
+                          setTaggedKnifeId(knife.id);
+                          setKnifePickerOpen(false);
+                        }}
+                        style={isFeatured ? { boxShadow: "inset 0 0 12px 0px rgba(230,184,0,0.08)" } : undefined}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0 ${
+                          isFeatured ? "hover:bg-gold/10" : "hover:bg-white/5"
+                        }`}
+                      >
+                        {/* Cover photo thumbnail */}
+                        <div className={`w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                          {knife.coverPhoto && knife.coverPhoto !== "" ? (
+                            <img src={knife.coverPhoto} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[9px] flex-shrink-0" />}
+                            <span className={`text-sm font-medium truncate ${isFeatured ? "text-gold" : "text-white"}`}>{knife.displayName}</span>
+                          </div>
+                          <span className="text-white/40 text-xs truncate">{knife.knifeMaker}{knife.baseKnifeModel ? ` · ${knife.baseKnifeModel}` : ""}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -21,7 +21,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   facebook: {
     label: "Facebook",
     placeholder: "https://www.facebook.com/yourprofile",
-    apiUrl: "accounts/me/update-facebook-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "facebookLink",
     inputType: "url",
     prefix: "https://www.facebook.com",
@@ -30,7 +30,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   instagram: {
     label: "Instagram",
     placeholder: "https://www.instagram.com/yourhandle",
-    apiUrl: "accounts/me/update-instagram-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "instagramLink",
     inputType: "url",
     prefix: "https://www.instagram.com",
@@ -39,7 +39,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   twitter: {
     label: "Twitter / X",
     placeholder: "https://x.com/yourhandle",
-    apiUrl: "accounts/me/update-twitter-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "twitterLink",
     inputType: "url",
     prefix: "https://",
@@ -48,7 +48,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   youtube: {
     label: "YouTube",
     placeholder: "https://www.youtube.com/@yourchannel",
-    apiUrl: "accounts/me/update-youtube-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "youtubeLink",
     inputType: "url",
     prefix: "https://www.youtube.com",
@@ -57,7 +57,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   reddit: {
     label: "Reddit",
     placeholder: "https://www.reddit.com/u/yourname",
-    apiUrl: "accounts/me/update-reddit-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "redditLink",
     inputType: "url",
     prefix: "https://www.reddit.com",
@@ -66,7 +66,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   discord: {
     label: "Discord",
     placeholder: "your_username",
-    apiUrl: "accounts/me/update-discord-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "discordLink",
     inputType: "text",
     hint: "Enter your Discord username",
@@ -74,7 +74,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   email: {
     label: "Personal Email",
     placeholder: "you@example.com",
-    apiUrl: "accounts/me/update-personal-email-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "personalEmailLink",
     inputType: "email",
     hint: "This email will be visible on your public profile",
@@ -82,7 +82,7 @@ const LINK_CONFIGS: Record<LinkType, LinkConfig> = {
   website: {
     label: "Personal Website",
     placeholder: "https://yourwebsite.com",
-    apiUrl: "accounts/me/update-personal-website-link",
+    apiUrl: "accounts/me/update-social-links",
     userField: "personalWebsiteLink",
     inputType: "url",
     prefix: "https://",
@@ -132,14 +132,25 @@ const LinkConfiguration = ({ linkType }: Props) => {
     if (!validate(trimmed)) return;
 
     setIsLoading(true);
+    const payload = {
+      facebookLink:       user?.facebookLink       ?? null,
+      twitterLink:        user?.twitterLink         ?? null,
+      instagramLink:      user?.instagramLink       ?? null,
+      youtubeLink:        user?.youtubeLink         ?? null,
+      discordLink:        user?.discordLink         ?? null,
+      redditLink:         user?.redditLink          ?? null,
+      personalEmailLink:  user?.personalEmailLink   ?? null,
+      personalWebsiteLink: user?.personalWebsiteLink ?? null,
+      [config.userField]: trimmed,
+    };
     await axiosApiInstanceAuth
       .request({
         url: config.apiUrl,
         method: "post",
-        data: { newLink: trimmed },
+        data: payload,
       })
-      .then((res) => {
-        dispatch(setNewUser({ ...user, [config.userField]: res.data } as Profile));
+      .then(() => {
+        dispatch(setNewUser({ ...user, [config.userField]: trimmed } as Profile));
         navigate(-1);
       })
       .catch((err) => {
@@ -148,6 +159,35 @@ const LinkConfiguration = ({ linkType }: Props) => {
         setErrMsg("Something went wrong. Please try again.");
       })
       .finally(() => setIsLoading(false));
+  };
+
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  const handleRemove = async () => {
+    setIsRemoving(true);
+    const payload = {
+      facebookLink:        user?.facebookLink        ?? null,
+      twitterLink:         user?.twitterLink          ?? null,
+      instagramLink:       user?.instagramLink        ?? null,
+      youtubeLink:         user?.youtubeLink          ?? null,
+      discordLink:         user?.discordLink          ?? null,
+      redditLink:          user?.redditLink           ?? null,
+      personalEmailLink:   user?.personalEmailLink    ?? null,
+      personalWebsiteLink: user?.personalWebsiteLink  ?? null,
+      [config.userField]:  null,
+    };
+    await axiosApiInstanceAuth
+      .request({ url: config.apiUrl, method: "post", data: payload })
+      .then(() => {
+        dispatch(setNewUser({ ...user, [config.userField]: null } as Profile));
+        navigate(-1);
+      })
+      .catch((err) => {
+        console.log(err);
+        setIsError(true);
+        setErrMsg("Something went wrong. Please try again.");
+      })
+      .finally(() => setIsRemoving(false));
   };
 
   const currentValue = user?.[config.userField] as string | undefined;
@@ -189,11 +229,23 @@ const LinkConfiguration = ({ linkType }: Props) => {
       {/* Submit */}
       <button
         type="submit"
-        disabled={isUnchanged || !value.trim() || isLoading}
+        disabled={isUnchanged || !value.trim() || isLoading || isRemoving}
         className="w-full py-3 rounded-xl bg-blue-primary text-white text-sm font-semibold hover:bg-blue-primary/80 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isLoading ? "Saving..." : `Save ${config.label}`}
       </button>
+
+      {/* Remove — only shown when a link is currently set */}
+      {currentValue && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={isRemoving || isLoading}
+          className="w-full py-3 rounded-xl border border-red/30 text-red text-sm font-semibold hover:bg-red/5 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isRemoving ? "Removing..." : `Remove ${config.label}`}
+        </button>
+      )}
 
     </form>
   );

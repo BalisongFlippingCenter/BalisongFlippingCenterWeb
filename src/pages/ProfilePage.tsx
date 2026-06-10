@@ -8,17 +8,20 @@ const ProfilePage = () => {
 
   const { account, identifier } = useParams();
 
-  console.log(account, identifier);
+  // Show the logged-in user's own profile only when BOTH displayName and identifierCode match.
+  // Using || means: if either doesn't match (or user is not logged in), show the public view.
+  const isOwnProfile =
+    !!user &&
+    user.displayName === account &&
+    user.identifierCode === identifier;
 
-  if (user?.displayName != account && user?.identifierCode != identifier) {
-    // component to display profiles other than the auth account
+  if (!isOwnProfile) {
     return (
       <ProfilePageDisplay displayName={account!} identifierCode={identifier!} />
     );
-  } else {
-    // home auth page for logged in user
-    return <UserProfilePage />;
   }
+
+  return <UserProfilePage />;
 };
 
 export default ProfilePage;

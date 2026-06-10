@@ -5,6 +5,9 @@ import { GoogleOAuthProvider } from "@react-oauth/google"
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./redux/store.ts";
+import { setStore } from "./api/axios.ts";
+
+setStore(store);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   // <React.StrictMode>

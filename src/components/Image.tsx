@@ -12,9 +12,14 @@ const Image = ({ imageId, contain }: params) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
+  const safeId = typeof imageId === "string" ? imageId : null;
+  const isUrl = !!safeId && (safeId.startsWith("http://") || safeId.startsWith("https://"));
+
   useEffect(() => {}, [imageId]);
 
   useEffect(() => {
+    if (isUrl) return;
+
     const getImg = async () => {
       setIsLoading(true);
       await axiosApiInstance
@@ -40,51 +45,55 @@ const Image = ({ imageId, contain }: params) => {
         });
     };
 
-    if (imageId && imageId !== "") {
+    if (safeId && safeId !== "") {
       getImg();
     }
   }, []);
 
-  if (!imageId || imageId === "") {
+  if (!safeId || safeId === "") {
     return (
       <div className="w-full h-full flex justify-center items-center bg-white">
         <h4 className="text-black">No Image</h4>
       </div>
     );
-  } else if (isLoading) {
-    return <div className="w-full h-full">loading...</div>;
-  } else {
-    if (isError) {
-      return <div className="w-full h-full">ERROR</div>;
-    }
-
-    if (image?.type === "video/mp4") {
-      return (
-        <video
-          src={`data:video/mp4;base64,${image?.data}`}
-          className={
-            contain
-              ? "w-full h-full object-contain"
-              : "w-full h-full object-cover"
-          }
-          autoPlay
-          controls
-          muted
-        ></video>
-      );
-    } else {
-      return (
-        <img
-          className={
-            contain
-              ? "w-full h-full object-contain"
-              : "w-full h-full object-cover"
-          }
-          src={`data:image/*;base64,${image?.data}`}
-        />
-      );
-    }
   }
+
+  // S3 URL — render directly without fetching
+  if (isUrl) {
+    return (
+      <img
+        className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+        src={safeId ?? undefined}
+      />
+    );
+  }
+
+  if (isLoading) {
+    return <div className="w-full h-full">loading...</div>;
+  }
+
+  if (isError) {
+    return <div className="w-full h-full">ERROR</div>;
+  }
+
+  if (image?.type === "video/mp4") {
+    return (
+      <video
+        src={`data:video/mp4;base64,${image?.data}`}
+        className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+        autoPlay
+        controls
+        muted
+      ></video>
+    );
+  }
+
+  return (
+    <img
+      className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+      src={`data:image/*;base64,${image?.data}`}
+    />
+  );
 };
 
 export default Image;

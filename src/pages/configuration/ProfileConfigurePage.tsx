@@ -54,11 +54,10 @@ interface ToggleRowProps<T extends string> {
   options: { value: T; display: string }[];
   current: T | null | undefined;
   defaultValue: T;
-  apiUrl: string;
   userField: keyof Profile;
 }
 
-function ToggleRow<T extends string>({ label, options, current, defaultValue, apiUrl, userField }: ToggleRowProps<T>) {
+function ToggleRow<T extends string>({ label, options, current, defaultValue, userField }: ToggleRowProps<T>) {
   const user = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [saving, setSaving] = useState(false);
@@ -68,8 +67,13 @@ function ToggleRow<T extends string>({ label, options, current, defaultValue, ap
   const handleSelect = async (val: T) => {
     if (val === active || saving) return;
     setSaving(true);
+    const payload = {
+      measurementUnit: user?.measurementUnit ?? "imperial",
+      currency: user?.currency ?? "USD",
+      [userField]: val,
+    };
     await axiosApiInstanceAuth
-      .request({ url: apiUrl, method: "post", data: val })
+      .request({ url: "accounts/me/update-preferences", method: "post", data: payload })
       .then(() => {
         dispatch(setNewUser({ ...user, [userField]: val } as Profile));
       })
@@ -134,7 +138,7 @@ const DANGER_CONFIGS: Record<DangerAction, DangerConfig> = {
     description: "Your account and all associated data — posts, collection, profile — will be permanently and irreversibly removed.",
     consequence: "This action cannot be undone. You will be logged out immediately.",
     confirmLabel: "Permanently Delete",
-    apiUrl: "accounts/me/delete-account",
+    apiUrl: "accounts/me",
   },
 };
 
@@ -163,7 +167,7 @@ const DangerModal = ({ action, onClose }: DangerModalProps) => {
     await axiosApiInstanceAuth
       .request({
         url: config.apiUrl,
-        method: "post",
+        method: action === "delete" ? "delete" : "post",
         data: { password: password.trim() },
       })
       .then(() => {
@@ -383,7 +387,6 @@ const ProfileConfigurePage = () => {
             ]}
             current={user?.measurementUnit}
             defaultValue="imperial"
-            apiUrl="accounts/me/update-measurement-unit"
             userField="measurementUnit"
           />
           <ToggleRow
@@ -394,7 +397,6 @@ const ProfileConfigurePage = () => {
             ]}
             current={user?.currency}
             defaultValue="USD"
-            apiUrl="accounts/me/update-currency"
             userField="currency"
           />
         </SettingsCard>
