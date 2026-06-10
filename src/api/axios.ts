@@ -9,18 +9,18 @@ import { clearCollection } from "../redux/collection/collectionSlice";
 let store: AppStore;
 export const setStore = (s: AppStore) => { store = s; };
 
-const BASE_URL = "http://localhost:8080";
-// const PRODUCTION_URL = "http://ec2-3-217-173-234.compute-1.amazonaws.com:8080";
+// const BASE_URL = "http://localhost:8080";
+const PRODUCTION_URL = "http://ec2-3-217-173-234.compute-1.amazonaws.com:8080";
 
 // Unauthenticated instance — for login, register, refresh-token-login
 export const axiosApiInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: PRODUCTION_URL,
   withCredentials: true,
 });
 
 // Authenticated instance — attaches Bearer token on every request
 export const axiosApiInstanceAuth = axios.create({
-  baseURL: BASE_URL,
+  baseURL: PRODUCTION_URL,
   withCredentials: true,
 });
 
