@@ -24,10 +24,34 @@ const collectionSlice = createSlice({
       state.collection = action.payload;
       state.collectionKnives = action.payload.collectedKnives!;
     },
+    updateCollectionKnife: (state, action: PayloadAction<CollectionKnife>) => {
+      const updated = action.payload;
+      state.collectionKnives = state.collectionKnives.map((k) =>
+        String(k.id) === String(updated.id) ? updated : k
+      );
+      if (state.collection?.collectedKnives) {
+        state.collection.collectedKnives = state.collection.collectedKnives.map((k) =>
+          String(k.id) === String(updated.id) ? updated : k
+        );
+      }
+    },
+    removeCollectionKnife: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      state.collectionKnives = state.collectionKnives.filter((k) => String(k.id) !== id);
+      if (state.collection?.collectedKnives) {
+        state.collection.collectedKnives = state.collection.collectedKnives.filter(
+          (k) => String(k.id) !== id
+        );
+      }
+      // Clear featuredKnifeId if the removed knife was featured
+      if (state.collection && String(state.collection.featuredKnifeId) === id) {
+        state.collection.featuredKnifeId = null;
+      }
+    },
   },
   extraReducers: (_builder) => {},
 });
 
-export const { clearCollection, setCollection } = collectionSlice.actions;
+export const { clearCollection, setCollection, updateCollectionKnife, removeCollectionKnife } = collectionSlice.actions;
 
 export default collectionSlice.reducer;

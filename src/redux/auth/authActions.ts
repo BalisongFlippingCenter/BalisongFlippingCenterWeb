@@ -1,5 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosApiInstance } from "../../api/axios";
+import { Profile } from "../../modals/User";
+
+// Maps backend field names → frontend Profile field names
+const mapAccount = (account: any): Profile => ({
+  ...account,
+  profileCaption: account.profileCaption ?? account.bio ?? null,
+});
 
 interface RegistrationPayload {
   email: string;
@@ -40,7 +47,7 @@ export const login = createAsyncThunk(
         data: payload,
       });
 
-      return response.data;
+      return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
     }
@@ -56,7 +63,7 @@ export const loginWithRefreshToken = createAsyncThunk(
         method: "post",
       });
 
-      return response.data;
+      return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
     }

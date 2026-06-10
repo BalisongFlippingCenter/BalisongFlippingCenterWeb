@@ -28,15 +28,74 @@ export interface CollectionTimelinePostModal {
 }
 
 export interface PostCover {
-  id?: string;
+  id: string;
   caption: string | null;
-  coverFile: string | null;
+  coverFile: string | null;   // S3 URL or null
   comments: number;
   likes: number;
-  identifier: string | null;
+  identifier: string | null;  // post type / tag label
+  mediaCount: number;         // total number of media files on the post
+  creationDate: string | null;
   isPrivate: boolean;
   isAnnouncement: boolean;
 }
+
+/**
+ * Extracts the first usable URL string from a field that may be:
+ *  - a plain string                     → "https://..."
+ *  - an array of plain strings          → ["https://...", ...]
+ *  - an array of media objects          → [{ url: "https://...", video: false }, ...]
+ */
+const pickUrl = (v: any): string | null => {
+  if (typeof v === "string" && v.length > 0) return v;
+  if (Array.isArray(v) && v.length > 0) {
+    const first = v[0];
+    if (typeof first === "string" && first.length > 0) return first;
+    // backend returns { url, video } media objects
+    if (first && typeof first === "object" && typeof first.url === "string" && first.url.length > 0)
+      return first.url;
+  }
+  return null;
+};
+
+/**
+ * Converts a raw mediaFiles array (either string[] or {url,video}[]) to string[].
+ * Used wherever the frontend needs a flat list of S3 URLs.
+ */
+const extractMediaUrls = (arr: any[]): string[] =>
+  arr
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && typeof item.url === "string") return item.url;
+      return null;
+    })
+    .filter((u): u is string => u !== null && u.length > 0);
+
+/**
+ * Maps a raw backend response to PostCover.
+ * Backend returns { post: {...}, author: {...} } — falls back to flat object for safety.
+ */
+export const mapPostCover = (data: any): PostCover => {
+  const p = data.post ?? data;   // post fields
+  return {
+    id:             p.id             ?? "",
+    caption:        p.caption        ?? null,
+    coverFile:      pickUrl(p.coverFile)
+                    ?? pickUrl(p.coverPhoto)
+                    ?? pickUrl(p.thumbnailUrl)
+                    ?? pickUrl(p.coverPhotoUrl)
+                    ?? pickUrl(p.mediaFiles)
+                    ?? pickUrl(p.files)
+                    ?? null,
+    comments:       p.commentCount   ?? p.comments   ?? 0,
+    likes:          p.likeCount      ?? p.likes      ?? 0,
+    identifier:     p.identifier     ?? p.postType   ?? null,
+    mediaCount:     (p.mediaFiles    ?? p.files      ?? []).length,
+    creationDate:   p.creationDate   ?? null,
+    isPrivate:      p.isPrivate      ?? false,
+    isAnnouncement: p.isAnnouncement ?? false,
+  };
+};
 
 export interface PostPreview {
   id: string;
@@ -53,6 +112,82 @@ export interface PostPreview {
   hasTimer: boolean;
   timeInHours: string;
 }
+
+// ── Post knife reference (embedded in post detail responses) ─────────────────
+export interface PostKnifeRef {
+  id: string | null;
+  displayName: string;
+  knifeMaker: string;
+  baseKnifeModel: string | null;
+  coverPhoto: string | null;
+}
+
+// ── Full post detail (for the post page) ─────────────────────────────────────
+export interface PostDetail {
+  id: string;
+  accountId: string;            // creator's account ID — used to detect ownership
+  postType: string;             // GENERIC | BUY_SELL | TRADE | TRICK_TUTORIAL | COMBO
+  caption: string;
+  description: string | null;
+  mediaFiles: string[];         // S3 URLs
+  tags: string[];               // GENERIC tags (SCREAMING_SNAKE_CASE from backend)
+  // Creator
+  creatorDisplayName: string;
+  creatorIdentifierCode: string | null;
+  creatorProfileImg: string | null;
+  creationDate: string;
+  // Stats
+  likes: number;
+  comments: number;
+  // BUY_SELL
+  mode: string | null;          // "BUYING" | "SELLING"
+  price: string | null;
+  offeringKnife: PostKnifeRef | null;   // SELLING and TRADE
+  // TRADE
+  lookingForText: string | null;
+  lookingForImageUrl: string | null;
+  // TRICK_TUTORIAL / COMBO
+  difficultyTag: string | null;
+  techniqueTags: string[];
+  // GENERIC / other — optional reference knife
+  referenceKnife: PostKnifeRef | null;
+  isPrivate: boolean;
+  isAnnouncement: boolean;
+}
+
+/**
+ * Maps a raw backend response to PostDetail.
+ * Backend returns { post: {...}, author: {...} } — falls back to flat object for safety.
+ */
+export const mapPostDetail = (data: any): PostDetail => {
+  const p = data.post   ?? data;   // post fields
+  const a = data.author ?? {};     // author fields
+  return {
+    id:                    p.id                   ?? "",
+    accountId:             p.accountId            ?? a.accountId ?? p.creatorId ?? "",
+    postType:              p.postType              ?? "GENERIC",
+    caption:               p.caption              ?? "",
+    description:           p.description          ?? null,
+    mediaFiles:            extractMediaUrls(p.mediaFiles ?? p.files ?? []),
+    tags:                  p.tags                 ?? [],
+    creatorDisplayName:    a.displayName          ?? p.creatorDisplayName ?? p.creatorName ?? "",
+    creatorIdentifierCode: a.identifierCode       ?? p.creatorIdentifierCode ?? null,
+    creatorProfileImg:     a.profileImg           ?? p.creatorProfileImg   ?? null,
+    creationDate:          p.creationDate         ?? "",
+    likes:                 p.likeCount            ?? p.likes    ?? 0,
+    comments:              p.commentCount         ?? p.comments ?? 0,
+    mode:                  p.mode                 ?? null,
+    price:                 p.price                ?? null,
+    offeringKnife:         p.offeringKnife        ?? null,
+    lookingForText:        p.lookingForText        ?? null,
+    lookingForImageUrl:    p.lookingForImageUrl   ?? p.lookingForImage ?? null,
+    difficultyTag:         p.difficultyTag        ?? null,
+    techniqueTags:         p.techniqueTags        ?? [],
+    referenceKnife:        p.referenceKnife       ?? null,
+    isPrivate:             p.isPrivate            ?? false,
+    isAnnouncement:        p.isAnnouncement       ?? false,
+  };
+};
 
 export interface CreationPostDTO {
   caption: string;

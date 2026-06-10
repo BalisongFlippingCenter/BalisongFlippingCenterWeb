@@ -6,6 +6,7 @@ import { Profile } from "../../modals/User";
 import { useNavigate } from "react-router-dom";
 
 const MAX_LENGTH = 150;
+const MAX_LINES = 8;
 
 const ProfileCaptionConfiguration = () => {
   const [caption, setCaption] = useState("");
@@ -22,6 +23,7 @@ const ProfileCaptionConfiguration = () => {
 
   const handleOnChange = (val: string) => {
     if (val.length > MAX_LENGTH) return;
+    if (val.split("\n").length > MAX_LINES) return;
     setCaption(val);
     if (isError) setIsError(false);
   };
@@ -32,13 +34,13 @@ const ProfileCaptionConfiguration = () => {
     setIsLoading(true);
     await axiosApiInstanceAuth
       .request({
-        url: "/accounts/me/update-profile-caption",
+        url: "/accounts/me/update-bio",
         method: "post",
         data: caption.trim(),
+        headers: { "Content-Type": "text/plain" },
       })
-      .then((res) => {
-        const newUser = { ...user, profileCaption: res.data } as Profile;
-        dispatch(setNewUser(newUser));
+      .then(() => {
+        dispatch(setNewUser({ ...user, profileCaption: caption.trim() } as Profile));
         navigate(-1);
       })
       .catch((err) => {
@@ -80,7 +82,7 @@ const ProfileCaptionConfiguration = () => {
           className="w-full bg-[#1c1f27] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 resize-none placeholder:text-white/25"
         />
         <p className="text-xs text-white/25">
-          Shown on your public profile · Max {MAX_LENGTH} characters
+          Shown on your public profile · Max {MAX_LENGTH} characters · Max {MAX_LINES} lines
         </p>
       </div>
 

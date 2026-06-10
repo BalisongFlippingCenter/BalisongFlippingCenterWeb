@@ -86,7 +86,7 @@ const NewCollectionKnifeForm = ({
   const [knifeMaker, setKNifeMaker] = useState("");
   const [baseKnifeModel, setBaseKnifeModel] = useState("");
 
-  const [knifeType, setKnifeType] = useState("Live Blade");
+  const [knifeType, setKnifeType] = useState("liveblade");
 
   const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
 

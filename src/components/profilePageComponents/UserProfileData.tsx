@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleUser, faEnvelope, faGlobe, faLink, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faCircleUser, faEnvelope, faGlobe, faLink, faArrowUpRightFromSquare, faPen } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookSquare,
   faInstagram,
@@ -10,7 +10,7 @@ import {
   faRedditSquare,
   faDiscord,
 } from "@fortawesome/free-brands-svg-icons";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 const STAT_DUMMY = { posts: 0, followers: 0, following: 0 };
@@ -30,45 +30,80 @@ const UserProfileData = () => {
   const collectionKnives = useAppSelector((state) => state.collection.collectionKnives);
   const navigate = useNavigate();
   const [linksOpen, setLinksOpen] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const [bioOverflows, setBioOverflows] = useState(false);
+  const bioRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (bioRef.current) {
+      setBioOverflows(bioRef.current.scrollHeight > bioRef.current.clientHeight);
+    }
+  }, [user?.profileCaption]);
 
   const socialLinks = [
-    { href: user?.facebookLink  ?? '#', icon: faFacebookSquare, color: '#1877F2' },
-    { href: user?.instagramLink ?? '#', icon: faInstagram,      color: '#E1306C' },
-    { href: user?.twitterLink   ?? '#', icon: faTwitterSquare,  color: '#1DA1F2' },
-    { href: user?.youtubeLink   ?? '#', icon: faYoutubeSquare,  color: '#FF0000' },
-    { href: user?.redditLink    ?? '#', icon: faRedditSquare,   color: '#FF4500' },
-    { href: user?.discordLink   ?? '#', icon: faDiscord,        color: '#5865F2' },
+    { href: user?.facebookLink  ?? '#', icon: faFacebookSquare, color: '#1877F2', route: '/configure/facebook_link',       isSet: !!user?.facebookLink },
+    { href: user?.instagramLink ?? '#', icon: faInstagram,      color: '#E1306C', route: '/configure/instagram_link',      isSet: !!user?.instagramLink },
+    { href: user?.twitterLink   ?? '#', icon: faTwitterSquare,  color: '#1DA1F2', route: '/configure/twitter_link',        isSet: !!user?.twitterLink },
+    { href: user?.youtubeLink   ?? '#', icon: faYoutubeSquare,  color: '#FF0000', route: '/configure/youtube_link',        isSet: !!user?.youtubeLink },
+    { href: user?.redditLink    ?? '#', icon: faRedditSquare,   color: '#FF4500', route: '/configure/reddit_link',         isSet: !!user?.redditLink },
+    { href: user?.discordLink   ?? '#', icon: faDiscord,        color: '#5865F2', route: '/configure/discord_link',        isSet: !!user?.discordLink },
   ];
 
   const personalLinks = [
-    { href: user?.personalEmailLink   ? `mailto:${user.personalEmailLink}` : '#', icon: faEnvelope, color: '#108198' },
-    { href: user?.personalWebsiteLink ?? '#', icon: faGlobe, color: '#108198' },
+    { href: user?.personalEmailLink   ? `mailto:${user.personalEmailLink}` : '#', icon: faEnvelope, color: '#108198', route: '/configure/personal_email_link',   isSet: !!user?.personalEmailLink },
+    { href: user?.personalWebsiteLink ?? '#',                                      icon: faGlobe,    color: '#108198', route: '/configure/personal_website_link',  isSet: !!user?.personalWebsiteLink },
   ];
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-stretch px-6 xsm:pt-16 sm:pt-20 md:pt-6 lg:pt-8 pb-4 text-white gap-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-6 xsm:pt-16 sm:pt-20 md:pt-6 lg:pt-8 pb-4 text-white gap-6">
 
       {/* Left — info section */}
       <div className="flex flex-col gap-3 md:gap-4 md:max-w-xs">
 
         {/* Display name + identifier tag */}
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/configure/display_name')}
+          className="flex items-center gap-2 group w-fit"
+        >
           <FontAwesomeIcon icon={faCircleUser} className="text-white/50 text-2xl flex-shrink-0" />
-          <h2 className="text-xl font-bold text-white leading-none">
+          <h2 className="text-xl font-bold text-white leading-none group-hover:text-white/70 transition-colors duration-200">
             {user?.displayName || user?.id}
           </h2>
           <span className="text-[11px] text-white/35 font-medium bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-full leading-none">
             #{user?.identifierCode}
           </span>
-        </div>
+          <FontAwesomeIcon icon={faPen} className="text-white/0 group-hover:text-white/30 text-[10px] transition-colors duration-200" />
+        </button>
 
         {/* Bio / profile caption */}
-        <p className="text-sm text-white/55 leading-relaxed">
-          {user?.profileCaption && user.profileCaption !== ""
-            ? user.profileCaption
-            : <span className="text-white/20 italic">No bio yet.</span>
-          }
-        </p>
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => navigate('/configure/profile_caption')}
+            className="text-sm text-white/55 leading-relaxed text-left group flex items-start gap-2 w-full"
+          >
+            <span
+              ref={bioRef}
+              className={`flex-1 whitespace-pre-wrap ${bioExpanded ? "" : "line-clamp-3"}`}
+            >
+              {user?.profileCaption && user.profileCaption !== ""
+                ? user.profileCaption
+                : <span className="text-white/20 italic">Add a bio...</span>
+              }
+            </span>
+            <FontAwesomeIcon icon={faPen} className="text-white/0 group-hover:text-white/30 text-[10px] transition-colors duration-200 mt-1 flex-shrink-0" />
+          </button>
+          {bioOverflows && (
+            <button
+              type="button"
+              onClick={() => setBioExpanded((p) => !p)}
+              className="text-blue-primary/70 text-xs font-medium hover:text-blue-primary transition-colors duration-150 text-left w-fit"
+            >
+              {bioExpanded ? "Show less" : "Read more"}
+            </button>
+          )}
+        </div>
 
         {/* Links row — expands on click */}
         <div className="flex items-center gap-3">
@@ -94,20 +129,20 @@ const UserProfileData = () => {
                 {socialLinks.map((link, i) => {
                   const total = socialLinks.length + 1 + personalLinks.length;
                   return (
-                    <motion.a
+                    <motion.button
                       key={i}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/35 transition-colors duration-200 flex items-center"
+                      type="button"
+                      onClick={() => navigate(link.route)}
+                      className="transition-colors duration-200 flex items-center"
+                      style={{ color: link.isSet ? link.color : undefined }}
                       onMouseEnter={e => (e.currentTarget.style.color = link.color)}
-                      onMouseLeave={e => (e.currentTarget.style.color = '')}
+                      onMouseLeave={e => (e.currentTarget.style.color = link.isSet ? link.color : '')}
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0, transition: { duration: 0.15, delay: i * 0.04 } }}
                       exit={{ opacity: 0, x: -16, transition: { duration: 0.25, delay: (total - 1 - i) * 0.05 } }}
                     >
-                      <FontAwesomeIcon icon={link.icon} className="text-2xl block" />
-                    </motion.a>
+                      <FontAwesomeIcon icon={link.icon} className={`block transition-all duration-200 ${link.isSet ? "text-2xl" : "text-xl opacity-30"}`} />
+                    </motion.button>
                   );
                 })}
 
@@ -122,20 +157,20 @@ const UserProfileData = () => {
                   const total = socialLinks.length + 1 + personalLinks.length;
                   const pos = socialLinks.length + 1 + i;
                   return (
-                    <motion.a
+                    <motion.button
                       key={i}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/35 transition-colors duration-200 flex items-center"
+                      type="button"
+                      onClick={() => navigate(link.route)}
+                      className="transition-colors duration-200 flex items-center"
+                      style={{ color: link.isSet ? link.color : undefined }}
                       onMouseEnter={e => (e.currentTarget.style.color = link.color)}
-                      onMouseLeave={e => (e.currentTarget.style.color = '')}
+                      onMouseLeave={e => (e.currentTarget.style.color = link.isSet ? link.color : '')}
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0, transition: { duration: 0.15, delay: pos * 0.04 } }}
                       exit={{ opacity: 0, x: -16, transition: { duration: 0.25, delay: (total - 1 - pos) * 0.05 } }}
                     >
-                      <FontAwesomeIcon icon={link.icon} className="text-2xl block" />
-                    </motion.a>
+                      <FontAwesomeIcon icon={link.icon} className={`block transition-all duration-200 ${link.isSet ? "text-2xl" : "text-xl opacity-30"}`} />
+                    </motion.button>
                   );
                 })}
 
@@ -160,11 +195,11 @@ const UserProfileData = () => {
       <button
         type="button"
         onClick={() => navigate(`/${user?.displayName}/${user?.identifierCode}/collection`)}
-        className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-white/25 w-full md:w-64 xsm:h-28 sm:h-32 md:h-auto flex-shrink-0 group transition-all duration-300"
+        className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-white/25 w-full md:w-64 xsm:h-36 sm:h-40 md:h-44 flex-shrink-0 group transition-all duration-300"
       >
         {/* Background */}
         {collectionData?.bannerImg && collectionData.bannerImg !== "" ? (
-          <img src={collectionData.bannerImg} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={collectionData.bannerImg} className="absolute inset-0 w-full h-full object-cover object-center" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
         )}

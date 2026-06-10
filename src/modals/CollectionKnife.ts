@@ -1,3 +1,8 @@
+export interface GalleryFile {
+  fileId: string;
+  postId: string | null;
+}
+
 export interface CollectionKnifeDTO {
   id: string | null;
   displayName: string;
@@ -37,16 +42,18 @@ export interface CollectionKnifeDTO {
 
 export interface CollectionKnife {
   id: string | null;
+  collectionId: number | null;
   displayName: string;
   knifeMaker: string;
   baseKnifeModel: string;
   knifeType: string;
-  isFavoriteKnife: boolean;
-  isFavoriteFlipper: boolean;
+  favoriteKnife: boolean;
+  favoriteFlipper: boolean;
   aqquiredDate: string;
   coverPhoto: string;
+  galleryFiles: GalleryFile[] | null;
 
-  msrp: string;
+  msrp: string | number;
   overallLength: string;
   weight: string;
   pivotSystem: string;

@@ -36,7 +36,7 @@ Two Axios instances are defined in `src/api/axios.ts`:
 - `axiosApiInstance` — unauthenticated requests (login, register, public data)
 - `axiosApiInstanceAuth` — authenticated requests; a request interceptor attaches the `Bearer` access token from Redux state, and a response interceptor automatically retries on `403` by calling `/auth/refresh-access-token` to get a new access token
 
-> **Known bug:** the response interceptor in `axiosApiInstanceAuth` currently hardcodes `http://localhost:8080` for the token refresh call instead of the EC2 base URL.
+> **Circular dependency fix:** `axios.ts` does not import `store` directly (that created a cycle: axios → store → authSlice → authActions → axios). Instead, the store is injected via `setStore(store)` called in `main.tsx` immediately after the store is created. Do not re-introduce a direct `store` import in `axios.ts`.
 
 On app mount (`App.tsx`), the app attempts to restore a session by calling `/auth/refresh-token-login`. The refresh token is stored in an HTTP-only cookie; the access token lives only in Redux state (never persisted to localStorage).
 
@@ -69,6 +69,10 @@ Note the directory is named `modals` (not `models`) — this is intentional in t
 - **`Collection`** — belongs to a user, holds an array of `CollectionKnife`
 - **`CollectionKnife`** / **`CollectionKnifeDTO`** — detailed knife entry with specs (blade, handle, pivot, scores). `DTO` variant uses `File` for `coverPhoto`; the entity variant uses `string` (URL).
 - **`Post`** / **`CollectionTimelinePostModal`** / **`PostCover`** / **`PostPreview`** / **`CreationPostDTO`** — post-related models for community feed and collection timeline events.
+
+### Images
+
+The backend stores images in **AWS S3** and returns full URLs (e.g. `https://bucket.s3.amazonaws.com/...`). The `Image` component (`src/components/Image.tsx`) detects this — if `imageId` starts with `http://` or `https://`, it renders a plain `<img src>` directly. Otherwise it falls back to the old `/file/${imageId}` arraybuffer fetch path (legacy). `ProfileImageDisplay` (`src/components/ProfileImageDisplay.tsx`) reads `user.profileImg` from Redux and renders the S3 URL directly.
 
 ### Component Conventions
 
@@ -112,6 +116,10 @@ This is the front end repo for the project. The project directly communicates wi
 This project is one little bit at a time. Claude needs to remember to plan with me first before doing any coding. Any questions must be asked and already existing code needs to stay relatively the same.
 
 Also claude needs to remember that alot of the functionality will need to be implemented on the backend. The frontend will only be used as a GUI for everything.
+
+## Known Backend Issues
+
+- **Login/refresh response missing profile fields** — `/auth/login` and `/auth/refresh-token-login` do not return all `Profile` fields (`profileCaption`, `profileImg`, social links, etc.) in the account object. This causes saved values to appear empty after logout/login. Needs to be fixed on the backend so the full account is returned on every auth response.
 
 ## Future Implementation
 

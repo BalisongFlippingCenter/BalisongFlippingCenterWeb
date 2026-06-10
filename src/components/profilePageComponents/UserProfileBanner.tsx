@@ -10,7 +10,7 @@ const UserProfileBanner = () => {
 
   return (
     <div
-      className="w-full xsm:h-[136px] md:h-56 lg:h-64 relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-[#1c1f27] to-[#111318] border-b border-white/10 hover:cursor-pointer group"
+      className="w-full xsm:h-[130px] md:h-40 lg:h-48 relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-[#1c1f27] to-[#111318] border-b border-white/10 hover:cursor-pointer group"
       onClick={() => navigate("/configure/profile-banner")}
     >
       {user?.bannerImg && user.bannerImg !== "" ? (

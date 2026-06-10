@@ -2,8 +2,8 @@ import { useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import Image from "../Image";
 import { axiosApiInstanceAuth } from "../../api/axios";
-import { Collection } from "../../modals/Collection";
 import { setCollection } from "../../redux/collection/collectionSlice";
+import { mapCollection } from "../../redux/collection/collectionActions";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
@@ -40,8 +40,7 @@ const CollectionBannerConfiguration = () => {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((res) => {
-        const newCollection = { ...collectionData, bannerImg: res.data } as Collection;
-        dispatch(setCollection(newCollection));
+        dispatch(setCollection(mapCollection(res.data)));
         navigate(-1);
       })
       .catch((error) => {
