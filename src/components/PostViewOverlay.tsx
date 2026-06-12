@@ -95,7 +95,7 @@ const PostViewOverlay = ({ postId, onClose }: Props) => {
   // ── Loading / error states ────────────────────────────────────────────────
 
   const topBar = (title: string, subtitle?: string) => (
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 border-b border-white/[0.06] flex-shrink-0">
+    <div className="flex items-center gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0">
       <button
         type="button"
         onClick={onClose}
@@ -269,7 +269,7 @@ const PostViewOverlay = ({ postId, onClose }: Props) => {
                   <div
                     key={i}
                     className={`relative overflow-hidden rounded-xl bg-[#0d0f14] border border-white/10 ${
-                      post.mediaFiles.length === 1 ? "aspect-video" : "aspect-square"
+                      post.mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-[4/3]"
                     }`}
                   >
                     {isVideo ? (

@@ -6,7 +6,7 @@ import UserProfileImage from "./UserProfileImage";
 const UserProfilePage = () => {
   return (
     <>
-      <div className="w-full h-screen">
+      <div className="w-full min-h-screen pb-24">
         {/*Profile Display Info*/}
         <section className="w-full flex flex-col">
           <div className="w-full">

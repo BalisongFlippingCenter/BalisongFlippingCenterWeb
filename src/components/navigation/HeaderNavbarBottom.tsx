@@ -62,7 +62,7 @@ interface NavItemProps {
 }
 
 const NavItem = ({ isActive, label, springConfig, floatY, activeScale, hoverScale, children, className = '' }: NavItemProps) => (
-  <div className={`flex flex-col items-center px-2 xsm:pt-2 xsm:pb-1 xsm:gap-0.5 md:pt-3.5 md:pb-2 md:gap-1 ${className}`}>
+  <div className={`flex flex-col items-center px-2 xsm:pt-2 xsm:pb-1 xsm:gap-0.5 md:pt-3.5 md:pb-2 md:gap-1 short:md:pt-1.5 short:md:pb-1 short:md:gap-0.5 ${className}`}>
     <motion.div
       animate={{ y: isActive ? floatY : 0 }}
       transition={springConfig}
@@ -206,12 +206,12 @@ const HeaderNavbarBottom = () => {
           <NavLink to={profilePath}>
             {({ isActive }) => (
               <NavItem isActive={isActive} label="Profile" {...navItemProps}>
-                <div className={`rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 transition-colors duration-200 ${
+                <div className={`rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 short:md:w-7 short:md:h-7 transition-colors duration-200 ${
                   isActive
                     ? "bg-[#111318] text-blue-primary border border-white/15"
                     : "text-white/65 hover:text-white"
                 }`}>
-                  <FontAwesomeIcon icon={faCircleUser} className="xsm:text-base md:text-xl" />
+                  <FontAwesomeIcon icon={faCircleUser} className="xsm:text-base md:text-xl short:md:text-base" />
                 </div>
               </NavItem>
             )}
@@ -223,12 +223,12 @@ const HeaderNavbarBottom = () => {
           <NavLink to={collectionPath}>
             {({ isActive }) => (
               <NavItem isActive={isActive} label="Collection" {...navItemProps}>
-                <div className={`rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 transition-colors duration-200 ${
+                <div className={`rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 short:md:w-7 short:md:h-7 transition-colors duration-200 ${
                   isActive
                     ? "bg-[#111318] text-blue-primary border border-white/15"
                     : "text-white/65 hover:text-white"
                 }`}>
-                  <FontAwesomeIcon icon={faCubes} className="xsm:text-base md:text-xl" />
+                  <FontAwesomeIcon icon={faCubes} className="xsm:text-base md:text-xl short:md:text-base" />
                 </div>
               </NavItem>
             )}
@@ -243,8 +243,8 @@ const HeaderNavbarBottom = () => {
           <NavLink to={createPath}>
             {({ isActive }) => (
               <NavItem isActive={isActive} label="Create" {...navItemProps}>
-                <div className="rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 bg-blue-primary">
-                  <FontAwesomeIcon icon={faPlus} className="text-white xsm:text-sm md:text-lg" />
+                <div className="rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 short:md:w-7 short:md:h-7 bg-blue-primary">
+                  <FontAwesomeIcon icon={faPlus} className="text-white xsm:text-sm md:text-lg short:md:text-sm" />
                 </div>
               </NavItem>
             )}

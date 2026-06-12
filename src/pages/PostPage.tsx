@@ -127,7 +127,7 @@ const PostPage = () => {
   // ── Top bar ───────────────────────────────────────────────────────────────
 
   const TopBar = ({ subtitle }: { subtitle?: string }) => (
-    <div className="flex items-center justify-between gap-3 px-4 pt-14 pb-4 border-b border-white/[0.06] flex-shrink-0">
+    <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"

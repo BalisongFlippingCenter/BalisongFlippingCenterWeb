@@ -33,7 +33,8 @@ export default {
       'sm': '550px',
       'md': '950px',
       'nav': '1150px',
-      'lg': '1310px'
+      'lg': '1310px',
+      'short': { 'raw': '(max-height: 800px)' },
     },
     extend: {
       keyframes: {
