@@ -37,6 +37,9 @@ export default {
       'short': { 'raw': '(max-height: 800px)' },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       keyframes: {
         fade_in_out: {
           to: { opacity: '1' }

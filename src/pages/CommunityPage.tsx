@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
@@ -6,7 +7,8 @@ import {
   faHeart, faComment, faTag,
   faGlobe, faEarthAmericas,
   faImage, faArrowRightArrowLeft, faCircleDollarToSlot,
-  faBullhorn, faLock,
+  faBullhorn, faLock, faChevronLeft, faChevronRight,
+  faVolumeMute, faVolumeUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
@@ -81,15 +83,51 @@ const tagColor = (tag: string): string => {
 
 const FeedPostCard = ({ post }: { post: PostDetail }) => {
   const navigate = useNavigate();
-  const [descExpanded, setDescExpanded] = useState(false);
+  const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
+  const [mediaIndex,    setMediaIndex]    = useState(0);
+  const [muted,         setMuted]         = useState(true);
+
+  const descRef   = useRef<HTMLParagraphElement>(null);
+  const cardRef   = useRef<HTMLDivElement>(null);
+  const videoRef  = useRef<HTMLVideoElement>(null);
+  const inViewRef = useRef(false);
 
   useEffect(() => {
     if (descRef.current) {
       setDescOverflows(descRef.current.scrollHeight > descRef.current.clientHeight);
     }
   }, [post.description]);
+
+  // Autoplay video when card scrolls into view, pause when out
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inViewRef.current = entry.isIntersecting;
+        const video = videoRef.current;
+        if (!video) return;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
+
+  // Play new video when carousel index changes (if card is in view)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const video = videoRef.current;
+      if (video && inViewRef.current) video.play().catch(() => {});
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [mediaIndex]);
 
   const layout      = POST_TYPE_TO_LAYOUT[post.postType] ?? "generic";
   const badge       = LAYOUT_BADGE[layout];
@@ -110,8 +148,30 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
     }
   };
 
+  const mediaFiles = post.mediaFiles;
+  const currentUrl = mediaFiles[mediaIndex] ?? "";
+  const isVid      = !!currentUrl && isVideoUrl(currentUrl);
+
+  const goPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    videoRef.current?.pause();
+    setMediaIndex(i => (i - 1 + mediaFiles.length) % mediaFiles.length);
+  };
+
+  const goNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    videoRef.current?.pause();
+    setMediaIndex(i => (i + 1) % mediaFiles.length);
+  };
+
+  const goTo = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    videoRef.current?.pause();
+    setMediaIndex(idx);
+  };
+
   return (
-    <div className="w-full bg-[#13161d] border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden">
+    <div ref={cardRef} className="w-full bg-[#13161d] border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden">
 
       {/* ── Card header ── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
@@ -183,26 +243,74 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
             <span className="text-white/30 text-xs">Trade offer</span>
           </div>
         </div>
-      ) : post.mediaFiles.length > 0 ? (
-        <div
-          className={`pb-0 grid gap-0.5 ${
-            post.mediaFiles.length === 1 ? "grid-cols-1"
-            : post.mediaFiles.length === 2 ? "grid-cols-2"
-            : "grid-cols-3"
-          }`}
-        >
-          {post.mediaFiles.map((url, i) => {
-            const isVid = isVideoUrl(url);
-            const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
-            return (
-              <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
-                {isVid
-                  ? <video src={url} muted playsInline preload="metadata" className="w-full h-full object-cover" />
-                  : <img src={url} alt="" className="w-full h-full object-cover" />
-                }
+      ) : mediaFiles.length > 0 ? (
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#0d0f14]">
+
+          {/* Current media */}
+          {isVid ? (
+            <video
+              key={currentUrl}
+              ref={videoRef}
+              src={currentUrl}
+              muted={muted}
+              playsInline
+              loop
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img src={currentUrl} alt="" className="w-full h-full object-cover" />
+          )}
+
+          {/* Nav arrows + counter + dots */}
+          {mediaFiles.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goPrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+              >
+                <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+              >
+                <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
+              </button>
+
+              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80 text-[11px] font-medium px-2 py-0.5 rounded-full">
+                {mediaIndex + 1} / {mediaFiles.length}
               </div>
-            );
-          })}
+
+              {mediaFiles.length <= 6 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
+                  {mediaFiles.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={(e) => goTo(i, e)}
+                      className={`h-1.5 rounded-full transition-all duration-200 ${
+                        i === mediaIndex ? "w-3 bg-white" : "w-1.5 bg-white/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Mute toggle */}
+          {isVid && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setMuted(m => !m); }}
+              className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+            >
+              <FontAwesomeIcon icon={muted ? faVolumeMute : faVolumeUp} className="text-white/70 text-xs" />
+            </button>
+          )}
+
         </div>
       ) : null}
 
@@ -308,8 +416,8 @@ const CommunityPage = () => {
   const [initialDone, setInitialDone] = useState(false);
   const [fetchError,  setFetchError]  = useState(false);
 
-  const sentinelRef  = useRef<HTMLDivElement>(null);
-  const isFetching   = useRef(false);
+  const listRef    = useRef<HTMLDivElement>(null);
+  const isFetching = useRef(false);
 
   const fetchPosts = useCallback((pageIndex: number) => {
     if (isFetching.current) return;
@@ -332,24 +440,26 @@ const CommunityPage = () => {
       });
   }, []);
 
-  // Initial load
   useEffect(() => { fetchPosts(0); }, [fetchPosts]);
 
-  // Infinite scroll — observe the sentinel div
+  // Virtual list — only renders posts near the viewport
+  const virtualizer = useWindowVirtualizer({
+    count: posts.length,
+    estimateSize: () => 550,
+    overscan: 3,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  });
+
+  const virtualItems    = virtualizer.getVirtualItems();
+  const lastVirtualItem = virtualItems[virtualItems.length - 1];
+
+  // Infinite scroll — trigger when the last rendered item approaches the end of loaded posts
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isFetching.current) {
-          fetchPosts(page + 1);
-        }
-      },
-      { rootMargin: "200px" }   // start loading 200px before the sentinel is visible
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMore, page, fetchPosts]);
+    if (!lastVirtualItem) return;
+    if (lastVirtualItem.index >= posts.length - 1 && hasMore && !isFetching.current) {
+      fetchPosts(page + 1);
+    }
+  }, [lastVirtualItem?.index, posts.length, hasMore, fetchPosts, page]);
 
   return (
     <div
@@ -364,9 +474,9 @@ const CommunityPage = () => {
           backgroundSize: "28px 28px",
         }}
       />
-      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-6 pb-24 flex flex-col xsm:gap-0.5 lg:gap-5">
+      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-6 pb-24">
 
-        {/* ── Initial loading skeleton ── */}
+        {/* ── Initial loading ── */}
         {!initialDone && (
           <div className="flex justify-center py-24">
             <div className="w-6 h-6 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
@@ -387,13 +497,29 @@ const CommunityPage = () => {
           </div>
         )}
 
-        {/* ── Feed ── */}
-        {posts.map((post) => (
-          <FeedPostCard key={post.id} post={post} />
-        ))}
-
-        {/* ── Sentinel — IntersectionObserver target ── */}
-        <div ref={sentinelRef} className="w-full" />
+        {/* ── Virtual feed ── */}
+        <div
+          ref={listRef}
+          style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}
+        >
+          {virtualItems.map((virtualItem) => (
+            <div
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+              className="xsm:pb-0.5 lg:pb-5"
+            >
+              <FeedPostCard post={posts[virtualItem.index]} />
+            </div>
+          ))}
+        </div>
 
         {/* ── Loading more spinner ── */}
         {isLoading && initialDone && (

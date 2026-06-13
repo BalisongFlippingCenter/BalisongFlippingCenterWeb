@@ -72,7 +72,7 @@ const App = () => {
     dispatch(
       setCredentials({
         newUser: {
-          id: "1",
+          id: "99999",
           displayName: "Test",
           identifierCode: "4444",
           role: "USER",
