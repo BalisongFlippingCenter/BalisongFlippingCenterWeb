@@ -437,7 +437,7 @@ const PostPage = () => {
               }`}>
                 {post.mediaFiles.map((url, i) => {
                   const isVid = isVideoUrl(url);
-                  const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
+                  const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/5]" : "aspect-square";
                   if (isVid) {
                     return (
                       <VideoCell

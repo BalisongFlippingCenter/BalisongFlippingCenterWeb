@@ -81,7 +81,7 @@ const tagColor = (tag: string): string => {
 
 // ── Feed post card ────────────────────────────────────────────────────────────
 
-const FeedPostCard = ({ post }: { post: PostDetail }) => {
+const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   const navigate = useNavigate();
   const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
@@ -172,7 +172,7 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
   };
 
   return (
-    <div ref={cardRef} className="w-full bg-[#13161d] border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden">
+    <div ref={cardRef} className={`w-full border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
 
       {/* ── Card header ── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
@@ -280,7 +280,7 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
           </div>
         );
       })() : mediaFiles.length > 0 ? (
-        <div className="relative aspect-[4/3] overflow-hidden bg-[#0d0f14]">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#0d0f14]">
 
           {/* Current media */}
           {isVid ? (
@@ -579,7 +579,7 @@ const CommunityPage = () => {
           backgroundSize: "28px 28px",
         }}
       />
-      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-6 pb-24">
+      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-0 pb-24">
 
         {/* ── Initial loading ── */}
         {!initialDone && (
@@ -619,9 +619,9 @@ const CommunityPage = () => {
                 width: "100%",
                 transform: `translateY(${virtualItem.start}px)`,
               }}
-              className="xsm:pb-0.5 lg:pb-5"
+              className="xsm:pb-1 lg:pb-3"
             >
-              <FeedPostCard post={posts[virtualItem.index]} />
+              <FeedPostCard post={posts[virtualItem.index]} index={virtualItem.index} />
             </div>
           ))}
         </div>
