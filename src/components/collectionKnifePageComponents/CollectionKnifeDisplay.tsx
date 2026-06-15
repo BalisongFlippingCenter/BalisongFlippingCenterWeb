@@ -1,23 +1,369 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronLeft,
+  faStar,
+  faHeart,
+  faImage,
+  faCrown,
+} from "@fortawesome/free-solid-svg-icons";
+import { axiosApiInstance } from "../../api/axios";
+import { CollectionKnife } from "../../modals/CollectionKnife";
+import Image from "../Image";
+import { formatCurrency, formatWeight, formatLength } from "../../utils/unitConversions";
+
+const isFav = (val: any) => val === true || String(val) === "true";
+
+const DetailRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) => {
+  const display =
+    value &&
+    String(value) !== "UNKNOWN" &&
+    String(value) !== "Unknown" &&
+    String(value) !== "null" &&
+    String(value) !== "0"
+      ? String(value).replace(/_/g, " ")
+      : null;
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
+        {label}
+      </span>
+      <span className="text-white/80 text-sm font-medium">
+        {display ?? <span className="text-white/25 italic text-xs">—</span>}
+      </span>
+    </div>
+  );
+};
+
+const ScoreCard = ({ label, value }: { label: string; value: number }) => (
+  <div className="flex-1 bg-[#13161d] border border-white/8 rounded-xl px-3 py-3 flex flex-col items-center gap-2 min-w-0">
+    <span className="text-[10px] text-white/35 uppercase tracking-widest font-medium text-center">
+      {label}
+    </span>
+    <span className="leading-none">
+      <span className="text-white font-bold text-2xl">{value}</span>
+      <span className="text-white/30 text-sm font-normal">/10</span>
+    </span>
+    <div className="w-full h-1 bg-white/8 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-blue-primary rounded-full transition-all duration-500"
+        style={{ width: `${(value / 10) * 100}%` }}
+      />
+    </div>
+  </div>
+);
 
 const CollectionKnifeDisplay = () => {
-  return (
-    <section className="lg:pl-[192px] pt-[64px] w-full flex flex-col items-center">
-      {/*Go Back Btn*/}
-      <div className="w-full p-10">
+  const { account, identifier, knife } = useParams();
+  const navigate = useNavigate();
+
+  const [collectionKnife, setCollectionKnife] = useState<CollectionKnife | null>(null);
+  const [featuredKnifeId, setFeaturedKnifeId] = useState<string | null>(null);
+  const [pageState, setPageState] = useState<"loading" | "error" | "success">("loading");
+
+  useEffect(() => {
+    if (!account || !identifier || !knife) {
+      setPageState("error");
+      return;
+    }
+    axiosApiInstance
+      .get(`/collection/any/handle`, { params: { displayName: account, identifierCode: identifier } })
+      .then((res) => {
+        const knives: CollectionKnife[] = res.data?.collection?.collectedKnives ?? [];
+        const found = knives.find((k) => k.displayName === knife) ?? null;
+        setFeaturedKnifeId(res.data?.collection?.featuredKnifeId ?? null);
+        setCollectionKnife(found);
+        setPageState(found ? "success" : "error");
+      })
+      .catch(() => setPageState("error"));
+  }, [account, identifier, knife]);
+
+  if (pageState === "loading") {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (pageState === "error" || !collectionKnife) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-white/40 text-sm">Knife not found.</p>
         <button
           type="button"
-          className="text-xl font-bold bg-shadow p-4 rounded hover:bg-shadow-green-offset flex items-center gap-2"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-white/40 hover:text-white transition-colors duration-200 text-sm font-medium"
         >
-          <FontAwesomeIcon icon={faCircleLeft} />
-          <h4>Back To Collection</h4>
+          <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  const k = collectionKnife;
+  const isFeatured = !!featuredKnifeId && String(k.id) === String(featuredKnifeId);
+
+  const knifeTypeLabel: Record<string, string> = {
+    liveblade: "Live Blade",
+    trainer:   "Trainer",
+    both:      "Both",
+  };
+
+  const scores = [
+    { label: "Quality",    value: k.qualityScore    },
+    { label: "Flipping",   value: k.flippingScore   },
+    { label: "Feel",       value: k.feelScore       },
+    { label: "Sound",      value: k.soundScore      },
+    { label: "Durability", value: k.durabilityScore },
+  ];
+
+  return (
+    <section className="lg:pl-[192px] w-full min-h-screen bg-[#080a0e] pb-36">
+
+      {/* ── Back button ── */}
+      <div className="px-6 pt-6 pb-2">
+        <button
+          type="button"
+          onClick={() => navigate(`/${account}/${identifier}/collection`)}
+          className="flex items-center gap-2 text-white/40 hover:text-white transition-colors duration-200 text-sm font-medium"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
+          Back to Collection
         </button>
       </div>
 
-      {/*Main Display*/}
-      <div className="flex flex-col items-center bg-black max-w-[1000px] w-full h-20 mt-20 p-4 rounded">
-        <h1>Random Knife</h1>
+      <div className="px-6 flex flex-col gap-6">
+
+        {/* ── Hero ── */}
+        <div className="flex xsm:flex-col md:flex-row gap-6 items-start">
+
+          {/* Cover photo */}
+          <div className="xsm:w-full md:w-[420px] md:flex-shrink-0 xsm:aspect-[3/2] md:aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 bg-[#13161d]">
+            {k.coverPhoto && k.coverPhoto !== "" ? (
+              <Image imageId={k.coverPhoto} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <FontAwesomeIcon icon={faImage} className="text-white/15 text-5xl" />
+              </div>
+            )}
+          </div>
+
+          {/* Key info */}
+          <div className="flex-1 flex flex-col gap-4">
+
+            {/* Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {isFeatured && (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-gold bg-gold/10 border border-gold/30 px-2.5 py-1 rounded-full">
+                  <FontAwesomeIcon icon={faCrown} className="text-[10px]" />
+                  Featured
+                </span>
+              )}
+              {isFav(k.favoriteKnife) && (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-gold bg-gold/10 border border-gold/25 px-2.5 py-1 rounded-full">
+                  <FontAwesomeIcon icon={faStar} className="text-[10px]" />
+                  Favorite Knife
+                </span>
+              )}
+              {isFav(k.favoriteFlipper) && (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-blue-primary bg-blue-primary/10 border border-blue-primary/25 px-2.5 py-1 rounded-full">
+                  <FontAwesomeIcon icon={faHeart} className="text-[10px]" />
+                  Favorite Flipper
+                </span>
+              )}
+              {k.knifeType && (
+                <span className="text-xs text-white/50 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                  {knifeTypeLabel[k.knifeType.toLowerCase().replace(/_/g, "")] ?? k.knifeType}
+                </span>
+              )}
+            </div>
+
+            {/* Name */}
+            <div>
+              <h1 className="text-white font-bold text-3xl leading-tight">{k.displayName}</h1>
+              <p className="text-white/45 text-base mt-1">
+                {k.knifeMaker}
+                {k.baseKnifeModel ? ` · ${k.baseKnifeModel}` : ""}
+              </p>
+            </div>
+
+            {/* Quick stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
+                <DetailRow label="Acquired" value={
+                  k.aqquiredDate
+                    ? (() => {
+                        const d = new Date(k.aqquiredDate + "T00:00:00");
+                        return isNaN(d.getTime())
+                          ? k.aqquiredDate
+                          : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                      })()
+                    : ""
+                } />
+              </div>
+              <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
+                <DetailRow label="MSRP" value={formatCurrency(k.msrp, undefined) || null} />
+              </div>
+              <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
+                <DetailRow label="Weight" value={formatWeight(k.weight, undefined) || null} />
+              </div>
+              <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
+                <DetailRow label="Overall Length" value={formatLength(k.overallLength, undefined) || null} />
+              </div>
+            </div>
+
+            {/* Average score */}
+            {k.averageScore !== null && k.averageScore !== undefined && (
+              <div className="bg-[#13161d] border border-white/8 rounded-xl px-5 py-4 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
+                    Average Score
+                  </span>
+                  <p className="leading-none mt-1">
+                    <span className="text-white font-bold text-4xl">{Number(k.averageScore).toFixed(1)}</span>
+                    <span className="text-white/30 text-lg font-normal">/10</span>
+                  </p>
+                </div>
+                <div className="w-16 h-16 rounded-full border-2 border-blue-primary/40 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faStar} className="text-blue-primary text-xl" />
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* ── Balance display ── */}
+        {!k.hasModularBalance && k.balanceValue !== null && k.balanceValue !== undefined && String(k.balanceValue) !== "null" && (() => {
+          const balanceLabels = [
+            "Heavy Blade", "Blade Bias", "Mod. Blade", "Neutral",
+            "Mod. Handle", "Handle Bias", "Heavy Handle",
+          ];
+          const activeIdx = Number(k.balanceValue);
+          const pct = (activeIdx / 6) * 100;
+          return (
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 py-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
+                  Balance Point
+                </span>
+                <span className="text-xs font-semibold text-blue-primary">
+                  {balanceLabels[activeIdx] ?? ""}
+                </span>
+              </div>
+              <div className="relative px-2" style={{ paddingTop: "10px", paddingBottom: "10px" }}>
+                <div className="relative h-2 rounded-full bg-white/8">
+                  <div
+                    className="absolute left-0 top-0 h-full rounded-full"
+                    style={{ width: `${pct}%`, background: "linear-gradient(to right, #7c3aed, #108198)" }}
+                  />
+                </div>
+                <div
+                  className="absolute w-5 h-5 rounded-full bg-blue-primary border-2 border-[#13161d]"
+                  style={{
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    left: `calc(${pct}% - ${(pct * 20 / 100).toFixed(2)}px)`,
+                    boxShadow: "0 0 12px 3px rgba(16,129,152,0.65)",
+                  }}
+                />
+              </div>
+              <div className="flex justify-between px-2 -mt-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className={`w-px rounded-full transition-all duration-300 ${
+                      i === activeIdx
+                        ? "h-2.5 bg-blue-primary"
+                        : i < activeIdx
+                        ? "h-1.5 bg-white/30"
+                        : "h-1.5 bg-white/15"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-white/25 px-0.5 -mt-1">
+                <span>Blade</span>
+                <span>Neutral</span>
+                <span>Handle</span>
+              </div>
+            </div>
+          );
+        })()}
+        {k.hasModularBalance && (
+          <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 py-4">
+            <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">Balance</span>
+            <p className="text-white/80 text-sm font-medium mt-0.5">Modular Balance System</p>
+          </div>
+        )}
+
+        {/* ── Score breakdown ── */}
+        <div>
+          <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
+            Score Breakdown
+          </h2>
+          <div className="flex gap-3">
+            {scores.map((s) => (
+              <ScoreCard key={s.label} label={s.label} value={s.value} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Details ── */}
+        <div className="grid xsm:grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
+            <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">Hardware</h3>
+            <DetailRow label="Pivot System" value={k.pivotSystem} />
+            <DetailRow label="Pin System"   value={k.pinSystem}   />
+            <DetailRow label="Latch Type"   value={k.latchType}   />
+          </div>
+          <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
+            <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">Blade</h3>
+            <DetailRow label="Blade Style"    value={k.bladeStyle}    />
+            <DetailRow label="Blade Finish"   value={k.bladeFinish}   />
+            <DetailRow label="Blade Material" value={k.bladeMaterial} />
+          </div>
+          <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
+            <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">Handle</h3>
+            <DetailRow label="Construction" value={k.handleConstruction} />
+            <DetailRow label="Material"     value={k.handleMaterial}     />
+            <DetailRow label="Finish"       value={k.handleFinish}       />
+          </div>
+        </div>
+
+        {/* ── Gallery ── */}
+        <div>
+          <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
+            Gallery
+          </h2>
+          {k.galleryFiles && k.galleryFiles.length > 0 ? (
+            <div className="grid xsm:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {k.galleryFiles.map((file, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg overflow-hidden border border-white/8 bg-[#13161d]"
+                >
+                  <img src={file.fileId} alt={`gallery ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#13161d] border border-dashed border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center gap-3 text-center">
+              <FontAwesomeIcon icon={faImage} className="text-white/15 text-4xl" />
+              <p className="text-white/25 text-sm">No gallery items yet.</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </section>
   );
