@@ -579,7 +579,7 @@ const CommunityPage = () => {
           backgroundSize: "28px 28px",
         }}
       />
-      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-6 pb-24">
+      <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-2 pb-24">
 
         {/* ── Initial loading ── */}
         {!initialDone && (

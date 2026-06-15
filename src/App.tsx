@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import { Route, Routes } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -36,7 +37,7 @@ import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
 
 const App = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const user = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
@@ -50,9 +51,12 @@ const App = () => {
       dispatch(setToRememberLoginInfo());
     }
 
-    // attempt to restore session with valid refresh token cookie
-    if (!user && !accessToken) {
-      setIsLoading(true);
+    // attempt to restore session only if a refresh token is stored
+    const storedToken = localStorage.getItem("refreshToken");
+    const minLoadMs = 3000;
+    const startTime = Date.now();
+
+    if (!user && !accessToken && storedToken) {
       dispatch(loginWithRefreshToken())
         .unwrap()
         .then((res) => {
@@ -63,9 +67,15 @@ const App = () => {
           dispatch(setCollection(mapCollection(res.collection)));
         })
         .catch(() => {
-          // no valid session — user stays logged out, show login
+          // no valid session — user stays logged out
         })
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+          const elapsed = Date.now() - startTime;
+          const remaining = Math.max(0, minLoadMs - elapsed);
+          setTimeout(() => setIsLoading(false), remaining);
+        });
+    } else {
+      setTimeout(() => setIsLoading(false), minLoadMs);
     }
 
     // dispatch(
@@ -86,10 +96,34 @@ const App = () => {
   }, []);
 
   if (isLoading) {
-    // loading screen
     return (
-      <main className="w-full h-screen flex justify-center items-center text-5xl">
-        <h1>Loading...</h1>
+      <main className="w-full h-screen flex flex-col justify-center items-center bg-[#080a0e] gap-10">
+        <motion.svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 540 110"
+          className="w-80 sm:w-96"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
+          <path d="M 52,55 L 6,12 L 10,8 L 56,51 Z" fill="white" opacity="0.3"/>
+          <path d="M 52,55 L 6,98 L 0,92 L 4,84 L 44,51 Z" fill="white" opacity="0.95"/>
+          <path d="M 52,55 L 6,98 L 10,102 L 56,59 Z" fill="white" opacity="0.3"/>
+          <path d="M 52,55 C 70,54 92,50 112,46 C 130,42 142,38 148,35 C 142,41 130,47 112,52 C 92,57 70,58 52,57 Z" fill="white" opacity="0.95"/>
+          <circle cx="52" cy="55" r="4.5" fill="white"/>
+          <circle cx="52" cy="55" r="2" fill="black"/>
+          <text x="178" y="52" fontFamily="'Bebas Neue','Impact',sans-serif" fontSize="44" letterSpacing="4" fill="white">BALISONG</text>
+          <rect x="182" y="61" width="209" height="1.5" rx="0.75" fill="white" opacity="0.75"/>
+          <text x="182" y="82" fontFamily="'Barlow','Arial Narrow',sans-serif" fontSize="16" fontWeight="600" letterSpacing="6" fill="white" opacity="0.7">FLIPPING CENTER</text>
+        </motion.svg>
+        <div className="w-56 h-[2px] rounded-full bg-white/10 overflow-hidden relative">
+          <motion.div
+            className="absolute inset-y-0 w-1/3 rounded-full"
+            style={{ background: "linear-gradient(to right, transparent, #108198, transparent)" }}
+            animate={{ x: ["-150%", "500%"] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
       </main>
     );
   } else {
