@@ -1,13 +1,13 @@
 name: Build and Push Docker Image to ECR
 
-# runs when code is merged to master or directly pushed to master
+# runs when code is merged to main or directly pushed to main
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 # necessary for secrets to be read
 permissions:
