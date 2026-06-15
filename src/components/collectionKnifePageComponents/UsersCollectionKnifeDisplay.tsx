@@ -533,7 +533,7 @@ const UsersCollectionKnifeDisplay = () => {
           </div>
 
           {/* ── Balance display ── */}
-          {!k.hasModularBalance && k.balanceValue !== null && k.balanceValue !== undefined && (() => {
+          {!k.hasModularBalance && k.balanceValue !== null && k.balanceValue !== undefined && String(k.balanceValue) !== "null" && (() => {
             const balanceLabels = [
               "Heavy Blade", "Blade Bias", "Mod. Blade", "Neutral",
               "Mod. Handle", "Handle Bias", "Heavy Handle",
