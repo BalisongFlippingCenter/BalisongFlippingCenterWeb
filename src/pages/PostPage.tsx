@@ -6,15 +6,16 @@ import {
   faChevronLeft,
   faImage,
   faArrowRightArrowLeft,
-  faCircleDollarToSlot,
   faHeart,
   faComment,
-  faTag,
   faEarthAmericas,
   faBullhorn,
   faLock,
   faGlobe,
   faPenToSquare,
+  faVolumeMute,
+  faVolumeUp,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
@@ -86,6 +87,59 @@ const formatDate = (dateStr: string): string => {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+// ── VideoCell — per-video pause state ────────────────────────────────────────
+
+interface VideoCellProps {
+  url: string;
+  muted: boolean;
+  aspectCls: string;
+  onMuteToggle: () => void;
+}
+
+const VideoCell = ({ url, muted, aspectCls, onMuteToggle }: VideoCellProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
+  return (
+    <div className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
+      <video
+        ref={videoRef}
+        key={url}
+        src={url}
+        muted={muted}
+        autoPlay
+        playsInline
+        loop
+        onPlay={() => setPaused(false)}
+        onPause={() => setPaused(true)}
+        className="w-full h-full object-cover"
+      />
+      {/* click-to-pause overlay */}
+      <div
+        className="absolute inset-0 z-10 flex items-center justify-center cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          const v = videoRef.current;
+          if (!v) return;
+          v.paused ? v.play().catch(() => {}) : v.pause();
+        }}
+      >
+        {paused && (
+          <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <FontAwesomeIcon icon={faPlay} className="text-white text-base pl-0.5" />
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onMuteToggle(); }}
+        className="absolute bottom-2 right-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+      >
+        <FontAwesomeIcon icon={muted ? faVolumeMute : faVolumeUp} className="text-white/70 text-xs" />
+      </button>
+    </div>
+  );
+};
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const PostPage = () => {
@@ -99,6 +153,8 @@ const PostPage = () => {
   const [fetchError, setFetchError] = useState(false);
   const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
+  const [muted,            setMuted]            = useState(true);
+  const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
 
   const descRef = useRef<HTMLParagraphElement>(null);
 
@@ -224,9 +280,14 @@ const PostPage = () => {
                   : <span className="text-blue-primary text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
                 }
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
-                {identifier && <span className="text-white/30 text-xs leading-none">{identifier}</span>}
+              <div className="flex flex-col items-start gap-0.5 min-w-0">
+                <div className="flex items-baseline gap-1.5 min-w-0">
+                  <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
+                  {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
+                </div>
+                {post.creationDate && (
+                  <span className="text-white/35 text-[11px] leading-none pt-0.5">{formatDate(post.creationDate)}</span>
+                )}
               </div>
             </button>
 
@@ -258,78 +319,203 @@ const PostPage = () => {
           </div>
 
           {/* ── Caption ── */}
-          <div className="px-4 pt-3 pb-2">
-            <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
-          </div>
+          {post.caption?.trim() && (
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
+            </div>
+          )}
 
           {/* ── Media ── */}
-          {layout === "trade" ? (
-            /* Trade — side-by-side offering / looking for */
-            <div className="px-4 pb-3">
-              <div className="grid grid-cols-2 gap-2 ">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Offering</p>
-                  <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
-                    {post.offeringKnife?.coverPhoto
-                      ? <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
-                    }
+          {layout === "trade" ? (() => {
+            const lookingForImg = post.lookingForImageUrl ?? post.mediaFiles[0] ?? null;
+            return (
+              <div className="px-4 pb-3">
+                <div className="grid grid-cols-[1fr_32px_1fr] gap-y-1.5">
+                  {/* Row 1 — labels */}
+                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Offering</p>
+                  <div />
+                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Looking For</p>
+
+                  {/* Row 2 — images with icon centered in gap */}
+                  <div
+                    className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10 cursor-pointer"
+                    onClick={() => {
+                      if (post.offeringKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
+                        navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.offeringKnife.displayName}`);
+                      }
+                    }}
+                  >
+                    {post.offeringKnife && (
+                      <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                        <p className="text-white text-xs font-semibold truncate leading-tight">
+                          {post.offeringKnife.knifeMaker}{post.offeringKnife.baseKnifeModel ? ` · ${post.offeringKnife.baseKnifeModel}` : ""}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex-1 min-h-0">
+                      {post.offeringKnife?.coverPhoto
+                        ? <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
+                      }
+                    </div>
                   </div>
-                  {post.offeringKnife && (
-                    <p className="text-white/60 text-xs truncate">{post.offeringKnife.displayName}</p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Looking For</p>
-                  <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
-                    {post.lookingForImageUrl
-                      ? <img src={post.lookingForImageUrl} alt="Looking for" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
-                    }
+                  <div className="flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-[#0d0f14] border border-white/10 flex items-center justify-center flex-shrink-0">
+                      <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-[9px]" />
+                    </div>
                   </div>
-                  {post.lookingForText && (
-                    <p className="text-white/60 text-xs truncate">{post.lookingForText}</p>
-                  )}
+                  <div className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10">
+                    {post.lookingForText && (
+                      <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                        <p className="text-white text-xs font-semibold truncate leading-tight">{post.lookingForText}</p>
+                      </div>
+                    )}
+                    <div className="flex-1 min-h-0">
+                      {lookingForImg
+                        ? <img src={lookingForImg} alt="Looking for" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
+                      }
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-sm" />
-                <span className="text-white/30 text-xs">Trade offer</span>
-              </div>
-            </div>
-          ) : post.mediaFiles.length > 0 ? (
-            /* Standard media grid — full-width, no horizontal padding */
-            <div className={`pb-0 grid gap-0.5 ${
-              post.mediaFiles.length === 1 ? "grid-cols-1"
-              : post.mediaFiles.length === 2 ? "grid-cols-2"
-              : "grid-cols-3"
-            }`}>
-              {post.mediaFiles.map((url, i) => {
-                const isVid = isVideoUrl(url);
-                // single image: 4:3 landscape; multi: square
-                const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
-                return (
-                  <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
-                    {isVid
-                      ? <video src={url} controls className="w-full h-full object-cover" playsInline />
-                      : <img src={url} alt="" className="w-full h-full object-cover" />
-                    }
+            );
+          })() : post.mediaFiles.length > 0 ? (
+            layout === "buysell" ? (
+              /* Buy/sell: hero + thumbnail strip */
+              <div className="flex flex-col gap-0">
+                {/* Hero */}
+                {(() => {
+                  const heroUrl = post.mediaFiles[selectedMediaIdx] ?? post.mediaFiles[0];
+                  const isVid = isVideoUrl(heroUrl);
+                  return isVid ? (
+                    <VideoCell
+                      key={selectedMediaIdx}
+                      url={heroUrl}
+                      muted={muted}
+                      aspectCls="aspect-video"
+                      onMuteToggle={() => setMuted(m => !m)}
+                    />
+                  ) : (
+                    <div className="relative overflow-hidden bg-[#0d0f14] aspect-video">
+                      <img src={heroUrl} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  );
+                })()}
+                {/* Thumbnail strip — only when > 1 file */}
+                {post.mediaFiles.length > 1 && (
+                  <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/5 mt-0">
+                    {post.mediaFiles.map((url, i) => {
+                      const isVid = isVideoUrl(url);
+                      const active = i === selectedMediaIdx;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedMediaIdx(i)}
+                          className={`relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#0d0f14] border-2 transition-all duration-150 ${
+                            active ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+                          }`}
+                        >
+                          {isVid ? (
+                            <video src={url} muted playsInline className="w-full h-full object-cover" />
+                          ) : (
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </div>
+            ) : (
+              /* Standard media grid — full-width, no horizontal padding */
+              <div className={`pb-0 grid gap-0.5 ${
+                post.mediaFiles.length === 1 ? "grid-cols-1"
+                : post.mediaFiles.length === 2 ? "grid-cols-2"
+                : "grid-cols-3"
+              }`}>
+                {post.mediaFiles.map((url, i) => {
+                  const isVid = isVideoUrl(url);
+                  const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
+                  if (isVid) {
+                    return (
+                      <VideoCell
+                        key={i}
+                        url={url}
+                        muted={muted}
+                        aspectCls={aspectCls}
+                        onMuteToggle={() => setMuted(m => !m)}
+                      />
+                    );
+                  }
+                  return (
+                    <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  );
+                })}
+              </div>
+            )
           ) : null}
 
-          {/* ── Posted date ── */}
-          {post.creationDate && (
-            <div className="px-4 pt-2 pb-0">
-              <span className="text-white/25 text-[11px]">{formatDate(post.creationDate)}</span>
+          {/* ── Buy/sell meta (only for buysell layout) ── */}
+          {layout === "buysell" && (
+            <div className="px-4 pt-3 pb-0 flex flex-col gap-1.5">
+              {/* Badge + label row */}
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  post.mode === "BUYING"
+                    ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10"
+                    : "text-green border-green/30 bg-green/10"
+                }`}>
+                  {post.mode === "BUYING" ? "Buying" : "Selling"}
+                </span>
+                <span className="text-white/25 text-[11px]">{post.mode === "BUYING" ? "Marketplace inquiry" : "Marketplace listing"}</span>
+              </div>
+              {/* Price hero */}
+              {post.mode === "SELLING" && post.price && (
+                <p className="text-white font-bold text-3xl tracking-tight">
+                  {currencySymbol}{parseFloat(post.price).toFixed(2)}
+                </p>
+              )}
+
+            </div>
+          )}
+
+          {/* ── Offering knife card (buy/sell) ── */}
+          {layout === "buysell" && post.offeringKnife && (
+            <div className="px-4 pt-3 pb-1">
+              <div
+                className="flex items-center gap-0 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
+                onClick={() => navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.offeringKnife!.displayName}`)}
+              >
+                {post.offeringKnife.coverPhoto ? (
+                  <img
+                    src={post.offeringKnife.coverPhoto}
+                    alt={post.offeringKnife.displayName}
+                    className="w-28 h-28 object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-28 h-28 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon={faImage} className="text-white/15 text-2xl" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1.5 px-4 min-w-0">
+                  <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Listed Knife</span>
+                  <p className="text-white font-semibold text-base truncate">{post.offeringKnife.displayName}</p>
+                  <p className="text-white/50 text-xs truncate">
+                    {post.offeringKnife.knifeMaker}
+                    {post.offeringKnife.baseKnifeModel ? ` · ${post.offeringKnife.baseKnifeModel}` : ""}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
           {/* ── Tags ── */}
           {displayTags.length > 0 && (
-            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+            <div className="px-4 pt-2 pb-2 flex flex-wrap gap-1.5">
               {displayTags.map((tag) => (
                 <span
                   key={tag}
@@ -344,10 +530,10 @@ const PostPage = () => {
 
           {/* ── Description ── */}
           {post.description?.trim() && (
-            <div className="px-4 pb-3 flex flex-col gap-1">
+            <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
               <p
                 ref={descRef}
-                className={`text-white/50 text-xs leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
+                className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
               >
                 {post.description}
               </p>
@@ -363,40 +549,30 @@ const PostPage = () => {
             </div>
           )}
 
-          {/* ── Buy/Sell details ── */}
-          {layout === "buysell" && (
-            <>
-              <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between gap-3">
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                  post.mode === "BUYING"
-                    ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10"
-                    : "text-green border-green/30 bg-green/10"
-                }`}>
-                  {post.mode === "BUYING" ? "Buying" : "Selling"}
-                </span>
-                {post.mode === "SELLING" && post.price && (
-                  <span className="text-white font-bold text-base">
-                    {currencySymbol}{parseFloat(post.price).toFixed(2)}
-                  </span>
+          {/* ── Reference knife card (generic/tutorial/combo only) ── */}
+          {post.referenceKnife && layout !== "buysell" && layout !== "trade" && (
+            <div className="px-4 pb-3">
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                {post.referenceKnife.coverPhoto ? (
+                  <img
+                    src={post.referenceKnife.coverPhoto}
+                    alt={post.referenceKnife.displayName}
+                    className="w-16 h-16 object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon={faImage} className="text-white/15 text-lg" />
+                  </div>
                 )}
+                <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
+                  <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
+                  <p className="text-white font-semibold text-sm truncate">{post.referenceKnife.displayName}</p>
+                  <p className="text-white/50 text-xs truncate">
+                    {post.referenceKnife.knifeMaker}
+                    {post.referenceKnife.baseKnifeModel ? ` · ${post.referenceKnife.baseKnifeModel}` : ""}
+                  </p>
+                </div>
               </div>
-              <div className="px-4 pb-3 flex items-center gap-1.5 -mt-1">
-                <FontAwesomeIcon icon={faCircleDollarToSlot} className="text-gold/50 text-xs" />
-                <span className="text-white/25 text-xs">Marketplace listing</span>
-              </div>
-            </>
-          )}
-
-          {/* ── Reference knife ── */}
-          {post.referenceKnife && (
-            <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-2">
-              <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs flex-shrink-0" />
-              <span className="text-white/60 text-xs">{post.referenceKnife.displayName}</span>
-              <span className="text-white/30 text-xs">·</span>
-              <span className="text-white/40 text-xs">
-                {post.referenceKnife.knifeMaker}
-                {post.referenceKnife.baseKnifeModel ? ` · ${post.referenceKnife.baseKnifeModel}` : ""}
-              </span>
             </div>
           )}
 

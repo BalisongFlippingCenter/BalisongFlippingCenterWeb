@@ -6,12 +6,10 @@ import {
   faChevronLeft,
   faImage,
   faXmark,
-  faTag,
   faChevronDown,
   faVideo,
   faPen,
   faArrowRightArrowLeft,
-  faCircleDollarToSlot,
   faHeart,
   faComment,
   faBoxOpen,
@@ -123,6 +121,7 @@ interface PostPreviewOverlayProps {
   buySellTag: "Buying" | "Selling" | null;
   currency: string;
   taggedKnife: CollectionKnife | null;
+  sellingKnife: CollectionKnife | null;
   user: Profile | null;
   isLoading: boolean;
   error: string;
@@ -147,16 +146,17 @@ const tagColorPreview = (tag: string): string => {
 const PostPreviewOverlay = ({
   layout, caption, description, tags, selectedFiles,
   tradeSoughtFile, tradeOfferingKnife, lookingFor, price, buySellTag,
-  currency, taggedKnife, user, isLoading, error, onEdit, onConfirm,
+  currency, taggedKnife, sellingKnife, user, isLoading, error, onEdit, onConfirm,
 }: PostPreviewOverlayProps) => {
   const badge = LAYOUT_BADGE[layout];
-  const displayName = user?.displayName ?? "You";
-  const identifier  = user?.identifierCode ? `#${user.identifierCode}` : "";
-  const avatar      = user?.profileImg ?? null;
+  const displayName    = user?.displayName ?? "You";
+  const identifier     = user?.identifierCode ? `#${user.identifierCode}` : "";
+  const avatar         = user?.profileImg ?? null;
   const currencySymbol = currency === "EUR" ? "€" : "$";
 
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [descOverflows, setDescOverflows] = useState(false);
+  const [descExpanded,    setDescExpanded]    = useState(false);
+  const [descOverflows,   setDescOverflows]   = useState(false);
+  const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
   const descRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -165,7 +165,6 @@ const PostPreviewOverlay = ({
     }
   }, [description]);
 
-  // media grid for non-trade layouts
   const mediaFiles = layout === "trade" ? [] : selectedFiles;
 
   return (
@@ -195,29 +194,24 @@ const PostPreviewOverlay = ({
           {/* Card header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
             <div className="flex items-center gap-3 min-w-0">
-              {/* Avatar */}
               <div className="w-9 h-9 rounded-full bg-blue-primary/20 border border-blue-primary/30 flex-shrink-0 overflow-hidden flex items-center justify-center">
                 {avatar
                   ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                   : <span className="text-blue-primary text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
                 }
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                <span className="text-white text-sm font-semibold leading-none">{displayName}</span>
-                {identifier && <span className="text-white/30 text-xs leading-none">{identifier}</span>}
+              <div className="flex flex-col items-start gap-0 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-white text-sm font-semibold leading-none">{displayName}</span>
+                  {identifier && <span className="text-white/30 text-xs leading-none">{identifier}</span>}
+                </div>
+                <span className="text-white/30 text-[11px] pt-0.5">Just now</span>
               </div>
             </div>
-            {/* Right side: section icon + layout badge */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {layout === "generic" && (
-                <FontAwesomeIcon icon={faGlobe} className="text-white/25 text-xs" title="Community" />
-              )}
-              {(layout === "buysell" || layout === "trade") && (
-                <FontAwesomeIcon icon={faEarthAmericas} className="text-white/25 text-xs" title="Product World" />
-              )}
-              {(layout === "tutorial" || layout === "combo") && (
-                <FontAwesomeIcon icon={faHubspot} className="text-white/25 text-xs" title="Tutorial Center" />
-              )}
+              {layout === "generic" && <FontAwesomeIcon icon={faGlobe} className="text-white/25 text-xs" />}
+              {(layout === "buysell" || layout === "trade") && <FontAwesomeIcon icon={faEarthAmericas} className="text-white/25 text-xs" />}
+              {(layout === "tutorial" || layout === "combo") && <FontAwesomeIcon icon={faHubspot} className="text-white/25 text-xs" />}
               <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
                 {badge.label}
               </span>
@@ -225,78 +219,164 @@ const PostPreviewOverlay = ({
           </div>
 
           {/* Caption */}
-          <div className="px-4 pt-3 pb-2">
-            <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{caption}</p>
-          </div>
+          {caption.trim() && (
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{caption}</p>
+            </div>
+          )}
 
-          {/* Media */}
+          {/* ── Media ── */}
           {layout === "trade" ? (
-            /* Trade — side-by-side comparison */
+            /* Trade — 3-column grid matching community/post page */
             <div className="px-4 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                {/* Offering */}
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Offering</p>
-                  <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
+              <div className="grid grid-cols-[1fr_32px_1fr] gap-y-1.5">
+                <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Offering</p>
+                <div />
+                <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Looking For</p>
+
+                <div className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10">
+                  {tradeOfferingKnife && (
+                    <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                      <p className="text-white text-xs font-semibold truncate leading-tight">
+                        {tradeOfferingKnife.knifeMaker}{tradeOfferingKnife.baseKnifeModel ? ` · ${tradeOfferingKnife.baseKnifeModel}` : ""}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex-1 min-h-0">
                     {tradeOfferingKnife?.coverPhoto
                       ? <img src={tradeOfferingKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
                     }
                   </div>
-                  {tradeOfferingKnife && (
-                    <p className="text-white/60 text-xs truncate">{tradeOfferingKnife.displayName}</p>
-                  )}
                 </div>
-                {/* Looking for */}
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Looking For</p>
-                  <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
+
+                <div className="flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-[#0d0f14] border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-[9px]" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10">
+                  {lookingFor && (
+                    <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                      <p className="text-white text-xs font-semibold truncate leading-tight">{lookingFor}</p>
+                    </div>
+                  )}
+                  <div className="flex-1 min-h-0">
                     {tradeSoughtFile
                       ? <img src={URL.createObjectURL(tradeSoughtFile)} alt="Looking for" className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
                     }
                   </div>
-                  {lookingFor && (
-                    <p className="text-white/60 text-xs truncate">{lookingFor}</p>
-                  )}
                 </div>
-              </div>
-              {/* Trade arrows icon */}
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-sm" />
-                <span className="text-white/30 text-xs">Trade offer</span>
               </div>
             </div>
           ) : mediaFiles.length > 0 ? (
-            /* Standard media grid — full-width, no horizontal padding */
-            <div className={`pb-0 grid gap-0.5 ${mediaFiles.length === 1 ? "grid-cols-1" : mediaFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-              {mediaFiles.map((file, i) => {
-                const isVideo = file.type.startsWith("video/");
-                const url = URL.createObjectURL(file);
-                const aspectCls = mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
-                return (
-                  <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
-                    {isVideo
-                      ? <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/30">
-                          <FontAwesomeIcon icon={faVideo} className="text-2xl" />
-                          <span className="text-[10px] text-center truncate w-full px-3">{file.name}</span>
-                        </div>
-                      : <img src={url} alt="" className="w-full h-full object-cover" />
-                    }
+            layout === "buysell" ? (
+              /* Buy/sell — hero + thumbnail strip */
+              <div className="flex flex-col gap-0">
+                {(() => {
+                  const heroFile = mediaFiles[selectedMediaIdx] ?? mediaFiles[0];
+                  const heroUrl  = URL.createObjectURL(heroFile);
+                  const isVid    = heroFile.type.startsWith("video/");
+                  return isVid
+                    ? <video key={selectedMediaIdx} src={heroUrl} muted autoPlay playsInline loop className="w-full aspect-video object-cover" />
+                    : <div className="relative overflow-hidden bg-[#0d0f14] aspect-video"><img src={heroUrl} alt="" className="w-full h-full object-cover" /></div>;
+                })()}
+                {mediaFiles.length > 1 && (
+                  <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/5">
+                    {mediaFiles.map((file, i) => {
+                      const url   = URL.createObjectURL(file);
+                      const isVid = file.type.startsWith("video/");
+                      const active = i === selectedMediaIdx;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedMediaIdx(i)}
+                          className={`relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#0d0f14] border-2 transition-all duration-150 ${
+                            active ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+                          }`}
+                        >
+                          {isVid
+                            ? <video src={url} muted playsInline className="w-full h-full object-cover" />
+                            : <img src={url} alt="" className="w-full h-full object-cover" />
+                          }
+                        </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </div>
+            ) : (
+              /* Standard media grid */
+              <div className={`pb-0 grid gap-0.5 ${mediaFiles.length === 1 ? "grid-cols-1" : mediaFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                {mediaFiles.map((file, i) => {
+                  const isVideo = file.type.startsWith("video/");
+                  const url = URL.createObjectURL(file);
+                  const aspectCls = mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
+                  return (
+                    <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
+                      {isVideo
+                        ? <video src={url} muted autoPlay playsInline loop className="w-full h-full object-cover" />
+                        : <img src={url} alt="" className="w-full h-full object-cover" />
+                      }
+                    </div>
+                  );
+                })}
+              </div>
+            )
           ) : null}
 
-          {/* Posted date — sits just below media */}
-          <div className="px-4 pt-1 pb-0">
-            <span className="text-white/25 text-[11px]">Just now</span>
-          </div>
+          {/* ── Buy/sell meta ── */}
+          {layout === "buysell" && (
+            <div className="px-4 pt-3 pb-0 flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  buySellTag === "Buying"
+                    ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10"
+                    : "text-green border-green/30 bg-green/10"
+                }`}>
+                  {buySellTag}
+                </span>
+                <span className="text-white/20 text-[11px]">·</span>
+                <span className="text-white/25 text-[11px]">
+                  {buySellTag === "Buying" ? "Marketplace inquiry" : "Marketplace listing"}
+                </span>
+              </div>
+              {buySellTag === "Selling" && price.trim() && (
+                <p className="text-white font-bold text-3xl tracking-tight">
+                  {currencySymbol}{parseFloat(price).toFixed(2)}
+                </p>
+              )}
+            </div>
+          )}
 
-          {/* Tags */}
+          {/* ── Offering knife card (buysell selling) ── */}
+          {layout === "buysell" && buySellTag === "Selling" && sellingKnife && (
+            <div className="px-4 pt-3 pb-1">
+              <div className="flex items-center gap-0 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                {sellingKnife.coverPhoto ? (
+                  <img src={sellingKnife.coverPhoto} alt={sellingKnife.displayName} className="w-28 h-28 object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-28 h-28 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon={faImage} className="text-white/15 text-2xl" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1.5 px-4 min-w-0">
+                  <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Listed Knife</span>
+                  <p className="text-white font-semibold text-base truncate">{sellingKnife.displayName}</p>
+                  <p className="text-white/50 text-xs truncate">
+                    {sellingKnife.knifeMaker}{sellingKnife.baseKnifeModel ? ` · ${sellingKnife.baseKnifeModel}` : ""}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tags ── */}
           {tags.length > 0 && (
-            <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+            <div className="px-4 pt-3 pb-0 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
                 <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColorPreview(tag)}`}>
                   <span className="opacity-50">#</span>{tag}
@@ -305,12 +385,12 @@ const PostPreviewOverlay = ({
             </div>
           )}
 
-          {/* Description */}
+          {/* ── Description ── */}
           {description.trim() && (
-            <div className="px-4 pb-3 flex flex-col gap-1">
+            <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
               <p
                 ref={descRef}
-                className={`text-white/50 text-xs leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
+                className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
               >
                 {description}
               </p>
@@ -326,39 +406,29 @@ const PostPreviewOverlay = ({
             </div>
           )}
 
-          {/* Buy/Sell footer */}
-          {layout === "buysell" && (
-            <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between gap-3">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${buySellTag === "Buying" ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10" : "text-green border-green/30 bg-green/10"}`}>
-                {buySellTag}
-              </span>
-              {buySellTag === "Selling" && price.trim() && (
-                <span className="text-white font-bold text-base">
-                  {currencySymbol}{parseFloat(price).toFixed(2)}
-                </span>
-              )}
+          {/* ── Reference knife card (generic/tutorial/combo) ── */}
+          {taggedKnife && layout !== "buysell" && layout !== "trade" && (
+            <div className="px-4 pb-3">
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                {taggedKnife.coverPhoto ? (
+                  <img src={taggedKnife.coverPhoto} alt={taggedKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon={faImage} className="text-white/15 text-lg" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
+                  <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
+                  <p className="text-white font-semibold text-sm truncate">{taggedKnife.displayName}</p>
+                  <p className="text-white/50 text-xs truncate">
+                    {taggedKnife.knifeMaker}{taggedKnife.baseKnifeModel ? ` · ${taggedKnife.baseKnifeModel}` : ""}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Tagged knife */}
-          {taggedKnife && (
-            <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-2">
-              <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs flex-shrink-0" />
-              <span className="text-white/60 text-xs">{taggedKnife.displayName}</span>
-              <span className="text-white/30 text-xs">·</span>
-              <span className="text-white/40 text-xs">{taggedKnife.knifeMaker}{taggedKnife.baseKnifeModel ? ` · ${taggedKnife.baseKnifeModel}` : ""}</span>
-            </div>
-          )}
-
-          {/* Buy/sell icon accent */}
-          {layout === "buysell" && (
-            <div className="px-4 pb-3 flex items-center gap-1.5 -mt-1">
-              <FontAwesomeIcon icon={faCircleDollarToSlot} className="text-gold/50 text-xs" />
-              <span className="text-white/25 text-xs">Marketplace listing</span>
-            </div>
-          )}
-
-          {/* Engagement counts — read-only, matches PostPage */}
+          {/* ── Engagement counts ── */}
           <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-4">
             <span className="flex items-center gap-1.5 text-white/30 text-xs">
               <FontAwesomeIcon icon={faHeart} className="text-[11px]" />
@@ -374,7 +444,6 @@ const PostPreviewOverlay = ({
 
         </div>
 
-        {/* Error */}
         {error && <p className="text-red text-sm font-medium text-center">{error}</p>}
 
       </div>
@@ -445,8 +514,8 @@ const CreatePostPage = () => {
   const tradeBlocked = layout === "trade" && collectionKnives.length === 0;
   const sellBlocked = layout === "buysell" && buySellTag === "Selling" && collectionKnives.length === 0;
 
-  // tutorial/combo require exactly one difficulty tag
-  const hasDifficultyTag = (layout === "tutorial" || layout === "combo")
+  // tutorial requires a difficulty tag; combo does not
+  const hasDifficultyTag = layout === "tutorial"
     ? tags.some((t) => getTrickTagGroup(t) === "Difficulty")
     : true;
 
@@ -454,7 +523,7 @@ const CreatePostPage = () => {
     !tradeBlocked &&
     !sellBlocked &&
     hasDifficultyTag &&
-    caption.trim() !== "" &&
+    (layout === "generic" || layout === "combo" || caption.trim() !== "") &&
     (layout === "trade"
       ? tradeSoughtFile !== null && tradeOfferingKnifeId !== null
       : selectedFiles.length > 0) &&
@@ -650,7 +719,10 @@ const CreatePostPage = () => {
         {/* Caption */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">{layout === "tutorial" ? "Trick Name" : layout === "combo" ? "Combo Name" : "Caption"}</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
+              {layout === "tutorial" ? "Trick Name" : layout === "combo" ? "Combo Name" : "Caption"}
+              {(layout === "generic" || layout === "combo") && <span className="text-white/25 normal-case tracking-normal font-normal ml-1">— optional</span>}
+            </p>
             <span className={`text-xs font-medium ${caption.length > 235 ? "text-gold" : "text-white/30"}`}>
               {255 - caption.length} left
             </span>
@@ -1004,10 +1076,7 @@ const CreatePostPage = () => {
                   return (
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#13161d] border border-white/10">
                       {isVideo ? (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FontAwesomeIcon icon={faVideo} className="text-white/40 text-2xl" />
-                          <span className="absolute bottom-1 left-1 right-1 text-[10px] text-white/50 truncate px-1">{file.name}</span>
-                        </div>
+                        <video src={url} muted playsInline className="w-full h-full object-cover" />
                       ) : (
                         <img src={url} alt="" className="w-full h-full object-cover" />
                       )}
@@ -1299,6 +1368,7 @@ const CreatePostPage = () => {
           buySellTag={buySellTag}
           currency={currency}
           taggedKnife={taggedKnife}
+          sellingKnife={collectionKnives.find((k) => k.id === sellingKnifeId) ?? null}
           user={user}
           isLoading={isLoading}
           error={error}

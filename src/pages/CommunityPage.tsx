@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
-  faHeart, faComment, faTag,
+  faHeart, faComment,
   faGlobe, faEarthAmericas,
-  faImage, faArrowRightArrowLeft, faCircleDollarToSlot,
+  faImage, faArrowRightArrowLeft,
   faBullhorn, faLock, faChevronLeft, faChevronRight,
-  faVolumeMute, faVolumeUp,
+  faVolumeMute, faVolumeUp, faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
@@ -87,6 +87,7 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
   const [descOverflows, setDescOverflows] = useState(false);
   const [mediaIndex,    setMediaIndex]    = useState(0);
   const [muted,         setMuted]         = useState(true);
+  const [videoPaused,   setVideoPaused]   = useState(false);
 
   const descRef   = useRef<HTMLParagraphElement>(null);
   const cardRef   = useRef<HTMLDivElement>(null);
@@ -182,9 +183,14 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
               : <span className="text-blue-primary text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
             }
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-            <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
-            {identifier && <span className="text-white/30 text-xs leading-none">{identifier}</span>}
+          <div className="flex flex-col items-start gap-0.5 min-w-0">
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
+              {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
+            </div>
+            {post.creationDate && (
+              <span className="text-white/35 text-[11px] leading-none pt-0.5">{formatDate(post.creationDate)}</span>
+            )}
           </div>
         </button>
 
@@ -209,54 +215,104 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
       </div>
 
       {/* ── Caption ── */}
-      <div className="px-4 pt-3 pb-2">
-        <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
-      </div>
+      {post.caption?.trim() && (
+        <div className="px-4 pt-3 pb-2">
+          <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
+        </div>
+      )}
 
       {/* ── Media ── */}
-      {layout === "trade" ? (
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Offering</p>
-              <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
-                {post.offeringKnife?.coverPhoto
-                  ? <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
-                }
+      {layout === "trade" ? (() => {
+        const lookingForImg = post.lookingForImageUrl ?? post.mediaFiles[0] ?? null;
+        return (
+          <div className="px-4 pb-3">
+            {/* 3-col grid: [offering] [↔ icon] [looking for]
+                Labels in row 1, images in row 2 (icon aligns with this row), names in row 3 */}
+            <div className="grid grid-cols-[1fr_32px_1fr] gap-y-1.5">
+              {/* Row 1 — labels */}
+              <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Offering</p>
+              <div />
+              <p className="text-[10px] text-white/35 font-semibold uppercase tracking-widest">Looking For</p>
+
+              {/* Row 2 — images with icon centered in gap */}
+              <div
+                className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (post.offeringKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
+                    navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.offeringKnife.displayName}`);
+                  }
+                }}
+              >
+                {post.offeringKnife && (
+                  <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                    <p className="text-white text-xs font-semibold truncate leading-tight">
+                      {post.offeringKnife.knifeMaker}{post.offeringKnife.baseKnifeModel ? ` · ${post.offeringKnife.baseKnifeModel}` : ""}
+                    </p>
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
+                  {post.offeringKnife?.coverPhoto
+                    ? <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
+                  }
+                </div>
               </div>
-              {post.offeringKnife && <p className="text-white/60 text-xs truncate">{post.offeringKnife.displayName}</p>}
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-[10px] text-white/35 font-semibold uppercase tracking-wider">Looking For</p>
-              <div className="aspect-square rounded-xl overflow-hidden bg-[#0d0f14] border border-white/10">
-                {post.lookingForImageUrl
-                  ? <img src={post.lookingForImageUrl} alt="Looking for" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
-                }
+              <div className="flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-[#0d0f14] border border-white/10 flex items-center justify-center flex-shrink-0">
+                  <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-[9px]" />
+                </div>
               </div>
-              {post.lookingForText && <p className="text-white/60 text-xs truncate">{post.lookingForText}</p>}
+              <div className="flex flex-col aspect-square rounded-2xl overflow-hidden bg-[#0d0f14] border border-white/10">
+                {post.lookingForText && (
+                  <div className="px-2.5 py-1.5 bg-black/80 flex-shrink-0">
+                    <p className="text-white text-xs font-semibold truncate leading-tight">{post.lookingForText}</p>
+                  </div>
+                )}
+                <div className="aspect-square">
+                  {lookingForImg
+                    ? <img src={lookingForImg} alt="Looking for" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
+                  }
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-primary/60 text-sm" />
-            <span className="text-white/30 text-xs">Trade offer</span>
-          </div>
-        </div>
-      ) : mediaFiles.length > 0 ? (
+        );
+      })() : mediaFiles.length > 0 ? (
         <div className="relative aspect-[4/3] overflow-hidden bg-[#0d0f14]">
 
           {/* Current media */}
           {isVid ? (
-            <video
-              key={currentUrl}
-              ref={videoRef}
-              src={currentUrl}
-              muted={muted}
-              playsInline
-              loop
-              className="w-full h-full object-cover"
-            />
+            <>
+              <video
+                key={currentUrl}
+                ref={videoRef}
+                src={currentUrl}
+                muted={muted}
+                playsInline
+                loop
+                className="w-full h-full object-cover"
+                onPlay={() => setVideoPaused(false)}
+                onPause={() => setVideoPaused(true)}
+              />
+              {/* Click-to-pause overlay */}
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const v = videoRef.current;
+                  if (!v) return;
+                  v.paused ? v.play().catch(() => {}) : v.pause();
+                }}
+              >
+                {videoPaused && (
+                  <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <FontAwesomeIcon icon={faPlay} className="text-white text-base pl-0.5" />
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <img src={currentUrl} alt="" className="w-full h-full object-cover" />
           )}
@@ -267,14 +323,14 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
               <button
                 type="button"
                 onClick={goPrev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
               >
                 <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
               </button>
               <button
                 type="button"
                 onClick={goNext}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
               >
                 <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
               </button>
@@ -305,7 +361,7 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setMuted(m => !m); }}
-              className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+              className="absolute bottom-2 right-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
             >
               <FontAwesomeIcon icon={muted ? faVolumeMute : faVolumeUp} className="text-white/70 text-xs" />
             </button>
@@ -314,16 +370,65 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
         </div>
       ) : null}
 
-      {/* ── Date ── */}
-      {post.creationDate && (
-        <div className="px-4 pt-1 pb-0">
-          <span className="text-white/25 text-[11px]">{formatDate(post.creationDate)}</span>
+      {/* ── Buy/sell meta (only for buysell layout) ── */}
+      {layout === "buysell" && (
+        <div className="px-4 pt-3 pb-0 flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+              post.mode === "BUYING"
+                ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10"
+                : "text-green border-green/30 bg-green/10"
+            }`}>
+              {post.mode === "BUYING" ? "Buying" : "Selling"}
+            </span>
+            <span className="text-white/20 text-[11px]">·</span>
+            <span className="text-white/25 text-[11px]">{post.mode === "BUYING" ? "Marketplace inquiry" : "Marketplace listing"}</span>
+          </div>
+          {post.mode === "SELLING" && post.price && (
+            <p className="text-white font-bold text-3xl tracking-tight">${parseFloat(post.price).toFixed(2)}</p>
+          )}
+
+        </div>
+      )}
+
+      {/* ── Offering knife card (buy/sell) ── */}
+      {layout === "buysell" && post.offeringKnife && (
+        <div className="px-4 pt-3 pb-1">
+          <div
+            className="flex items-center gap-0 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (post.offeringKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
+                navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.offeringKnife.displayName}`);
+              }
+            }}
+          >
+            {post.offeringKnife.coverPhoto ? (
+              <img
+                src={post.offeringKnife.coverPhoto}
+                alt={post.offeringKnife.displayName}
+                className="w-28 h-28 object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-28 h-28 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                <FontAwesomeIcon icon={faImage} className="text-white/15 text-2xl" />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5 px-4 min-w-0">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Listed Knife</span>
+              <p className="text-white font-semibold text-base truncate">{post.offeringKnife.displayName}</p>
+              <p className="text-white/50 text-xs truncate">
+                {post.offeringKnife.knifeMaker}
+                {post.offeringKnife.baseKnifeModel ? ` · ${post.offeringKnife.baseKnifeModel}` : ""}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* ── Tags ── */}
       {displayTags.length > 0 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+        <div className="px-4 pt-2 pb-2 flex flex-wrap gap-1.5">
           {displayTags.map((tag) => (
             <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColor(tag)}`}>
               <span className="opacity-50">#</span>{formatTagLabel(tag)}
@@ -334,10 +439,10 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
 
       {/* ── Description ── */}
       {post.description?.trim() && (
-        <div className="px-4 pb-3 flex flex-col gap-1">
+        <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
           <p
             ref={descRef}
-            className={`text-white/50 text-xs leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
+            className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
           >
             {post.description}
           </p>
@@ -353,38 +458,38 @@ const FeedPostCard = ({ post }: { post: PostDetail }) => {
         </div>
       )}
 
-      {/* ── Buy/Sell details ── */}
-      {layout === "buysell" && (
-        <>
-          <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between gap-3">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-              post.mode === "BUYING"
-                ? "text-blue-primary border-blue-primary/30 bg-blue-primary/10"
-                : "text-green border-green/30 bg-green/10"
-            }`}>
-              {post.mode === "BUYING" ? "Buying" : "Selling"}
-            </span>
-            {post.mode === "SELLING" && post.price && (
-              <span className="text-white font-bold text-base">${parseFloat(post.price).toFixed(2)}</span>
+      {/* ── Reference knife card (generic/tutorial/combo only) ── */}
+      {post.referenceKnife && layout !== "buysell" && layout !== "trade" && (
+        <div className="px-4 pb-3">
+          <div
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (post.referenceKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
+                navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.referenceKnife.displayName}`);
+              }
+            }}
+          >
+            {post.referenceKnife.coverPhoto ? (
+              <img
+                src={post.referenceKnife.coverPhoto}
+                alt={post.referenceKnife.displayName}
+                className="w-16 h-16 object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+                <FontAwesomeIcon icon={faImage} className="text-white/15 text-lg" />
+              </div>
             )}
+            <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
+              <p className="text-white font-semibold text-sm truncate">{post.referenceKnife.displayName}</p>
+              <p className="text-white/50 text-xs truncate">
+                {post.referenceKnife.knifeMaker}
+                {post.referenceKnife.baseKnifeModel ? ` · ${post.referenceKnife.baseKnifeModel}` : ""}
+              </p>
+            </div>
           </div>
-          <div className="px-4 pb-3 flex items-center gap-1.5 -mt-1">
-            <FontAwesomeIcon icon={faCircleDollarToSlot} className="text-gold/50 text-xs" />
-            <span className="text-white/25 text-xs">Marketplace listing</span>
-          </div>
-        </>
-      )}
-
-      {/* ── Reference knife ── */}
-      {post.referenceKnife && (
-        <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-2">
-          <FontAwesomeIcon icon={faTag} className="text-blue-primary text-xs flex-shrink-0" />
-          <span className="text-white/60 text-xs">{post.referenceKnife.displayName}</span>
-          <span className="text-white/30 text-xs">·</span>
-          <span className="text-white/40 text-xs">
-            {post.referenceKnife.knifeMaker}
-            {post.referenceKnife.baseKnifeModel ? ` · ${post.referenceKnife.baseKnifeModel}` : ""}
-          </span>
         </div>
       )}
 
