@@ -69,21 +69,21 @@ const App = () => {
         .finally(() => setIsLoading(false));
     }
 
-    dispatch(
-      setCredentials({
-        newUser: {
-          id: "99999",
-          displayName: "Test",
-          identifierCode: "4444",
-          role: "USER",
-          email: "test@gmail.com",
-          collectionId: "1123",
-          accountCreationDate: null,
-          lastLogin: null,
-        } as Profile,
-        newAccessToken: "1234",
-      })
-    );
+    // dispatch(
+    //   setCredentials({
+    //     newUser: {
+    //       id: "99999",
+    //       displayName: "Test",
+    //       identifierCode: "4444",
+    //       role: "USER",
+    //       email: "test@gmail.com",
+    //       collectionId: "1123",
+    //       accountCreationDate: null,
+    //       lastLogin: null,
+    //     } as Profile,
+    //     newAccessToken: "1234",
+    //   })
+    // );
   }, []);
 
   if (isLoading) {
