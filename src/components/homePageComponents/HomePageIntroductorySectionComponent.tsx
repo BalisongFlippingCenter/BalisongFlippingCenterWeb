@@ -88,13 +88,13 @@ const HomePageIntroductorySectionComponent = () => {
 
       {/* Hero content */}
       <div
-        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pb-10 sm:pb-20 transition-all duration-[2000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pb-10 sm:pb-20 short:sm:pt-6 short:sm:pb-6 transition-all duration-[2000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
         }`}
       >
         {/* Glass card */}
         <div
-          className="flex flex-col items-center bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl xsm:px-4 sm:px-8 md:px-12 lg:px-16 xsm:py-6 sm:py-8 md:py-10 lg:py-12 xsm:w-full lg:w-auto"
+          className="flex flex-col items-center bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl xsm:px-4 sm:px-8 md:px-12 lg:px-16 xsm:py-6 sm:py-8 md:py-10 lg:py-12 short:md:py-6 short:md:px-8 xsm:w-full lg:w-auto"
           style={{ borderTopWidth: '2px', borderTopColor: '#108198' }}
         >
 
@@ -105,11 +105,11 @@ const HomePageIntroductorySectionComponent = () => {
           </div>
 
           {/* Heading — wraps on mobile, nowrap on desktop */}
-          <h1 className="xsm:text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-5 md:whitespace-nowrap">
+          <h1 className="xsm:text-3xl sm:text-4xl md:text-5xl lg:text-7xl short:md:text-3xl short:lg:text-4xl font-bold tracking-tight mb-4 sm:mb-5 md:whitespace-nowrap">
             Balisong Flipping Center
           </h1>
 
-          <p className="xsm:text-sm sm:text-lg md:text-2xl lg:text-3xl font-light tracking-[0.15em] sm:tracking-[0.25em] text-blue-primary xsm:mb-4 sm:mb-7 uppercase">
+          <p className="xsm:text-sm sm:text-lg md:text-2xl lg:text-3xl short:md:text-base short:lg:text-lg font-light tracking-[0.15em] sm:tracking-[0.25em] text-blue-primary xsm:mb-4 sm:mb-7 uppercase">
             Flip. Collect. Connect.
           </p>
 
@@ -118,7 +118,7 @@ const HomePageIntroductorySectionComponent = () => {
             Your home for balisong flipping. Learn tricks, catalog your collection, and connect with the community.
           </p>
 
-          <p className="xsm:hidden sm:block sm:text-base md:text-lg lg:text-2xl text-white/75 font-bold max-w-2xl mb-8 sm:mb-10 leading-relaxed">
+          <p className="xsm:hidden sm:block sm:text-base md:text-lg lg:text-2xl short:md:text-sm short:lg:text-base text-white/75 font-bold max-w-2xl mb-8 sm:mb-10 leading-relaxed">
             Whether you're a seasoned flipper or just discovering the hobby, the Balisong Flipping Center has everything you need.
             Catalog and show off your knife collection, stay up to date on the latest from top makers, learn new tricks,
             and connect with a community that shares your passion for the art of the flip.
@@ -154,29 +154,29 @@ const HomePageIntroductorySectionComponent = () => {
 
           {/* Stats strip */}
           <div
-            className={`flex items-center xsm:gap-4 sm:gap-8 lg:gap-12 xsm:mt-6 sm:mt-10 xsm:pt-5 sm:pt-8 border-t border-white/10 w-full justify-center transition-opacity duration-[800ms] ease-in-out ${
+            className={`flex items-center xsm:gap-4 sm:gap-8 lg:gap-12 xsm:mt-6 sm:mt-10 short:mt-4 xsm:pt-5 sm:pt-8 short:pt-4 short:pb-2 border-t border-white/10 w-full justify-center transition-opacity duration-[800ms] ease-in-out ${
               statsVisible ? "opacity-100" : "opacity-0"
             }`}
           >
             <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl">
+              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
                 {counts.members.toLocaleString()}<span className="pl-[2px]">+</span>
               </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base text-white/60">Members</span>
+              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Members</span>
             </div>
-            <div className="w-px xsm:h-8 md:h-10 bg-white/20" />
+            <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
             <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl">
+              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
                 {counts.knives.toLocaleString()}<span className="pl-[2px]">+</span>
               </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base text-white/60">Knives</span>
+              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Knives</span>
             </div>
-            <div className="w-px xsm:h-8 md:h-10 bg-white/20" />
+            <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
             <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl">
+              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
                 {counts.posts.toLocaleString()}<span className="pl-[2px]">+</span>
               </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base text-white/60">Posts</span>
+              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Posts</span>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ const HomePageIntroductorySectionComponent = () => {
 
       {/* Scroll indicator */}
       <div
-        className={`relative z-20 flex flex-col items-center gap-2 xsm:pb-8 sm:pb-20 transition-all duration-[1200ms] ease-in-out ${
+        className={`relative z-20 flex flex-col items-center gap-2 xsm:pb-8 sm:pb-20 short:sm:pb-4 transition-all duration-[1200ms] ease-in-out ${
           cardVisible ? "opacity-100" : "opacity-0"
         }`}
       >

@@ -122,6 +122,17 @@ export interface PostKnifeRef {
   coverPhoto: string | null;
 }
 
+const normalizeKnifeRef = (raw: any): PostKnifeRef | null => {
+  if (!raw) return null;
+  return {
+    id:             raw.id            ?? null,
+    displayName:    raw.displayName   ?? raw.name         ?? "",
+    knifeMaker:     raw.knifeMaker    ?? raw.maker        ?? raw.brand       ?? "",
+    baseKnifeModel: raw.baseKnifeModel ?? raw.model       ?? raw.baseModel   ?? null,
+    coverPhoto:     raw.coverPhoto    ?? raw.coverPhotoUrl ?? raw.imageUrl   ?? raw.photo ?? raw.thumbnailUrl ?? null,
+  };
+};
+
 // ── Full post detail (for the post page) ─────────────────────────────────────
 export interface PostDetail {
   id: string;
@@ -178,12 +189,12 @@ export const mapPostDetail = (data: any): PostDetail => {
     comments:              p.commentCount         ?? p.comments ?? 0,
     mode:                  p.mode                 ?? null,
     price:                 p.price                ?? null,
-    offeringKnife:         p.offeringKnife        ?? null,
+    offeringKnife:         normalizeKnifeRef(data.offeringKnife ?? p.offeringKnife ?? p.offeredKnife ?? p.tradingKnife ?? p.listedKnife ?? null),
     lookingForText:        p.lookingForText        ?? null,
-    lookingForImageUrl:    p.lookingForImageUrl   ?? p.lookingForImage ?? null,
+    lookingForImageUrl:    p.lookingForImageUrl   ?? p.lookingForImage ?? p.lookingForImg ?? null,
     difficultyTag:         p.difficultyTag        ?? null,
     techniqueTags:         p.techniqueTags        ?? [],
-    referenceKnife:        p.referenceKnife       ?? null,
+    referenceKnife:        normalizeKnifeRef(p.referenceKnife ?? p.taggedKnife ?? null),
     isPrivate:             p.isPrivate            ?? false,
     isAnnouncement:        p.isAnnouncement       ?? false,
   };

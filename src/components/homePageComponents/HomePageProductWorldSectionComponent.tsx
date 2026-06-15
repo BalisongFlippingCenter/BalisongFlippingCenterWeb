@@ -58,7 +58,7 @@ const HomePageProductWorldSectionComponent = () => {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 xsm:pt-44 md:pt-24 pb-24">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 xsm:pt-44 md:pt-40 pb-24">
 
         {/* Eyebrow */}
         <div className="flex items-center justify-center gap-2 mb-4">

@@ -110,7 +110,7 @@ const UserRegistrationForm = () => {
   };
 
   return (
-    <section className="min-h-[calc(100vh_-_48px)] flex justify-center items-center px-4 py-12">
+    <section className="min-h-[calc(100vh_-_48px)] flex justify-center items-center px-4 py-12 short:py-4">
       <div className="flex md:flex-row xsm:flex-col w-full max-w-5xl rounded-xl overflow-hidden border border-white/10" style={{ boxShadow: '0 0 120px rgba(255,255,255,0.18), 0 0 40px rgba(255,255,255,0.08), 0 8px 48px rgba(0,0,0,0.8)' }}>
 
         {/* Left — branding panel (hidden on small screens) */}

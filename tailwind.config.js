@@ -33,9 +33,13 @@ export default {
       'sm': '550px',
       'md': '950px',
       'nav': '1150px',
-      'lg': '1310px'
+      'lg': '1310px',
+      'short': { 'raw': '(max-height: 800px)' },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       keyframes: {
         fade_in_out: {
           to: { opacity: '1' }

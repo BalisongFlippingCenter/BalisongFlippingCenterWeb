@@ -25,7 +25,7 @@ import ProfileConfigurationProfileBannerPage from "./pages/configuration/Profile
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import { setCredentials, setToRememberLoginInfo } from "./redux/auth/authSlice";
-// import { Profile } from "./modals/User";
+import { Profile } from "./modals/User";
 import { loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
 import { mapCollection } from "./redux/collection/collectionActions";
@@ -69,21 +69,21 @@ const App = () => {
         .finally(() => setIsLoading(false));
     }
 
-    // dispatch(
-    //   setCredentials({
-    //     newUser: {
-    //       id: "1",
-    //       displayName: "Test",
-    //       identifierCode: "4444",
-    //       role: "USER",
-    //       email: "test@gmail.com",
-    //       collectionId: "1123",
-    //       accountCreationDate: null,
-    //       lastLogin: null,
-    //     } as Profile,
-    //     newAccessToken: "1234",
-    //   })
-    // );
+    dispatch(
+      setCredentials({
+        newUser: {
+          id: "99999",
+          displayName: "Test",
+          identifierCode: "4444",
+          role: "USER",
+          email: "test@gmail.com",
+          collectionId: "1123",
+          accountCreationDate: null,
+          lastLogin: null,
+        } as Profile,
+        newAccessToken: "1234",
+      })
+    );
   }, []);
 
   if (isLoading) {

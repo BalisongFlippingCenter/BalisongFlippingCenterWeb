@@ -64,7 +64,7 @@ const Navbar = () => {
         variants={{ visible: { y: 0 }, hidden: { y: "-100%" } }}
         animate={hidden ? "hidden" : "visible"}
         transition={{ duration: 0.353, ease: "easeInOut" }}
-        className={`relative flex items-center sticky top-0 w-full px-4 md:px-8 py-3 z-30 text-white backdrop-blur-xl border-b border-white/10 shadow-lg transition-colors duration-500 ${
+        className={`relative flex items-center sticky top-0 w-full px-4 md:px-8 py-3 short:py-1.5 z-30 text-white backdrop-blur-xl border-b border-white/10 shadow-lg transition-colors duration-500 ${
           location.pathname === "/"
             ? "bg-transparent"
             : "bg-dark-neutral/80"
@@ -91,7 +91,7 @@ const Navbar = () => {
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 540 110"
               onClick={() => navigate(user ? "/community" : "/")}
-              className="hover:cursor-pointer h-9 md:h-14 w-auto"
+              className="hover:cursor-pointer h-9 md:h-14 short:md:h-10 w-auto"
               aria-label="Balisong Flipping Center"
             >
               <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>

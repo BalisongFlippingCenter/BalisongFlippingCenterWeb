@@ -112,7 +112,7 @@ const PublicCollectionPageComponent = ({ displayName, identifierCode }: Props) =
   ];
 
   return (
-    <section className="w-full flex flex-col">
+    <section className="w-full flex flex-col pb-24">
 
       {/* ── Collection header ── */}
       <div className="w-full px-6 pt-6 pb-5 border-b border-white/10 flex flex-col gap-4">

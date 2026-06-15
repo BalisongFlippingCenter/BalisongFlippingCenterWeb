@@ -173,7 +173,7 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
 
   // ── Full profile view ──────────────────────────────────────────────────────
   return (
-    <section className="relative w-full min-h-screen text-white">
+    <section className="relative w-full min-h-screen text-white pb-24">
 
       {/* Banner */}
       <div className="w-full xsm:h-[130px] md:h-40 lg:h-48 relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-[#1c1f27] to-[#111318] border-b border-white/10">

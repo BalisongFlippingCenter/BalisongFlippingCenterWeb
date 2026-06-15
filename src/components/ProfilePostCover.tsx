@@ -103,7 +103,7 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
       <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
       {/* ── Bottom bar: type badge · route icon · like + comment ── */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-2.5 px-2.5 flex items-end justify-between gap-1.5">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-3 px-3 flex items-end justify-between gap-1.5">
 
         {/* Post type badge */}
         {typeBadge ? (
