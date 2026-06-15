@@ -1,0 +1,35 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_check:
+    name: Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check dummy user is not active
+        run: |
+          if grep -n "newAccessToken: \"1234\"" src/App.tsx | grep -v "^[^:]*://"; then
+            echo "ERROR: Dummy user is uncommented in App.tsx. Comment it out before merging."
+            exit 1
+          fi
+          echo "Dummy user check passed."
+
+      - name: Build
+        run: npm run build
