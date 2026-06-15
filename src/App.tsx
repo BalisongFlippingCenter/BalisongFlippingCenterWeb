@@ -25,7 +25,6 @@ import ProfileConfigurationProfileBannerPage from "./pages/configuration/Profile
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import { setCredentials, setToRememberLoginInfo } from "./redux/auth/authSlice";
-import { Profile } from "./modals/User";
 import { loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
 import { mapCollection } from "./redux/collection/collectionActions";
