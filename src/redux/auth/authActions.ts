@@ -47,6 +47,10 @@ export const login = createAsyncThunk(
         data: payload,
       });
 
+      if (response.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+      }
+
       return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
@@ -58,10 +62,17 @@ export const loginWithRefreshToken = createAsyncThunk(
   "auth/loginWithRefreshToken",
   async (_, thunkAPI) => {
     try {
+      const storedToken = localStorage.getItem("refreshToken");
       const response = await axiosApiInstance.request({
         url: "auth/refresh-token-login",
         method: "post",
+        data: storedToken ?? undefined,
+        headers: storedToken ? { "Content-Type": "text/plain" } : undefined,
       });
+
+      if (response.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+      }
 
       return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
@@ -71,6 +82,7 @@ export const loginWithRefreshToken = createAsyncThunk(
 );
 
 export const logout = createAsyncThunk("auth/logout", async () => {
+  localStorage.removeItem("refreshToken");
   await axiosApiInstance.request({
     url: "/auth/logout",
     method: "post",
