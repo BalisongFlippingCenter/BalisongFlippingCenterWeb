@@ -16,10 +16,13 @@ import {
   faVolumeMute,
   faVolumeUp,
   faPlay,
+  faExpand,
+  faCompress,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import { useAppSelector } from "../redux/hooks";
+import { formatCurrency } from "../utils/unitConversions";
 
 // ── Layout / badge constants ──────────────────────────────────────────────────
 
@@ -55,21 +58,32 @@ const isVideoUrl = (url: string) =>
   /\.(mp4|mov|avi|webm|mkv|m4v)(\?.*)?$/i.test(url);
 
 const formatTagLabel = (tag: string) =>
-  tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  tag.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 // Cycle through a palette so each tag gets a distinct, consistent colour
-const TAG_PALETTE = [
-  "bg-blue-primary/10 border-blue-primary/25 text-blue-primary",
-  "bg-green/10 border-green/25 text-green",
-  "bg-gold/10 border-gold/25 text-gold",
-  "bg-light-blue/10 border-light-blue/25 text-light-blue",
-] as const;
+const DOT_PALETTE  = ["bg-blue-primary", "bg-green", "bg-gold", "bg-light-blue"] as const;
+const TEXT_PALETTE = ["text-blue-primary", "text-green", "text-gold", "text-light-blue"] as const;
 
-const tagColor = (tag: string): string => {
-  // simple hash so the same tag always maps to the same colour
+const tagDotColor = (tag: string): string => {
   let h = 0;
   for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
-  return TAG_PALETTE[h % TAG_PALETTE.length];
+  return DOT_PALETTE[h % DOT_PALETTE.length];
+};
+
+const tagTextColor = (tag: string): string => {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return TEXT_PALETTE[h % TEXT_PALETTE.length];
+};
+
+const difficultyStyle = (tag: string): { pill: string; dot: string } => {
+  switch (tag.toUpperCase()) {
+    case "BEGINNER":     return { pill: "bg-green/10 border-green/20 text-green",   dot: "bg-green" };
+    case "INTERMEDIATE": return { pill: "bg-gold/10 border-gold/20 text-gold",      dot: "bg-gold" };
+    case "ADVANCED":     return { pill: "bg-red/10 border-red/20 text-red",         dot: "bg-red" };
+    case "EXPERT":       return { pill: "bg-red/15 border-red/30 text-red",         dot: "bg-red" };
+    default:             return { pill: "bg-white/5 border-white/10 text-white/50", dot: "bg-white/50" };
+  }
 };
 
 const formatDate = (dateStr: string): string => {
@@ -87,6 +101,32 @@ const formatDate = (dateStr: string): string => {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+// ── ImageCell — per-image fullscreen state ────────────────────────────────────
+
+const ImageCell = ({ url, aspectCls }: { url: string; aspectCls: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className={`media-fs-container relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
+      <img src={url} alt="" className="w-full h-full object-cover" />
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); isFullscreen ? document.exitFullscreen() : containerRef.current?.requestFullscreen(); }}
+        className="absolute bottom-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+      >
+        <FontAwesomeIcon icon={isFullscreen ? faCompress : faExpand} className="text-white/70 text-xs" />
+      </button>
+    </div>
+  );
+};
+
 // ── VideoCell — per-video pause state ────────────────────────────────────────
 
 interface VideoCellProps {
@@ -97,10 +137,19 @@ interface VideoCellProps {
 }
 
 const VideoCell = ({ url, muted, aspectCls, onMuteToggle }: VideoCellProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef     = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
   return (
-    <div className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
+    <div ref={containerRef} className={`media-fs-container relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
       <video
         ref={videoRef}
         key={url}
@@ -135,6 +184,13 @@ const VideoCell = ({ url, muted, aspectCls, onMuteToggle }: VideoCellProps) => {
         className="absolute bottom-2 right-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
       >
         <FontAwesomeIcon icon={muted ? faVolumeMute : faVolumeUp} className="text-white/70 text-xs" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); isFullscreen ? document.exitFullscreen() : containerRef.current?.requestFullscreen(); }}
+        className="absolute bottom-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+      >
+        <FontAwesomeIcon icon={isFullscreen ? faCompress : faExpand} className="text-white/70 text-xs" />
       </button>
     </div>
   );
@@ -175,7 +231,6 @@ const PostPage = () => {
     }
   }, [post?.description]);
 
-  const currencySymbol = currency === "EUR" ? "€" : "$";
 
   // ── Ownership — compare logged-in user ID against post's accountId ────────
   const isOwner = !!user && !!post && String(user.id) === String(post.accountId);
@@ -449,11 +504,7 @@ const PostPage = () => {
                       />
                     );
                   }
-                  return (
-                    <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  );
+                  return <ImageCell key={i} url={url} aspectCls={aspectCls} />;
                 })}
               </div>
             )
@@ -476,7 +527,7 @@ const PostPage = () => {
               {/* Price hero */}
               {post.mode === "SELLING" && post.price && (
                 <p className="text-white font-bold text-3xl tracking-tight">
-                  {currencySymbol}{parseFloat(post.price).toFixed(2)}
+                  {formatCurrency(post.price, currency)}
                 </p>
               )}
 
@@ -515,16 +566,31 @@ const PostPage = () => {
 
           {/* ── Tags ── */}
           {displayTags.length > 0 && (
-            <div className="px-4 pt-2 pb-2 flex flex-wrap gap-1.5">
-              {displayTags.map((tag) => (
-                <span
-                  key={tag}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColor(tag)}`}
-                >
-                  <span className="opacity-50">#</span>
-                  {formatTagLabel(tag)}
-                </span>
-              ))}
+            <div className="px-4 pt-2 pb-2 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              {layout === "tutorial" || layout === "combo" ? (
+                <>
+                  {post.difficultyTag && (() => {
+                    const s = difficultyStyle(post.difficultyTag);
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold ${s.pill}`}>
+                        {formatTagLabel(post.difficultyTag)}
+                      </span>
+                    );
+                  })()}
+                  {post.techniqueTags.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tagDotColor(tag)}`} />
+                      {formatTagLabel(tag)}
+                    </span>
+                  ))}
+                </>
+              ) : (
+                post.tags.map((tag) => (
+                  <span key={tag} className={`inline-flex items-center text-[11px] font-medium ${tagTextColor(tag)}`}>
+                    <span className="mr-0.5">#</span>{formatTagLabel(tag)}
+                  </span>
+                ))
+              )}
             </div>
           )}
 

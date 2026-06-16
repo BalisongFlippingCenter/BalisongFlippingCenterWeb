@@ -62,7 +62,7 @@ const KnifeWeightInput = ({ setKnifeWeightOnChange, parentWeight }: params) => {
           placeholder="0.0"
           onChange={(e) => onWeightChange(e.target.value)}
           onBlur={handleOnBlur}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 placeholder:text-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 placeholder:text-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <div className="flex rounded-lg overflow-hidden border border-white/10">
           {["oz", "g"].map((unit) => (

@@ -15,6 +15,8 @@ import CreatePostPage from "./pages/CreatePostPage";
 import UserCollectionPage from "./pages/UserCollectionPage";
 import ProfileConfigurePage from "./pages/configuration/ProfileConfigurePage";
 import AboutPage from "./pages/AboutPage";
+import LearnPage from "./pages/LearnPage";
+import LearnTopicPage from "./pages/LearnTopicPage";
 import AddNewKnifeToCollectionPage from "./pages/AddNewKnifeToCollectionPage";
 import ProfileConfigurationLinksPage from "./pages/configuration/ProfileConfigurationLinksPage";
 import ProfileConfigurationDisplayNamePage from "./pages/configuration/ProfileConfigurationDisplayNamePage";
@@ -138,6 +140,8 @@ const App = () => {
           <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/product-world" element={<ProductWorldPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/learn" element={<LearnPage />} />
+          <Route path="/learn/:topic" element={<LearnTopicPage />} />
           <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />
           <Route path="/test" element={<TestPage />} />
 

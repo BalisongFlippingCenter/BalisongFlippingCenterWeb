@@ -1,11 +1,11 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAppSelector } from "../../redux/hooks";
-import { faArrowDown, faBolt } from "@fortawesome/free-solid-svg-icons";
-import { useEffect, useState } from "react";
+import { faArrowDown, faBolt, faChevronRight, faBookOpen } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import myVideo from "../../assets/HomePageVideo.mp4";
+import { axiosApiInstance } from "../../api/axios";
 
-const STAT_TARGETS = { members: 500, knives: 1200, posts: 3000 };
 const COUNT_DURATION = 1800;
 
 const HomePageIntroductorySectionComponent = () => {
@@ -14,6 +14,8 @@ const HomePageIntroductorySectionComponent = () => {
   const [cardVisible, setCardVisible] = useState(false);
   const [statsVisible, setStatsVisible] = useState(false);
   const [counts, setCounts] = useState({ members: 0, knives: 0, posts: 0 });
+  const [statsFetched, setStatsFetched] = useState(false);
+  const statTargets = useRef({ members: 0, knives: 0, posts: 0 });
 
   const user = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
@@ -22,6 +24,16 @@ const HomePageIntroductorySectionComponent = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    axiosApiInstance.get("/stats").then((res) => {
+      const members = res.data.accountCount ?? 0;
+      const knives  = res.data.knifeCount   ?? 0;
+      const posts   = res.data.postCount    ?? 0;
+      if (members > 0 || knives > 0 || posts > 0) {
+        statTargets.current = { members, knives, posts };
+        setStatsFetched(true);
+      }
+    }).catch(() => {});
 
     const videoTimer   = setTimeout(() => setVideoVisible(true),  400);
     const overlayTimer = setTimeout(() => setOverlayVisible(true), 600);
@@ -39,6 +51,7 @@ const HomePageIntroductorySectionComponent = () => {
   useEffect(() => {
     if (!statsVisible) return;
 
+    const targets = statTargets.current;
     const start = performance.now();
 
     const tick = (now: number) => {
@@ -46,9 +59,9 @@ const HomePageIntroductorySectionComponent = () => {
       const eased = 1 - Math.pow(1 - progress, 3);
 
       setCounts({
-        members: Math.floor(eased * STAT_TARGETS.members),
-        knives:  Math.floor(eased * STAT_TARGETS.knives),
-        posts:   Math.floor(eased * STAT_TARGETS.posts),
+        members: Math.floor(eased * targets.members),
+        knives:  Math.floor(eased * targets.knives),
+        posts:   Math.floor(eased * targets.posts),
       });
 
       if (progress < 1) requestAnimationFrame(tick);
@@ -133,22 +146,52 @@ const HomePageIntroductorySectionComponent = () => {
               Go to Community
             </button>
           ) : (
-            <div className="flex xsm:flex-col sm:flex-row items-center xsm:gap-3 sm:gap-6 xsm:w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => navigate("/register")}
-                className="xsm:w-full sm:w-auto px-8 py-3 bg-blue-primary text-white font-semibold text-lg rounded hover:brightness-110 transition-[filter] duration-300 animate-gentle-bounce"
-              >
-                Get Started
-              </button>
+            <div className="grid xsm:grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
 
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="xsm:w-full sm:w-auto px-8 py-3 border border-white/60 text-white font-semibold text-lg rounded hover:border-blue-primary hover:text-blue-primary hover:font-bold hover:bg-blue-primary/10 hover:-translate-y-1 transition-all duration-300"
-              >
-                Sign In
-              </button>
+              {/* Left panel — join */}
+              <div className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-4">
+                <div className="flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faBolt} className="text-blue-primary text-[10px]" />
+                  <p className="text-white/50 text-xs uppercase tracking-widest font-semibold">Ready to join?</p>
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed">
+                  Create a free account and become part of the balisong community today.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/register")}
+                  className="w-full mt-auto px-5 py-2.5 bg-blue-primary text-white font-semibold text-sm rounded-lg hover:brightness-110 transition-[filter] duration-300 animate-gentle-bounce"
+                >
+                  Get Started
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="text-white/35 hover:text-white/70 text-xs transition-colors duration-200"
+                >
+                  Already have an account? Sign in
+                </button>
+              </div>
+
+              {/* Right panel — learn */}
+              <div className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-4">
+                <div className="flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faBookOpen} className="text-blue-primary text-[10px]" />
+                  <p className="text-white/50 text-xs uppercase tracking-widest font-semibold">New to balisongs?</p>
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed">
+                  Not sure what a balisong is? Start with the basics before jumping in.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/learn")}
+                  className="w-full mt-auto flex items-center justify-center gap-2 px-5 py-2.5 border border-white/20 text-white/70 font-semibold text-sm rounded-lg hover:border-blue-primary hover:text-blue-primary hover:bg-blue-primary/10 transition-all duration-200"
+                >
+                  Learn the Basics
+                  <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
+                </button>
+              </div>
+
             </div>
           )}
 
@@ -158,26 +201,34 @@ const HomePageIntroductorySectionComponent = () => {
               statsVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
-                {counts.members.toLocaleString()}<span className="pl-[2px]">+</span>
-              </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Members</span>
-            </div>
-            <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
-                {counts.knives.toLocaleString()}<span className="pl-[2px]">+</span>
-              </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Knives</span>
-            </div>
-            <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
-                {counts.posts.toLocaleString()}<span className="pl-[2px]">+</span>
-              </span>
-              <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Posts</span>
-            </div>
+            {statsFetched ? (
+              <>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
+                    {counts.members.toLocaleString()}<span className="pl-[2px]">+</span>
+                  </span>
+                  <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Members</span>
+                </div>
+                <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
+                    {counts.knives.toLocaleString()}<span className="pl-[2px]">+</span>
+                  </span>
+                  <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Knives</span>
+                </div>
+                <div className="w-px xsm:h-8 md:h-10 short:md:h-6 bg-white/20" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white font-bold xsm:text-2xl sm:text-3xl md:text-4xl lg:text-4xl short:md:text-2xl">
+                    {counts.posts.toLocaleString()}<span className="pl-[2px]">+</span>
+                  </span>
+                  <span className="uppercase xsm:tracking-normal sm:tracking-widest xsm:text-xs sm:text-sm md:text-base short:md:text-xs text-white/60">Posts</span>
+                </div>
+              </>
+            ) : (
+              <p className="xsm:text-xs sm:text-sm text-white/50 tracking-wide text-center">
+                Growing community &nbsp;·&nbsp; Always free &nbsp;·&nbsp; Built for flippers
+              </p>
+            )}
           </div>
 
         </div>

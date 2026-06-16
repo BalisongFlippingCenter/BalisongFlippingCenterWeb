@@ -30,3 +30,23 @@ input {
 .animate-gentle-bounce {
     animation: gentleBounce 2s ease-in-out infinite;
 }
+
+/* Media fullscreen — fill screen, preserve proportions */
+.media-fs-container:fullscreen,
+.media-fs-container:-webkit-full-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw !important;
+    height: 100vh !important;
+    aspect-ratio: unset !important;
+    background: #000;
+}
+.media-fs-container:fullscreen img,
+.media-fs-container:-webkit-full-screen img,
+.media-fs-container:fullscreen video,
+.media-fs-container:-webkit-full-screen video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}

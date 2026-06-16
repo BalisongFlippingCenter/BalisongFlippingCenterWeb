@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useAppSelector } from "../../redux/hooks";
 import {
   faChevronLeft,
   faStar,
@@ -63,6 +64,8 @@ const ScoreCard = ({ label, value }: { label: string; value: number }) => (
 const CollectionKnifeDisplay = () => {
   const { account, identifier, knife } = useParams();
   const navigate = useNavigate();
+  const viewerCurrency        = useAppSelector((state) => state.auth.user?.currency);
+  const viewerMeasurementUnit = useAppSelector((state) => state.auth.user?.measurementUnit);
 
   const [collectionKnife, setCollectionKnife] = useState<CollectionKnife | null>(null);
   const [featuredKnifeId, setFeaturedKnifeId] = useState<string | null>(null);
@@ -211,13 +214,13 @@ const CollectionKnifeDisplay = () => {
                 } />
               </div>
               <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
-                <DetailRow label="MSRP" value={formatCurrency(k.msrp, undefined) || null} />
+                <DetailRow label="MSRP" value={formatCurrency(k.msrp, viewerCurrency) || null} />
               </div>
               <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
-                <DetailRow label="Weight" value={formatWeight(k.weight, undefined) || null} />
+                <DetailRow label="Weight" value={formatWeight(k.weight, viewerMeasurementUnit) || null} />
               </div>
               <div className="bg-[#13161d] border border-white/8 rounded-xl px-4 py-3">
-                <DetailRow label="Overall Length" value={formatLength(k.overallLength, undefined) || null} />
+                <DetailRow label="Overall Length" value={formatLength(k.overallLength, viewerMeasurementUnit) || null} />
               </div>
             </div>
 
