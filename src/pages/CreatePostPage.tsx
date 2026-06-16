@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
   faChevronLeft,
+  faChevronRight,
   faImage,
   faXmark,
   faChevronDown,

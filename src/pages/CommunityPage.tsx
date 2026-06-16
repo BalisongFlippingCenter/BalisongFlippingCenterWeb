@@ -68,21 +68,8 @@ const formatDate = (dateStr: string): string => {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
-const TAG_PALETTE = [
-  "bg-blue-primary/10 border-blue-primary/25 text-blue-primary",
-  "bg-green/10 border-green/25 text-green",
-  "bg-gold/10 border-gold/25 text-gold",
-  "bg-light-blue/10 border-light-blue/25 text-light-blue",
-] as const;
-
 const DOT_PALETTE  = ["bg-blue-primary", "bg-green", "bg-gold", "bg-light-blue"] as const;
 const TEXT_PALETTE = ["text-blue-primary", "text-green", "text-gold", "text-light-blue"] as const;
-
-const tagColor = (tag: string): string => {
-  let h = 0;
-  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
-  return TAG_PALETTE[h % TAG_PALETTE.length];
-};
 
 const tagDotColor = (tag: string): string => {
   let h = 0;
