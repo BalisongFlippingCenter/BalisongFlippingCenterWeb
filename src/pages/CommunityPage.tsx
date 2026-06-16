@@ -8,10 +8,12 @@ import {
   faGlobe, faEarthAmericas,
   faImage, faArrowRightArrowLeft,
   faBullhorn, faLock, faChevronLeft, faChevronRight,
-  faVolumeMute, faVolumeUp, faPlay,
+  faVolumeMute, faVolumeUp, faPlay, faExpand, faCompress,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
+import { useAppSelector } from "../redux/hooks";
+import { formatCurrency } from "../utils/unitConversions";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -49,7 +51,7 @@ const isVideoUrl = (url: string) =>
   /\.(mp4|mov|avi|webm|mkv|m4v)(\?.*)?$/i.test(url);
 
 const formatTagLabel = (tag: string) =>
-  tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  tag.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return "";
@@ -73,26 +75,61 @@ const TAG_PALETTE = [
   "bg-light-blue/10 border-light-blue/25 text-light-blue",
 ] as const;
 
+const DOT_PALETTE  = ["bg-blue-primary", "bg-green", "bg-gold", "bg-light-blue"] as const;
+const TEXT_PALETTE = ["text-blue-primary", "text-green", "text-gold", "text-light-blue"] as const;
+
 const tagColor = (tag: string): string => {
   let h = 0;
   for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
   return TAG_PALETTE[h % TAG_PALETTE.length];
 };
 
+const tagDotColor = (tag: string): string => {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return DOT_PALETTE[h % DOT_PALETTE.length];
+};
+
+const tagTextColor = (tag: string): string => {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return TEXT_PALETTE[h % TEXT_PALETTE.length];
+};
+
+const difficultyStyle = (tag: string): { pill: string; dot: string } => {
+  switch (tag.toUpperCase()) {
+    case "BEGINNER":     return { pill: "bg-green/10 border-green/20 text-green",   dot: "bg-green" };
+    case "INTERMEDIATE": return { pill: "bg-gold/10 border-gold/20 text-gold",      dot: "bg-gold" };
+    case "ADVANCED":     return { pill: "bg-red/10 border-red/20 text-red",         dot: "bg-red" };
+    case "EXPERT":       return { pill: "bg-red/15 border-red/30 text-red",         dot: "bg-red" };
+    default:             return { pill: "bg-white/5 border-white/10 text-white/50", dot: "bg-white/50" };
+  }
+};
+
 // ── Feed post card ────────────────────────────────────────────────────────────
 
 const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   const navigate = useNavigate();
+  const viewerCurrency = useAppSelector((state) => state.auth.user?.currency);
   const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
   const [mediaIndex,    setMediaIndex]    = useState(0);
   const [muted,         setMuted]         = useState(true);
   const [videoPaused,   setVideoPaused]   = useState(false);
 
-  const descRef   = useRef<HTMLParagraphElement>(null);
-  const cardRef   = useRef<HTMLDivElement>(null);
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const inViewRef = useRef(false);
+  const descRef    = useRef<HTMLParagraphElement>(null);
+  const cardRef    = useRef<HTMLDivElement>(null);
+  const videoRef   = useRef<HTMLVideoElement>(null);
+  const inViewRef  = useRef(false);
+  const touchStartX       = useRef<number | null>(null);
+  const mediaContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
 
   useEffect(() => {
     if (descRef.current) {
@@ -175,7 +212,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
     <div ref={cardRef} className={`w-full border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
 
       {/* ── Card header ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
         <button type="button" onClick={goToProfile} className="flex items-center gap-3 min-w-0 group">
           <div className="w-9 h-9 rounded-full bg-blue-primary/20 border border-blue-primary/30 flex-shrink-0 overflow-hidden flex items-center justify-center group-hover:border-blue-primary/60 transition-colors duration-200">
             {avatar
@@ -216,7 +253,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
 
       {/* ── Caption ── */}
       {post.caption?.trim() && (
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-4 pb-3">
           <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
         </div>
       )}
@@ -280,7 +317,19 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
           </div>
         );
       })() : mediaFiles.length > 0 ? (
-        <div className="relative aspect-[4/5] overflow-hidden bg-[#0d0f14]">
+        <div
+          ref={mediaContainerRef}
+          className="media-fs-container relative aspect-[4/5] overflow-hidden bg-[#0d0f14]"
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const delta = e.changedTouches[0].clientX - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(delta) < 40) return;
+            if (delta < 0) goNext(e as any);
+            else goPrev(e as any);
+          }}
+        >
 
           {/* Current media */}
           {isVid ? (
@@ -367,12 +416,24 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
             </button>
           )}
 
+          {/* Fullscreen */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              isFullscreen ? document.exitFullscreen() : mediaContainerRef.current?.requestFullscreen();
+            }}
+            className="absolute bottom-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-black/80 transition-colors duration-150"
+          >
+            <FontAwesomeIcon icon={isFullscreen ? faCompress : faExpand} className="text-white/70 text-xs" />
+          </button>
+
         </div>
       ) : null}
 
       {/* ── Buy/sell meta (only for buysell layout) ── */}
       {layout === "buysell" && (
-        <div className="px-4 pt-3 pb-0 flex flex-col gap-1.5">
+        <div className="px-4 pt-4 pb-1 flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
               post.mode === "BUYING"
@@ -385,7 +446,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
             <span className="text-white/25 text-[11px]">{post.mode === "BUYING" ? "Marketplace inquiry" : "Marketplace listing"}</span>
           </div>
           {post.mode === "SELLING" && post.price && (
-            <p className="text-white font-bold text-3xl tracking-tight">${parseFloat(post.price).toFixed(2)}</p>
+            <p className="text-white font-bold text-3xl tracking-tight">{formatCurrency(post.price, viewerCurrency)}</p>
           )}
 
         </div>
@@ -393,7 +454,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
 
       {/* ── Offering knife card (buy/sell) ── */}
       {layout === "buysell" && post.offeringKnife && (
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-4 pt-3 pb-2">
           <div
             className="flex items-center gap-0 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
             onClick={(e) => {
@@ -428,18 +489,37 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
 
       {/* ── Tags ── */}
       {displayTags.length > 0 && (
-        <div className="px-4 pt-2 pb-2 flex flex-wrap gap-1.5">
-          {displayTags.map((tag) => (
-            <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColor(tag)}`}>
-              <span className="opacity-50">#</span>{formatTagLabel(tag)}
-            </span>
-          ))}
+        <div className="px-4 pt-3 pb-3 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {layout === "tutorial" || layout === "combo" ? (
+            <>
+              {post.difficultyTag && (() => {
+                const s = difficultyStyle(post.difficultyTag);
+                return (
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold ${s.pill}`}>
+                    {formatTagLabel(post.difficultyTag)}
+                  </span>
+                );
+              })()}
+              {post.techniqueTags.map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tagDotColor(tag)}`} />
+                  {formatTagLabel(tag)}
+                </span>
+              ))}
+            </>
+          ) : (
+            post.tags.map((tag) => (
+              <span key={tag} className={`inline-flex items-center text-[11px] font-medium ${tagTextColor(tag)}`}>
+                <span className="mr-0.5">#</span>{formatTagLabel(tag)}
+              </span>
+            ))
+          )}
         </div>
       )}
 
       {/* ── Description ── */}
       {post.description?.trim() && (
-        <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
+        <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
           <p
             ref={descRef}
             className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
@@ -460,7 +540,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
 
       {/* ── Reference knife card (generic/tutorial/combo only) ── */}
       {post.referenceKnife && layout !== "buysell" && layout !== "trade" && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-4">
           <div
             className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
             onClick={(e) => {

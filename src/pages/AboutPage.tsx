@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGlobe, faEarthAmericas, faTv, faEnvelope, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faGlobe, faEarthAmericas, faTv, faEnvelope, faPaperPlane, faBookOpen, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 
 const pillars = [
@@ -29,6 +30,7 @@ const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 const MAX_LENGTH = 1000;
 
 const AboutPage = () => {
+  const navigate = useNavigate();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
@@ -80,6 +82,26 @@ const AboutPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Learn Section CTA */}
+        <button
+          type="button"
+          onClick={() => navigate("/learn")}
+          className="group w-full flex items-center gap-5 bg-[#13161d] hover:bg-[#1a1e28] border border-white/10 hover:border-blue-primary/30 rounded-2xl px-6 py-5 text-left transition-all duration-200"
+        >
+          <div className="w-11 h-11 rounded-xl bg-blue-primary/10 border border-blue-primary/20 flex items-center justify-center flex-shrink-0">
+            <FontAwesomeIcon icon={faBookOpen} className="text-blue-primary text-base" />
+          </div>
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <p className="text-white font-bold text-base group-hover:text-blue-primary transition-colors duration-200">
+              New to balisongs?
+            </p>
+            <p className="text-white/45 text-sm leading-relaxed">
+              Visit our knowledge base — from what a balisong is to how to choose your first knife, it's all covered.
+            </p>
+          </div>
+          <FontAwesomeIcon icon={faChevronRight} className="text-white/20 text-sm flex-shrink-0 group-hover:text-blue-primary transition-colors duration-200" />
+        </button>
 
         {/* Divider */}
         <div className="h-px bg-white/[0.06]" />

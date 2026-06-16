@@ -129,18 +129,29 @@ interface PostPreviewOverlayProps {
   onConfirm: () => void;
 }
 
-// ── Tag colour helper — same logic as PostPage ────────────────────────────────
-const TAG_PALETTE_PREVIEW = [
-  "bg-blue-primary/10 border-blue-primary/25 text-blue-primary",
-  "bg-green/10 border-green/25 text-green",
-  "bg-gold/10 border-gold/25 text-gold",
-  "bg-light-blue/10 border-light-blue/25 text-light-blue",
-] as const;
+// ── Tag helpers — same logic as CommunityPage / PostPage ─────────────────────
+const DOT_PALETTE_PREVIEW  = ["bg-blue-primary", "bg-green", "bg-gold", "bg-light-blue"] as const;
+const TEXT_PALETTE_PREVIEW = ["text-blue-primary", "text-green", "text-gold", "text-light-blue"] as const;
 
-const tagColorPreview = (tag: string): string => {
+const _tagHash = (tag: string) => {
   let h = 0;
   for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
-  return TAG_PALETTE_PREVIEW[h % TAG_PALETTE_PREVIEW.length];
+  return h;
+};
+const tagDotColorPreview  = (tag: string) => DOT_PALETTE_PREVIEW[_tagHash(tag) % DOT_PALETTE_PREVIEW.length];
+const tagTextColorPreview = (tag: string) => TEXT_PALETTE_PREVIEW[_tagHash(tag) % TEXT_PALETTE_PREVIEW.length];
+
+const formatTagLabelPreview = (tag: string) =>
+  tag.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const difficultyStylePreview = (tag: string): { pill: string } => {
+  switch (tag.toUpperCase()) {
+    case "BEGINNER":     return { pill: "bg-green/10 border-green/20 text-green" };
+    case "INTERMEDIATE": return { pill: "bg-gold/10 border-gold/20 text-gold" };
+    case "ADVANCED":     return { pill: "bg-red/10 border-red/20 text-red" };
+    case "EXPERT":       return { pill: "bg-red/15 border-red/30 text-red" };
+    default:             return { pill: "bg-white/5 border-white/10 text-white/50" };
+  }
 };
 
 const PostPreviewOverlay = ({
@@ -309,21 +320,39 @@ const PostPreviewOverlay = ({
                 )}
               </div>
             ) : (
-              /* Standard media grid */
-              <div className={`pb-0 grid gap-0.5 ${mediaFiles.length === 1 ? "grid-cols-1" : mediaFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-                {mediaFiles.map((file, i) => {
-                  const isVideo = file.type.startsWith("video/");
-                  const url = URL.createObjectURL(file);
-                  const aspectCls = mediaFiles.length === 1 ? "aspect-[4/3]" : "aspect-square";
-                  return (
-                    <div key={i} className={`relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
-                      {isVideo
-                        ? <video src={url} muted autoPlay playsInline loop className="w-full h-full object-cover" />
-                        : <img src={url} alt="" className="w-full h-full object-cover" />
-                      }
+              /* Standard media — carousel matching feed */
+              <div className="relative aspect-[4/5] overflow-hidden bg-[#0d0f14]">
+                {(() => {
+                  const file = mediaFiles[selectedMediaIdx] ?? mediaFiles[0];
+                  const url  = URL.createObjectURL(file);
+                  return file.type.startsWith("video/")
+                    ? <video key={selectedMediaIdx} src={url} muted autoPlay playsInline loop className="w-full h-full object-cover" />
+                    : <img key={selectedMediaIdx} src={url} alt="" className="w-full h-full object-cover" />;
+                })()}
+                {mediaFiles.length > 1 && (
+                  <>
+                    <button type="button" onClick={() => setSelectedMediaIdx(i => (i - 1 + mediaFiles.length) % mediaFiles.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
+                      <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
+                    </button>
+                    <button type="button" onClick={() => setSelectedMediaIdx(i => (i + 1) % mediaFiles.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
+                      <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
+                    </button>
+                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80 text-[11px] font-medium px-2 py-0.5 rounded-full">
+                      {selectedMediaIdx + 1} / {mediaFiles.length}
                     </div>
-                  );
-                })}
+                    {mediaFiles.length <= 6 && (
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
+                        {mediaFiles.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setSelectedMediaIdx(i)}
+                            className={`h-1.5 rounded-full transition-all duration-200 ${i === selectedMediaIdx ? "w-3 bg-white" : "w-1.5 bg-white/40"}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )
           ) : null}
@@ -376,12 +405,33 @@ const PostPreviewOverlay = ({
 
           {/* ── Tags ── */}
           {tags.length > 0 && (
-            <div className="px-4 pt-3 pb-0 flex flex-wrap gap-1.5">
-              {tags.map((tag) => (
-                <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${tagColorPreview(tag)}`}>
-                  <span className="opacity-50">#</span>{tag}
-                </span>
-              ))}
+            <div className="px-4 pt-3 pb-0 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              {layout === "tutorial" || layout === "combo" ? (
+                <>
+                  {(() => {
+                    const diffTag = tags.find((t) => getTrickTagGroup(t) === "Difficulty");
+                    if (!diffTag) return null;
+                    const s = difficultyStylePreview(diffTag);
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold flex-shrink-0 ${s.pill}`}>
+                        {formatTagLabelPreview(diffTag)}
+                      </span>
+                    );
+                  })()}
+                  {tags.filter((t) => getTrickTagGroup(t) === "Technique").map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50 flex-shrink-0">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tagDotColorPreview(tag)}`} />
+                      {formatTagLabelPreview(tag)}
+                    </span>
+                  ))}
+                </>
+              ) : (
+                tags.map((tag) => (
+                  <span key={tag} className={`inline-flex items-center text-[11px] font-medium flex-shrink-0 ${tagTextColorPreview(tag)}`}>
+                    <span className="mr-0.5">#</span>{formatTagLabelPreview(tag)}
+                  </span>
+                ))
+              )}
             </div>
           )}
 
@@ -614,7 +664,12 @@ const CreatePostPage = () => {
       selectedFiles.forEach((f) => fd.append("mediaFiles", f));
       if (buySellTag === "Selling") {
         if (sellingKnifeId) fd.append("offeringKnifeId", sellingKnifeId);
-        if (price.trim()) fd.append("price", price.trim());
+        if (price.trim()) {
+          const priceUsd = currency === "EUR"
+            ? (parseFloat(price) / 0.92).toFixed(2)
+            : parseFloat(price).toFixed(2);
+          fd.append("price", priceUsd);
+        }
       }
     }
 

@@ -9,6 +9,7 @@ import HomePageCommunitySectionComponent from "../components/homePageComponents/
 import HomePageProductWorldSectionComponent from "../components/homePageComponents/HomePageProductWorldSectionComponent";
 import HomePageTutorialCenterSectionComponent from "../components/homePageComponents/HomePageTutorialCenterSectionComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBookOpen, faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { useNavigate } from "react-router-dom";
 
@@ -40,36 +41,71 @@ const HomePage = () => {
           <HomePageTutorialCenterSectionComponent />
         </div>
 
-        {/* Discord CTA Section */}
-        <section className="w-full px-6 py-24 flex flex-col items-center gap-8 text-center" style={{ backgroundColor: '#0a0c10', position: 'relative', zIndex: 1 }}>
-          <div className="w-16 h-16 rounded-2xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center">
-            <FontAwesomeIcon icon={faDiscord} className="text-[#5865F2] text-3xl" />
-          </div>
+        {/* Closing CTA Section */}
+        <section className="w-full px-6 py-24 flex flex-col items-center gap-10 text-center" style={{ backgroundColor: '#0a0c10', position: 'relative', zIndex: 1 }}>
+
+          {/* Heading */}
           <div className="flex flex-col gap-3 max-w-lg">
             <h2 className="text-white font-black text-3xl sm:text-4xl leading-tight">
-              Join the Community on Discord
+              What's your next step?
             </h2>
             <p className="text-white/50 text-base leading-relaxed">
-              Connect with flippers, share your collection, ask questions, and stay up to date with everything happening in the balisong world.
+              Whether you're ready to join, want to connect with the community, or are just starting to explore — there's a place for you here.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3">
+
+          {/* Three action cards */}
+          <div className="grid xsm:grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+
+            {/* Discord */}
             <a
               href={DISCORD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2.5 px-7 py-3.5 bg-[#5865F2] text-white text-sm font-semibold rounded-xl hover:bg-[#5865F2]/80 transition-colors duration-200"
+              className="group flex flex-col items-center gap-3 bg-[#13161d] hover:bg-[#1a1e28] border border-white/10 hover:border-[#5865F2]/40 rounded-2xl px-5 py-6 transition-all duration-200"
             >
-              <FontAwesomeIcon icon={faDiscord} className="text-base" />
-              Join our Discord
+              <div className="w-11 h-11 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/25 flex items-center justify-center">
+                <FontAwesomeIcon icon={faDiscord} className="text-[#5865F2] text-lg" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-white font-bold text-sm group-hover:text-[#5865F2] transition-colors duration-200">Join our Discord</p>
+                <p className="text-white/40 text-xs leading-relaxed">Connect with the community in real time</p>
+              </div>
+              <FontAwesomeIcon icon={faChevronRight} className="text-white/15 text-xs mt-auto group-hover:text-[#5865F2] transition-colors duration-200" />
             </a>
+
+            {/* Learn */}
+            <button
+              type="button"
+              onClick={() => navigate("/learn")}
+              className="group flex flex-col items-center gap-3 bg-[#13161d] hover:bg-[#1a1e28] border border-white/10 hover:border-blue-primary/40 rounded-2xl px-5 py-6 transition-all duration-200"
+            >
+              <div className="w-11 h-11 rounded-xl bg-blue-primary/10 border border-blue-primary/25 flex items-center justify-center">
+                <FontAwesomeIcon icon={faBookOpen} className="text-blue-primary text-lg" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-white font-bold text-sm group-hover:text-blue-primary transition-colors duration-200">Learn the Basics</p>
+                <p className="text-white/40 text-xs leading-relaxed">New to balisongs? Start with the fundamentals</p>
+              </div>
+              <FontAwesomeIcon icon={faChevronRight} className="text-white/15 text-xs mt-auto group-hover:text-blue-primary transition-colors duration-200" />
+            </button>
+
+            {/* About */}
             <button
               type="button"
               onClick={() => navigate("/about")}
-              className="px-7 py-3.5 rounded-xl border border-white/25 text-white/60 text-sm font-semibold hover:text-white hover:border-white/50 transition-colors duration-200"
+              className="group flex flex-col items-center gap-3 bg-[#13161d] hover:bg-[#1a1e28] border border-white/10 hover:border-white/25 rounded-2xl px-5 py-6 transition-all duration-200"
             >
-              Learn more about us
+              <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <FontAwesomeIcon icon={faInfo} className="text-white/50 text-lg" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-white font-bold text-sm group-hover:text-white/80 transition-colors duration-200">About the Project</p>
+                <p className="text-white/40 text-xs leading-relaxed">Learn what Balisong Flipping Center is all about</p>
+              </div>
+              <FontAwesomeIcon icon={faChevronRight} className="text-white/15 text-xs mt-auto group-hover:text-white/40 transition-colors duration-200" />
             </button>
+
           </div>
         </section>
 
