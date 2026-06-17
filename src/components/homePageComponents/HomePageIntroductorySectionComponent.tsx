@@ -71,7 +71,7 @@ const HomePageIntroductorySectionComponent = () => {
   }, [statsVisible]);
 
   return (
-    <section className="relative w-full h-svh text-white overflow-hidden flex flex-col bg-dark-neutral">
+    <section className="relative w-full xsm:min-h-svh sm:h-svh text-white overflow-x-hidden flex flex-col bg-dark-neutral">
 
       {/* Full-bleed video background */}
       <video
@@ -80,7 +80,7 @@ const HomePageIntroductorySectionComponent = () => {
         autoPlay
         loop
         playsInline
-        className={`absolute inset-0 w-full h-full object-cover z-0 transition-all duration-[1200ms] ease-in-out ${
+        className={`absolute inset-0 w-full h-full min-h-full object-cover z-0 transition-all duration-[1200ms] ease-in-out ${
           videoVisible ? "opacity-100 scale-100" : "opacity-0 scale-50"
         }`}
       />

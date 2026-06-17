@@ -124,13 +124,16 @@ export interface PostKnifeRef {
 
 const normalizeKnifeRef = (raw: any): PostKnifeRef | null => {
   if (!raw) return null;
-  return {
+  const ref: PostKnifeRef = {
     id:             raw.id            ?? null,
     displayName:    raw.displayName   ?? raw.name         ?? "",
     knifeMaker:     raw.knifeMaker    ?? raw.maker        ?? raw.brand       ?? "",
     baseKnifeModel: raw.baseKnifeModel ?? raw.model       ?? raw.baseModel   ?? null,
     coverPhoto:     raw.coverPhoto    ?? raw.coverPhotoUrl ?? raw.imageUrl   ?? raw.photo ?? raw.thumbnailUrl ?? null,
   };
+  // Treat an effectively empty object (no id, no name) as absent
+  if (!ref.id && !ref.displayName) return null;
+  return ref;
 };
 
 // ── Full post detail (for the post page) ─────────────────────────────────────
@@ -194,7 +197,11 @@ export const mapPostDetail = (data: any): PostDetail => {
     lookingForImageUrl:    p.lookingForImageUrl   ?? p.lookingForImage ?? p.lookingForImg ?? null,
     difficultyTag:         p.difficultyTag        ?? null,
     techniqueTags:         p.techniqueTags        ?? [],
-    referenceKnife:        normalizeKnifeRef(p.referenceKnife ?? p.taggedKnife ?? null),
+    referenceKnife:        normalizeKnifeRef(
+                             data.referenceKnife   ?? data.taggedKnife      ?? data.collectionKnife ??
+                             p.referenceKnife      ?? p.taggedKnife         ?? p.collectionKnife    ??
+                             p.referencedKnife     ?? p.linkedKnife         ?? p.knife              ?? null
+                           ),
     isPrivate:             p.isPrivate            ?? false,
     isAnnouncement:        p.isAnnouncement       ?? false,
   };

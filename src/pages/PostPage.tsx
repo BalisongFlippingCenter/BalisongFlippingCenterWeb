@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
-  faChevronLeft,
+  faChevronLeft, faChevronRight,
   faImage,
   faArrowRightArrowLeft,
   faHeart,
@@ -211,6 +212,14 @@ const PostPage = () => {
   const [descOverflows, setDescOverflows] = useState(false);
   const [muted,            setMuted]            = useState(true);
   const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
+  const [slideDir,         setSlideDir]         = useState(1);
+
+  const selectMedia = (idx: number) => {
+    setSlideDir(idx > selectedMediaIdx ? 1 : -1);
+    setSelectedMediaIdx(idx);
+  };
+  const goPrev = () => selectMedia((selectedMediaIdx - 1 + (post?.mediaFiles.length ?? 1)) % (post?.mediaFiles.length ?? 1));
+  const goNext = () => selectMedia((selectedMediaIdx + 1) % (post?.mediaFiles.length ?? 1));
 
   const descRef = useRef<HTMLParagraphElement>(null);
 
@@ -336,7 +345,7 @@ const PostPage = () => {
                 }
               </div>
               <div className="flex flex-col items-start gap-0.5 min-w-0">
-                <div className="flex items-baseline gap-1.5 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
                   {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
                 </div>
@@ -439,24 +448,37 @@ const PostPage = () => {
             layout === "buysell" ? (
               /* Buy/sell: hero + thumbnail strip */
               <div className="flex flex-col gap-0">
-                {/* Hero */}
-                {(() => {
-                  const heroUrl = post.mediaFiles[selectedMediaIdx] ?? post.mediaFiles[0];
-                  const isVid = isVideoUrl(heroUrl);
-                  return isVid ? (
-                    <VideoCell
+                {/* Hero with slide animation */}
+                <div className="relative overflow-hidden bg-[#0d0f14] aspect-video">
+                  <AnimatePresence initial={false} custom={slideDir}>
+                    <motion.div
                       key={selectedMediaIdx}
-                      url={heroUrl}
-                      muted={muted}
-                      aspectCls="aspect-video"
-                      onMuteToggle={() => setMuted(m => !m)}
-                    />
-                  ) : (
-                    <div className="relative overflow-hidden bg-[#0d0f14] aspect-video">
-                      <img src={heroUrl} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  );
-                })()}
+                      custom={slideDir}
+                      variants={{
+                        enter:  (dir: number) => ({ x: dir > 0 ? "100%" : "-100%" }),
+                        center: { x: 0 },
+                        exit:   (dir: number) => ({ x: dir > 0 ? "-100%" : "100%" }),
+                      }}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
+                      className="absolute inset-0"
+                    >
+                      {isVideoUrl(post.mediaFiles[selectedMediaIdx] ?? post.mediaFiles[0]) ? (
+                        <VideoCell
+                          key={selectedMediaIdx}
+                          url={post.mediaFiles[selectedMediaIdx] ?? post.mediaFiles[0]}
+                          muted={muted}
+                          aspectCls="aspect-video"
+                          onMuteToggle={() => setMuted(m => !m)}
+                        />
+                      ) : (
+                        <img src={post.mediaFiles[selectedMediaIdx] ?? post.mediaFiles[0]} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
                 {/* Thumbnail strip — only when > 1 file */}
                 {post.mediaFiles.length > 1 && (
                   <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/5 mt-0">
@@ -467,7 +489,7 @@ const PostPage = () => {
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setSelectedMediaIdx(i)}
+                          onClick={() => selectMedia(i)}
                           className={`relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#0d0f14] border-2 transition-all duration-150 ${
                             active ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
                           }`}
@@ -483,29 +505,89 @@ const PostPage = () => {
                   </div>
                 )}
               </div>
+            ) : post.mediaFiles.length === 1 ? (
+              /* Single file — full-width */
+              isVideoUrl(post.mediaFiles[0]) ? (
+                <VideoCell url={post.mediaFiles[0]} muted={muted} aspectCls="aspect-[4/5]" onMuteToggle={() => setMuted(m => !m)} />
+              ) : (
+                <ImageCell url={post.mediaFiles[0]} aspectCls="aspect-[4/5]" />
+              )
             ) : (
-              /* Standard media grid — full-width, no horizontal padding */
-              <div className={`pb-0 grid gap-0.5 ${
-                post.mediaFiles.length === 1 ? "grid-cols-1"
-                : post.mediaFiles.length === 2 ? "grid-cols-2"
-                : "grid-cols-3"
-              }`}>
-                {post.mediaFiles.map((url, i) => {
-                  const isVid = isVideoUrl(url);
-                  const aspectCls = post.mediaFiles.length === 1 ? "aspect-[4/5]" : "aspect-square";
-                  if (isVid) {
+              /* Multiple files — hero + thumbnail strip */
+              <div className="flex flex-col gap-0">
+                {/* Hero with slide animation */}
+                <div className="relative aspect-[4/5] overflow-hidden bg-[#0d0f14]">
+                  <AnimatePresence initial={false} custom={slideDir}>
+                    <motion.div
+                      key={selectedMediaIdx}
+                      custom={slideDir}
+                      variants={{
+                        enter:  (dir: number) => ({ x: dir > 0 ? "100%" : "-100%" }),
+                        center: { x: 0 },
+                        exit:   (dir: number) => ({ x: dir > 0 ? "-100%" : "100%" }),
+                      }}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
+                      className="absolute inset-0"
+                    >
+                      {isVideoUrl(post.mediaFiles[selectedMediaIdx]) ? (
+                        <VideoCell
+                          key={selectedMediaIdx}
+                          url={post.mediaFiles[selectedMediaIdx]}
+                          muted={muted}
+                          aspectCls="aspect-[4/5]"
+                          onMuteToggle={() => setMuted(m => !m)}
+                        />
+                      ) : (
+                        <img src={post.mediaFiles[selectedMediaIdx]} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                  {/* Prev / Next arrows */}
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
+                  </button>
+                  {/* Counter */}
+                  <div className="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-sm text-white/80 text-[11px] font-medium px-2 py-0.5 rounded-full">
+                    {selectedMediaIdx + 1} / {post.mediaFiles.length}
+                  </div>
+                </div>
+                {/* Thumbnail strip */}
+                <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/5">
+                  {post.mediaFiles.map((url, i) => {
+                    const isVid = isVideoUrl(url);
+                    const active = i === selectedMediaIdx;
                     return (
-                      <VideoCell
+                      <button
                         key={i}
-                        url={url}
-                        muted={muted}
-                        aspectCls={aspectCls}
-                        onMuteToggle={() => setMuted(m => !m)}
-                      />
+                        type="button"
+                        onClick={() => selectMedia(i)}
+                        className={`relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#0d0f14] border-2 transition-all duration-150 ${
+                          active ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+                        }`}
+                      >
+                        {isVid ? (
+                          <video src={url} muted playsInline className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                        )}
+                      </button>
                     );
-                  }
-                  return <ImageCell key={i} url={url} aspectCls={aspectCls} />;
-                })}
+                  })}
+                </div>
               </div>
             )
           ) : null}

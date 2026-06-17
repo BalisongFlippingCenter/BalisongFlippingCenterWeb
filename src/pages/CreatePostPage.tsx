@@ -198,7 +198,8 @@ const PostPreviewOverlay = ({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div className="px-4 pt-6 pb-32 flex flex-col gap-4">
 
         {/* Post card */}
         <div className="w-full max-w-[600px] mx-auto bg-[#13161d] border border-white/10 rounded-2xl overflow-hidden">
@@ -406,7 +407,7 @@ const PostPreviewOverlay = ({
 
           {/* ── Tags ── */}
           {tags.length > 0 && (
-            <div className="px-4 pt-3 pb-0 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="px-4 pt-2 pb-2 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {layout === "tutorial" || layout === "combo" ? (
                 <>
                   {(() => {
@@ -459,7 +460,7 @@ const PostPreviewOverlay = ({
 
           {/* ── Reference knife card (generic/tutorial/combo) ── */}
           {taggedKnife && layout !== "buysell" && layout !== "trade" && (
-            <div className="px-4 pb-3">
+            <div className="px-4 pt-1 pb-4">
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
                 {taggedKnife.coverPhoto ? (
                   <img src={taggedKnife.coverPhoto} alt={taggedKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
@@ -497,10 +498,11 @@ const PostPreviewOverlay = ({
 
         {error && <p className="text-red text-sm font-medium text-center">{error}</p>}
 
+        </div>
       </div>
 
       {/* Bottom action bar */}
-      <div className="px-4 pb-8 pt-4 border-t border-white/[0.06] flex gap-3 flex-shrink-0">
+      <div className="px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom,2rem))] border-t border-white/[0.06] flex gap-3 flex-shrink-0">
         <button
           type="button"
           onClick={onEdit}
