@@ -122,6 +122,19 @@ Also claude needs to remember that alot of the functionality will need to be imp
 - **Login/refresh response missing profile fields** — `/auth/login` and `/auth/refresh-token-login` do not return all `Profile` fields (`profileCaption`, `profileImg`, social links, etc.) in the account object. This causes saved values to appear empty after logout/login. Needs to be fixed on the backend so the full account is returned on every auth response.
 - **Post response missing embedded knife reference** — `/posts/any` (and likely `/posts/:id`) returns only `referenceKnifeId` (an integer) inside the post object instead of a full embedded knife object. The frontend needs `displayName`, `knifeMaker`, `baseKnifeModel`, and `coverPhoto` to render the referenced knife card on the feed and post page. The backend needs to join and embed the full `CollectionKnife` data in every post response, the same way it already embeds the `author` object. Until fixed, referenced knives will not display on any post. The frontend mapping in `Post.ts` (`mapPostDetail`) already handles the embedded object shape via `normalizeKnifeRef` — no frontend change needed once the backend sends the data.
 
+## Product World & Tutorial Center — Design Notes
+
+### `/learn` page entry point
+When building out the **Product World** and **Tutorial Center** pages, include a small, unobtrusive link or card pointing logged-in users to the `/learn` page. These two areas are the primary support zones for new hobbyists, making them the natural discovery point for the learn page rather than cluttering the header nav or bottom nav. Something subtle — e.g. a "New to balisongs? Start here →" callout card near the top of each page — is the intended pattern.
+
+### Video upload strategy
+Native video uploads are capped at **90 seconds / ~150–200MB per file** — enough for trick clips, combo runs, and short show-off content. For longer tutorial content (full breakdowns, YouTube-length tutorials), the platform supports **YouTube URL embeds** rather than direct uploads. This keeps storage and infrastructure costs manageable while still surfacing long-form tutorial content in the community.
+
+- **Short native clips** (trick combos, show-offs, buy/sell footage) → direct upload, enforced duration/size cap
+- **Long tutorials** → YouTube embed via URL, video lives on YouTube's infrastructure
+- The Tutorial Center post type should support a `youtubeUrl` field on the backend alongside the existing `mediaFiles` field. The frontend should render an embedded YouTube player when this field is present.
+- This approach benefits creators too — their tutorials drive YouTube engagement while also reaching the balisong community on this platform.
+
 ## Future Implementation
 
 - **Registration verify redirect** — `UserRegistrationForm.tsx` line 94 hardcodes `navigate("/register/verify/tzenisekj@gmail.com")` after successful registration. This needs to be updated to use the `email` state variable: `navigate(\`/register/verify/${email.trim()}\`)` once the email verification flow is built out.

@@ -147,7 +147,7 @@ const ReportButton = () => {
 
 const MainLayout = () => {
   const { pathname } = useLocation();
-  const showFooter = FOOTER_ROUTES.includes(pathname);
+  const showFooter = FOOTER_ROUTES.includes(pathname) || pathname.startsWith("/learn");
 
   return (
     <>
