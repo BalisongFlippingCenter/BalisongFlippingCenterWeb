@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -101,6 +102,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
   const [mediaIndex,    setMediaIndex]    = useState(0);
+  const [slideDir,      setSlideDir]      = useState(1);
   const [muted,         setMuted]         = useState(true);
   const [videoPaused,   setVideoPaused]   = useState(false);
 
@@ -109,6 +111,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const inViewRef  = useRef(false);
   const touchStartX       = useRef<number | null>(null);
+  const touchStartY       = useRef<number | null>(null);
   const mediaContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -180,18 +183,21 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   const goPrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     videoRef.current?.pause();
+    setSlideDir(-1);
     setMediaIndex(i => (i - 1 + mediaFiles.length) % mediaFiles.length);
   };
 
   const goNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     videoRef.current?.pause();
+    setSlideDir(1);
     setMediaIndex(i => (i + 1) % mediaFiles.length);
   };
 
   const goTo = (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
     videoRef.current?.pause();
+    setSlideDir(idx > mediaIndex ? 1 : -1);
     setMediaIndex(idx);
   };
 
@@ -208,7 +214,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
             }
           </div>
           <div className="flex flex-col items-start gap-0.5 min-w-0">
-            <div className="flex items-baseline gap-1.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
               {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
             </div>
@@ -307,51 +313,84 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
         <div
           ref={mediaContainerRef}
           className="media-fs-container relative aspect-[4/5] overflow-hidden bg-[#0d0f14]"
-          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+            touchStartY.current = e.touches[0].clientY;
+          }}
           onTouchEnd={(e) => {
-            if (touchStartX.current === null) return;
-            const delta = e.changedTouches[0].clientX - touchStartX.current;
+            if (touchStartX.current === null || touchStartY.current === null) return;
+            const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+            const deltaY = e.changedTouches[0].clientY - touchStartY.current;
             touchStartX.current = null;
-            if (Math.abs(delta) < 40) return;
-            if (delta < 0) goNext(e as any);
+            touchStartY.current = null;
+            if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+            if (Math.abs(deltaX) < 60) return;
+            if (deltaX < 0) goNext(e as any);
             else goPrev(e as any);
           }}
         >
 
-          {/* Current media */}
-          {isVid ? (
-            <>
-              <video
-                key={currentUrl}
-                ref={videoRef}
-                src={currentUrl}
-                muted={muted}
-                playsInline
-                loop
-                className="w-full h-full object-cover"
-                onPlay={() => setVideoPaused(false)}
-                onPause={() => setVideoPaused(true)}
-              />
-              {/* Click-to-pause overlay */}
-              <div
-                className="absolute inset-0 z-10 flex items-center justify-center cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const v = videoRef.current;
-                  if (!v) return;
-                  v.paused ? v.play().catch(() => {}) : v.pause();
-                }}
-              >
-                {videoPaused && (
-                  <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                    <FontAwesomeIcon icon={faPlay} className="text-white text-base pl-0.5" />
+          {/* Current media — slides in/out on index change */}
+          <AnimatePresence initial={false} custom={slideDir}>
+            <motion.div
+              key={currentUrl}
+              custom={slideDir}
+              variants={{
+                enter:  (dir: number) => ({ x: dir > 0 ? "100%" : "-100%" }),
+                center: { x: 0 },
+                exit:   (dir: number) => ({ x: dir > 0 ? "-100%" : "100%" }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.22, ease: "easeInOut" }}
+              className="absolute inset-0"
+            >
+              {isVid ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={currentUrl}
+                    muted={muted}
+                    playsInline
+                    loop
+                    className="w-full h-full object-cover"
+                    onPlay={() => setVideoPaused(false)}
+                    onPause={() => setVideoPaused(true)}
+                  />
+                  {/* Click-to-pause overlay */}
+                  <div
+                    className="absolute inset-0 z-10 flex items-center justify-center cursor-pointer"
+                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY; }}
+                    onTouchEnd={(e) => {
+                      const ox = touchStartX.current ?? e.changedTouches[0].clientX;
+                      const oy = touchStartY.current ?? e.changedTouches[0].clientY;
+                      const moved = Math.hypot(e.changedTouches[0].clientX - ox, e.changedTouches[0].clientY - oy);
+                      if (moved > 10) return;
+                      e.stopPropagation();
+                      const v = videoRef.current;
+                      if (!v) return;
+                      v.paused ? v.play().catch(() => {}) : v.pause();
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const v = videoRef.current;
+                      if (!v) return;
+                      v.paused ? v.play().catch(() => {}) : v.pause();
+                    }}
+                  >
+                    {videoPaused && (
+                      <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <FontAwesomeIcon icon={faPlay} className="text-white text-base pl-0.5" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <img src={currentUrl} alt="" className="w-full h-full object-cover" />
-          )}
+                </>
+              ) : (
+                <img src={currentUrl} alt="" className="w-full h-full object-cover" />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           {/* Nav arrows + counter + dots */}
           {mediaFiles.length > 1 && (
