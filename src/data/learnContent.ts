@@ -1,13 +1,46 @@
+export interface StatusListItem {
+  name: string;
+  status: "legal" | "restricted" | "illegal";
+  note: string;
+}
+
+export interface KnifeRecommendation {
+  make: string;
+  model: string;
+  msrp: string;
+  material: string;
+  description: string;
+  url: string;
+}
+
+export interface TieredListItem {
+  range: string;
+  description: string;
+  knives: KnifeRecommendation[];
+}
+
 export interface LearnSection {
   heading?: string;
-  type: "paragraph" | "list";
-  body: string | string[];
+  type: "paragraph" | "list" | "status-list" | "callout" | "tiered-list";
+  body: string | string[] | StatusListItem[] | TieredListItem[];
+  media?: LearnMedia;
+  variant?: "warning" | "info";
+  links?: { label: string; href: string }[];
+}
+
+export interface LearnMedia {
+  type: "video" | "image";
+  src: string;
+  caption?: string;
 }
 
 export interface LearnTopic {
   slug: string;
   title: string;
   subtitle: string;
+  media?: LearnMedia;
+  showCommunityFeed?: boolean;
+  ctaVariant?: "community" | "product-world";
   sections: LearnSection[];
 }
 
@@ -16,6 +49,11 @@ export const LEARN_TOPICS: LearnTopic[] = [
     slug: "what-is-a-balisong",
     title: "What is a Balisong?",
     subtitle: "An introduction to the butterfly knife — its origins, design, and why people flip them.",
+    media: {
+      type: "video",
+      src: "", // drop video URL or import path here when available
+    },
+    showCommunityFeed: true,
     sections: [
       {
         type: "paragraph",
@@ -27,14 +65,19 @@ export const LEARN_TOPICS: LearnTopic[] = [
         body: "The balisong originates from the Philippines, where it has been a part of the culture for centuries. The name comes from Tagalog — 'bali' meaning broken and 'sung' meaning horn, a reference to the early handles carved from animal horn. The Batangas region of the Philippines is historically the center of balisong production, and the knife remains a symbol of Filipino craftsmanship.",
       },
       {
-        heading: "The Hobby",
-        type: "paragraph",
-        body: "In modern times, balisong flipping has grown into a dedicated global hobby. Flippers develop skill in manipulating the knife through tricks and combos — opening and closing the knife in fluid, creative sequences. The community spans beginners learning their first rollover to seasoned flippers developing original trick combinations and competing on a world stage.",
-      },
-      {
         heading: "Trainers vs Live Blades",
         type: "paragraph",
         body: "Balisongs come in two main forms: trainers and live blades. A trainer has a dull, unsharpened blade — ideal for learning tricks safely. A live blade is a sharpened, functional knife. Most people in the hobby recommend starting with a trainer before moving to a live blade.",
+        media: {
+          type: "image",
+          src: "", // drop trainer vs live blade comparison image URL here
+          caption: "Left: trainer balisong (dull blade). Right: live blade balisong (sharpened).",
+        },
+      },
+      {
+        heading: "The Hobby",
+        type: "paragraph",
+        body: "In modern times, balisong flipping has grown into a dedicated global hobby. Flippers develop skill in manipulating the knife through tricks and combos — opening and closing the knife in fluid, creative sequences. The community spans beginners learning their first rollover to seasoned flippers developing original trick combinations and competing on a world stage.",
       },
       {
         heading: "Why People Flip",
@@ -53,26 +96,38 @@ export const LEARN_TOPICS: LearnTopic[] = [
     slug: "balisong-legality",
     title: "Balisong Legality",
     subtitle: "Laws around balisongs vary widely by location. Know your local laws before you buy or carry.",
+    ctaVariant: "product-world",
     sections: [
       {
+        type: "callout",
+        variant: "info",
+        body: "Laws around balisongs change frequently and vary significantly by country, state, and city. The information below is a general reference only — always verify current regulations in your specific location before purchasing or carrying a balisong.",
+      },
+      {
         type: "paragraph",
-        body: "Balisong legality is one of the most important things to understand before buying or carrying one. Laws vary significantly by country, state, and even city. The information below is a general reference — always verify your local laws before purchasing or carrying a balisong.",
+        body: "Balisong legality is one of the most important things to understand before buying or carrying one. Laws vary significantly by country, state, and even city — and the consequences of getting it wrong can be serious.",
       },
       {
         heading: "United States",
-        type: "paragraph",
-        body: "In the United States, balisong laws vary by state. Many states treat the balisong as a standard folding knife with no additional restrictions. However, some states have specific laws targeting butterfly knives. Key states with restrictions include California (balisongs with blades over 2 inches are illegal to carry concealed), Hawaii (illegal to own or carry), and New York City (heavily restricted). Some states are completely permissive. Always check your state and local municipality.",
+        type: "list",
+        body: [
+          "Most states treat balisongs as standard folding knives with no additional restrictions",
+          "California — Illegal to carry concealed with a blade over 2 inches",
+          "Hawaii — Illegal to own or carry",
+          "New York City — Heavily restricted; treated similarly to a prohibited weapon",
+          "Always check both your state law and local municipal ordinances — city laws sometimes differ from state law",
+        ],
       },
       {
         heading: "Outside the United States",
-        type: "list",
+        type: "status-list",
         body: [
-          "United Kingdom — Balisongs are illegal to carry in public and classified as a prohibited weapon",
-          "Germany — Balisongs are generally prohibited under weapon laws",
-          "Canada — Legal to own but illegal to carry concealed in many provinces",
-          "Australia — Varies by state; generally restricted or prohibited",
-          "Philippines — Legal, as it is the country of origin",
-          "Most of the EU — Heavily restricted or outright banned",
+          { name: "Philippines", status: "legal", note: "Country of origin — legal to own and carry" },
+          { name: "Canada", status: "restricted", note: "Legal to own but illegal to carry concealed in many provinces" },
+          { name: "Australia", status: "restricted", note: "Varies by state; generally restricted or prohibited" },
+          { name: "United Kingdom", status: "illegal", note: "Classified as a prohibited weapon; illegal to carry in public" },
+          { name: "Germany", status: "illegal", note: "Generally prohibited under weapon laws" },
+          { name: "Most of the EU", status: "illegal", note: "Heavily restricted or outright banned in most member states" },
         ],
       },
       {
@@ -82,8 +137,108 @@ export const LEARN_TOPICS: LearnTopic[] = [
       },
       {
         heading: "Our Platform and Legality",
+        type: "callout",
+        variant: "warning",
+        body: "Balisong Flipping Center is a community platform. Users are solely responsible for ensuring their activity complies with the laws in their jurisdiction. Any buy/sell or trade activity occurs off-platform — we are not a party to any transaction and assume no responsibility for what is bought, sold, or carried.",
+        links: [
+          { label: "Terms of Service", href: "/terms" },
+          { label: "Privacy Policy", href: "/privacy" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "how-to-choose-your-first-balisong",
+    title: "How to Choose Your First Balisong",
+    subtitle: "A practical guide to picking the right first knife without overspending or making a mistake you'll regret.",
+    showCommunityFeed: true,
+    ctaVariant: "product-world",
+    sections: [
+      {
         type: "paragraph",
-        body: "Balisong Flipping Center is a community platform, and users are solely responsible for ensuring their activity complies with the laws in their jurisdiction. Any buy/sell or trade activity on this platform occurs off-platform — we are not a party to any transaction and are not responsible for what is bought, sold, or carried. See our Terms of Service for full details.",
+        body: "Choosing your first balisong can be overwhelming — there are hundreds of options at every price point. This guide cuts through the noise and gives you a practical framework for making a good first choice.",
+      },
+      {
+        heading: "Start With a Trainer",
+        type: "paragraph",
+        body: "If you are new to flipping, start with a trainer. A trainer balisong has a dull, unsharpened blade and allows you to learn tricks without the risk of cutting yourself. The learning curve for balisong flipping involves a lot of fumbled catches — doing that with a live blade is a fast way to end up injured. Most trainers flip identically to their live blade counterparts.",
+      },
+      {
+        heading: "What to Look For",
+        type: "list",
+        body: [
+          "Handle-biased over blade-biased — more handle weight makes beginner rollover tricks significantly easier to learn",
+          "Read community reviews — Reddit and YouTube have honest feedback on most popular knives before you buy",
+          "Zen pins or tang pins — either works at the beginner level, don't overthink it",
+          "Stick to known brands — Squid Industries, LDY, and Nablis are reliable starting points that won't break the bank",
+          "Check parts availability — can you get replacement pivots or tune it if needed?",
+        ],
+      },
+      {
+        heading: "Things to Avoid",
+        type: "list",
+        body: [
+          "Generic Amazon knockoffs under $20 — Poor tolerances, dangerous blade play, will break quickly",
+          "Spending $300+ on your first knife — You will drop it, scratch it, and possibly not stick with the hobby",
+          "Buying a live blade before you can safely catch a trainer",
+          "Ignoring the laws in your area",
+        ],
+      },
+      {
+        type: "callout",
+        variant: "info",
+        body: "Availability and pricing change over time. If a link is broken or a knife is out of stock, search by make and model to find current listings.",
+      },
+      {
+        heading: "Budget",
+        type: "tiered-list",
+        body: [
+          {
+            range: "$50+",
+            description: "Entry-level trainers. Good enough to learn the fundamentals without a large upfront investment.",
+            knives: [
+              { make: "Nabalis", model: "Cheese", msrp: "~$55", material: "7075 Aluminum", description: "Lightweight and beginner-friendly with a good out-of-box tune.", url: "https://nabalis.com/products/cheese-the-first-cute-harmless-and-public-friendly-metal-trainer" },
+              { make: "Nabalis", model: "Canyon", msrp: "~$45", material: "420 Stainless Steel", description: "Heavier steel build with excellent tolerances for the price.", url: "https://nabalis.com/products/nabalis-canyon-ss-balisong-butterfly-knife-trainer" },
+              { make: "LDY", model: "Orion V2", msrp: "~$85", material: "7075 Aluminum", description: "Feels like a $200+ knife — smooth, neutral balance, exceptional value.", url: "https://ldybalisong.net/products/orion-v2-trainer" },
+              { make: "Squid Industries", model: "Squiddy WH", msrp: "~$80", material: "Acetal (polymer)", description: "Quiet polymer trainer, ideal for public flipping or noise-sensitive environments.", url: "https://www.squidindustries.co/products/squiddy-wh" },
+              { make: "Squid Industries", model: "Squiddy AL", msrp: "~$85", material: "6061 Aluminum", description: "Metal Squiddy with adjustable eye weights for tuning the balance profile.", url: "https://www.squidindustries.co/products/squiddy-al" },
+            ],
+          },
+          {
+            range: "$100+",
+            description: "Mid-range. Noticeably better build quality and a more satisfying flip. The sweet spot for most beginners.",
+            knives: [
+              { make: "Nabalis", model: "Vulp Pro", msrp: "~$140", material: "7075 Aluminum + G10", description: "Responsive and well-tuned out of the box, with G10 inlays for improved grip during rollovers. Will Hirsch collab.", url: "https://nabalis.com/products/nabalis-vulp-pro-butterrfly-knife-trainer" },
+              { make: "Squid Industries", model: "Mako V5", msrp: "~$130", material: "6061 Aluminum", description: "Compact shark-inspired design with jimping, bronze washers, and solid tolerances. Doubles as a bottle opener.", url: "https://www.squidindustries.co/collections/mako-v5" },
+              { make: "Squid Industries", model: "Squidtrainer V4", msrp: "~$175", material: "6061 Aluminum", description: "The classic Squid trainer refined over years of community feedback — stainless bushing pivots, great balance, proven track record.", url: "https://www.squidindustries.co/products/squidtrainer-v4-best-balisong-butterfly-knife-trainer-flipping-tool" },
+              { make: "BBBarfly", model: "Barracuda V2", msrp: "$129", material: "6061 Aluminum", description: "Hand-tuned bushings, zen pins, phosphor bronze washers, and ships with spare hardware and a stand. Strong value at the price.", url: "https://bbbarfly.com/collections/barracuda" },
+            ],
+          },
+          {
+            range: "$200+",
+            description: "Higher-end production knives with premium pivot systems and tighter tolerances. Worth considering once you know you're committed to the hobby.",
+            knives: [
+              { make: "Squid Industries", model: "Krake Raken V3", msrp: "~$220", material: "7075 Aluminum", description: "Trainer sibling of the live-blade Krake Raken — zen pins, cryogenically treated blade, great balance and a well-earned reputation.", url: "https://www.squidindustries.co/products/krake-raken-trainer-v3" },
+              { make: "Squid Industries", model: "Nautilus V2", msrp: "~$235", material: "7075 Aluminum + G10", description: "Channel-liner hybrid with G10 overlays for grip. Bushing pivot, nearly zero handle play, and a distinctive look.", url: "https://www.squidindustries.co/products/nautilus-v2" },
+              { make: "BBBarfly", model: "Superfly", msrp: "$239", material: "Grade 5 Titanium", description: "Solid titanium flagship with hand-tuned bushings and an adjustable weight system. Top of the range.", url: "https://bbbarfly.com/collections/bbsuperfly-products" },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "Where to Buy",
+        type: "paragraph",
+        body: "Reputable retailers include Squid Industries, BladeHQ, and KnifeCenter. Always buy from established sellers with return policies when possible.",
+        links: [
+          { label: "Squid Industries", href: "https://www.squidindustries.co/" },
+          { label: "BladeHQ", href: "https://www.bladehq.com/" },
+          { label: "KnifeCenter", href: "https://www.knifecenter.com/" },
+        ],
+      },
+      {
+        heading: "Final Advice",
+        type: "paragraph",
+        body: "The best first balisong is one that is safe to learn on, well-built enough to not frustrate you with poor tolerances, and inexpensive enough that you're not stressed about dropping it. Once you've spent a few months with it and know you love the hobby, you'll have a much better sense of what you want in your next knife.",
       },
     ],
   },
@@ -282,63 +437,6 @@ export const LEARN_TOPICS: LearnTopic[] = [
           "Intermediate to advanced flippers — Most prefer latchless for cleaner trick flow.",
           "Everyday carry — A latch adds a layer of security keeping the knife closed in a pocket.",
         ],
-      },
-    ],
-  },
-  {
-    slug: "how-to-choose-your-first-balisong",
-    title: "How to Choose Your First Balisong",
-    subtitle: "A practical guide to picking the right first knife without overspending or making a mistake you'll regret.",
-    sections: [
-      {
-        type: "paragraph",
-        body: "Choosing your first balisong can be overwhelming — there are hundreds of options at every price point. This guide cuts through the noise and gives you a practical framework for making a good first choice.",
-      },
-      {
-        heading: "Start With a Trainer",
-        type: "paragraph",
-        body: "If you are new to flipping, start with a trainer. A trainer balisong has a dull, unsharpened blade and allows you to learn tricks without the risk of cutting yourself. The learning curve for balisong flipping involves a lot of fumbled catches — doing that with a live blade is a fast way to end up injured. Most trainers flip identically to their live blade counterparts.",
-      },
-      {
-        heading: "Budget",
-        type: "list",
-        body: [
-          "$20–$50 — Entry-level trainers. Brands like Squid Industries (Squidtrainer), Aurgelmir, and various Amazon options fall here. Expect washer pivots and basic construction. Good enough to learn fundamentals.",
-          "$50–$150 — Mid-range. Better construction, tighter tolerances, and more satisfying flip. The Squid Industries Krake Raken Trainer and similar offerings sit here. Recommended sweet spot for most beginners.",
-          "$150–$300 — Higher-end production knives. Better pivot systems, tighter tolerances, premium materials. Worth it once you know you're committed to the hobby.",
-          "$300+ — Premium and custom territory. Not necessary for a first knife.",
-        ],
-      },
-      {
-        heading: "What to Look For",
-        type: "list",
-        body: [
-          "Good pivot tolerances — Handles should not wobble side to side excessively",
-          "Reasonable weight — Not so light it feels cheap, not so heavy it's tiring",
-          "Zen pins or tang pins — Either works for a beginner",
-          "Reputation — Buy from known brands or sellers with reviews",
-          "Availability of parts — Can you get replacement pivots or tune it if needed?",
-        ],
-      },
-      {
-        heading: "Things to Avoid",
-        type: "list",
-        body: [
-          "Generic Amazon knockoffs under $20 — Poor tolerances, dangerous blade play, will break quickly",
-          "Spending $300+ on your first knife — You will drop it, scratch it, and possibly not stick with the hobby",
-          "Buying a live blade before you can safely catch a trainer",
-          "Ignoring the laws in your area",
-        ],
-      },
-      {
-        heading: "Where to Buy",
-        type: "paragraph",
-        body: "Reputable retailers include the Squid Industries website, BladeHQ, KnifeCenter, and the Balisong Collectors Alliance (BCA) group on Facebook for the secondhand market. Always buy from established sellers with return policies when possible.",
-      },
-      {
-        heading: "Final Advice",
-        type: "paragraph",
-        body: "The best first balisong is one that is safe to learn on, well-built enough to not frustrate you with poor tolerances, and inexpensive enough that you're not stressed about dropping it. Once you've spent a few months with it and know you love the hobby, you'll have a much better sense of what you want in your next knife.",
       },
     ],
   },

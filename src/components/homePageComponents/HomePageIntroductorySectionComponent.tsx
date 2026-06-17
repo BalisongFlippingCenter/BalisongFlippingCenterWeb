@@ -71,7 +71,7 @@ const HomePageIntroductorySectionComponent = () => {
   }, [statsVisible]);
 
   return (
-    <section className="relative w-full xsm:min-h-svh sm:h-svh text-white overflow-x-hidden flex flex-col bg-dark-neutral">
+    <section className="relative w-full xsm:min-h-svh sm:h-svh text-white overflow-hidden flex flex-col bg-dark-neutral">
 
       {/* Full-bleed video background */}
       <video

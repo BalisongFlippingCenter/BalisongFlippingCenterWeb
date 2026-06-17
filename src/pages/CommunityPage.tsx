@@ -312,7 +312,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
       })() : mediaFiles.length > 0 ? (
         <div
           ref={mediaContainerRef}
-          className="media-fs-container relative aspect-[4/5] overflow-hidden bg-[#0d0f14]"
+          className="media-fs-container relative aspect-[4/5] lg:aspect-[4/3] overflow-hidden bg-[#0d0f14]"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
             touchStartY.current = e.touches[0].clientY;
@@ -366,8 +366,9 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
                       const ox = touchStartX.current ?? e.changedTouches[0].clientX;
                       const oy = touchStartY.current ?? e.changedTouches[0].clientY;
                       const moved = Math.hypot(e.changedTouches[0].clientX - ox, e.changedTouches[0].clientY - oy);
-                      if (moved > 10) return;
+                      if (moved > 15) return;
                       e.stopPropagation();
+                      e.preventDefault();
                       const v = videoRef.current;
                       if (!v) return;
                       v.paused ? v.play().catch(() => {}) : v.pause();
@@ -619,6 +620,48 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
 
 // ── Community page ────────────────────────────────────────────────────────────
 
+const CreatePostPrompt = ({ posts: _ }: { posts: PostDetail[] }) => {
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+
+  if (user) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate("/create-post")}
+        className="w-full flex items-center gap-3 bg-gradient-to-r from-[#0d1a1f] to-[#0a1518] border border-white/[0.12] hover:border-white/[0.22] rounded-2xl px-4 py-3.5 transition-colors duration-200 group"
+      >
+        {user.profileImg ? (
+          <img src={user.profileImg} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-white/15" />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-blue-primary/20 border border-blue-primary/30 flex items-center justify-center flex-shrink-0">
+            <span className="text-blue-primary text-sm font-bold leading-none">
+              {user.displayName?.charAt(0).toUpperCase() ?? "?"}
+            </span>
+          </div>
+        )}
+        <span className="text-white/30 text-sm group-hover:text-white/50 transition-colors duration-200 text-left flex-1">
+          What are you flipping today?
+        </span>
+        <FontAwesomeIcon icon={faImage} className="text-white/20 text-sm flex-shrink-0 group-hover:text-white/40 transition-colors duration-200" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-full flex items-center gap-3 bg-gradient-to-r from-[#0d1a1f] to-[#0a1518] border border-white/[0.12] rounded-2xl px-4 py-3.5">
+      <p className="text-white/35 text-sm flex-1">Share your flips with the community.</p>
+      <button
+        type="button"
+        onClick={() => navigate("/login")}
+        className="flex-shrink-0 px-4 py-1.5 rounded-xl bg-blue-primary text-white text-xs font-semibold hover:bg-blue-primary/80 transition-colors duration-150"
+      >
+        Sign In
+      </button>
+    </div>
+  );
+};
+
 const CommunityPage = () => {
   const [posts,       setPosts]       = useState<PostDetail[]>([]);
   const [page,        setPage]        = useState(0);
@@ -630,7 +673,7 @@ const CommunityPage = () => {
   const listRef    = useRef<HTMLDivElement>(null);
   const isFetching = useRef(false);
 
-  const fetchPosts = useCallback((pageIndex: number) => {
+  const fetchPosts = useCallback((pageIndex: number, onComplete?: () => void) => {
     if (isFetching.current) return;
     isFetching.current = true;
     setIsLoading(true);
@@ -648,10 +691,63 @@ const CommunityPage = () => {
         setIsLoading(false);
         setInitialDone(true);
         isFetching.current = false;
+        onComplete?.();
       });
   }, []);
 
   useEffect(() => { fetchPosts(0); }, [fetchPosts]);
+
+  // Pull-to-refresh
+  const pullStartY   = useRef<number | null>(null);
+  const pullYRef     = useRef(0);
+  const [pullY, setPullY]           = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const isRefreshingRef = useRef(false);
+  const PULL_THRESHOLD = 72;
+
+  useEffect(() => {
+    const prev = document.body.style.overscrollBehaviorY;
+    document.body.style.overscrollBehaviorY = "contain";
+    return () => { document.body.style.overscrollBehaviorY = prev; };
+  }, []);
+
+  useEffect(() => {
+    const onStart = (e: TouchEvent) => {
+      if (window.scrollY === 0 && !isRefreshingRef.current && !isFetching.current) {
+        pullStartY.current = e.touches[0].clientY;
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      if (pullStartY.current === null) return;
+      const delta = e.touches[0].clientY - pullStartY.current;
+      if (delta <= 0) { pullStartY.current = null; pullYRef.current = 0; setPullY(0); return; }
+      const val = Math.min(delta * 0.45, PULL_THRESHOLD + 20);
+      pullYRef.current = val;
+      setPullY(val);
+    };
+    const onEnd = () => {
+      if (pullYRef.current >= PULL_THRESHOLD && !isRefreshingRef.current && !isFetching.current) {
+        isRefreshingRef.current = true;
+        setIsRefreshing(true);
+        pullYRef.current = 0;
+        setPullY(0);
+        pullStartY.current = null;
+        fetchPosts(0, () => { setIsRefreshing(false); isRefreshingRef.current = false; });
+      } else {
+        pullYRef.current = 0;
+        setPullY(0);
+        pullStartY.current = null;
+      }
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchmove",  onMove,  { passive: true });
+    document.addEventListener("touchend",   onEnd);
+    return () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchmove",  onMove);
+      document.removeEventListener("touchend",   onEnd);
+    };
+  }, [fetchPosts]);
 
   // Virtual list — only renders posts near the viewport
   const virtualizer = useWindowVirtualizer({
@@ -677,6 +773,24 @@ const CommunityPage = () => {
       className="w-full min-h-screen relative overflow-hidden"
       style={{ background: "radial-gradient(ellipse at 50% 40%, #0c2d35 0%, #061a1f 50%, #030d11 100%)" }}
     >
+      {/* Pull-to-refresh indicator */}
+      {(pullY > 8 || isRefreshing) && (
+        <div
+          className="fixed left-1/2 z-50 pointer-events-none"
+          style={{
+            top: isRefreshing ? 68 : 56 + Math.max(0, pullY - 20),
+            transform: "translateX(-50%)",
+            transition: pullY === 0 ? "top 0.25s ease, opacity 0.25s ease" : "none",
+            opacity: isRefreshing ? 1 : Math.min((pullY - 8) / 28, 1),
+          }}
+        >
+          <div className={`w-8 h-8 rounded-full border-2 bg-[#0d1a1f] shadow-xl flex items-center justify-center ${
+            isRefreshing || pullY >= PULL_THRESHOLD
+              ? "border-blue-primary border-t-transparent animate-spin"
+              : "border-white/20"
+          }`} />
+        </div>
+      )}
       {/* Dot grid overlay */}
       <div
         className="absolute inset-0 z-0 opacity-[0.18] pointer-events-none"
@@ -686,6 +800,12 @@ const CommunityPage = () => {
         }}
       />
       <div className="relative z-10 w-full max-w-[600px] mx-auto xsm:px-0 lg:px-4 pt-0 pb-24">
+
+        {/* ── Create post prompt ── */}
+        <div className="px-4 pt-2 pb-2">
+          <CreatePostPrompt posts={posts} />
+        </div>
+        <div className="h-px bg-white/[0.06] mx-4 mb-1" />
 
         {/* ── Initial loading ── */}
         {!initialDone && (
@@ -723,7 +843,7 @@ const CommunityPage = () => {
                 top: 0,
                 left: 0,
                 width: "100%",
-                transform: `translateY(${virtualItem.start}px)`,
+                transform: `translateY(${virtualItem.start - virtualizer.options.scrollMargin}px)`,
               }}
               className="xsm:pb-1 lg:pb-3"
             >
