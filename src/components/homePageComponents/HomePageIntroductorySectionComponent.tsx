@@ -101,7 +101,7 @@ const HomePageIntroductorySectionComponent = () => {
 
       {/* Hero content */}
       <div
-        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pb-10 sm:pb-20 short:sm:pt-6 short:sm:pb-6 transition-all duration-[2000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pt-16 xsm:pb-10 sm:pt-0 sm:pb-20 short:sm:pt-6 short:sm:pb-6 transition-all duration-[2000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
         }`}
       >

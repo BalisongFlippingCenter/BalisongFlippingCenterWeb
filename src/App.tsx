@@ -55,9 +55,6 @@ const App = () => {
 
     // attempt to restore session only if a refresh token is stored
     const storedToken = localStorage.getItem("refreshToken");
-    const minLoadMs = 3000;
-    const startTime = Date.now();
-
     if (!user && !accessToken && storedToken) {
       dispatch(loginWithRefreshToken())
         .unwrap()
@@ -72,12 +69,10 @@ const App = () => {
           // no valid session — user stays logged out
         })
         .finally(() => {
-          const elapsed = Date.now() - startTime;
-          const remaining = Math.max(0, minLoadMs - elapsed);
-          setTimeout(() => setIsLoading(false), remaining);
+          setIsLoading(false);
         });
     } else {
-      setTimeout(() => setIsLoading(false), minLoadMs);
+      setTimeout(() => setIsLoading(false), 500);
     }
 
     // dispatch(
