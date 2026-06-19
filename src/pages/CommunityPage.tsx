@@ -706,9 +706,14 @@ const CommunityPage = () => {
   const PULL_THRESHOLD = 72;
 
   useEffect(() => {
-    const prev = document.body.style.overscrollBehaviorY;
+    const prevBody = document.body.style.overscrollBehaviorY;
+    const prevHtml = document.documentElement.style.overscrollBehaviorY;
     document.body.style.overscrollBehaviorY = "contain";
-    return () => { document.body.style.overscrollBehaviorY = prev; };
+    document.documentElement.style.overscrollBehaviorY = "contain";
+    return () => {
+      document.body.style.overscrollBehaviorY = prevBody;
+      document.documentElement.style.overscrollBehaviorY = prevHtml;
+    };
   }, []);
 
   useEffect(() => {
@@ -721,6 +726,8 @@ const CommunityPage = () => {
       if (pullStartY.current === null) return;
       const delta = e.touches[0].clientY - pullStartY.current;
       if (delta <= 0) { pullStartY.current = null; pullYRef.current = 0; setPullY(0); return; }
+      // Prevent Chrome's native pull-to-refresh from firing
+      e.preventDefault();
       const val = Math.min(delta * 0.45, PULL_THRESHOLD + 20);
       pullYRef.current = val;
       setPullY(val);
@@ -740,7 +747,8 @@ const CommunityPage = () => {
       }
     };
     document.addEventListener("touchstart", onStart, { passive: true });
-    document.addEventListener("touchmove",  onMove,  { passive: true });
+    // Must be non-passive to allow e.preventDefault() which blocks native pull-to-refresh
+    document.addEventListener("touchmove",  onMove,  { passive: false });
     document.addEventListener("touchend",   onEnd);
     return () => {
       document.removeEventListener("touchstart", onStart);

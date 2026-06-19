@@ -47,7 +47,7 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
 
   return (
     <div
-      className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer border border-white/8 hover:border-white/20 transition-all duration-300"
+      className="relative aspect-[4/5] xsm:rounded-none lg:rounded-xl overflow-hidden group cursor-pointer border border-white/8 hover:border-white/20 transition-all duration-300"
       onClick={() => post.id && onOpen(post.id)}
     >
 
@@ -68,15 +68,15 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
         <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
       )}
 
-      {/* Video play badge — top right */}
+      {/* Video play badge — top right when no multi-media, top left when multi-media also present */}
       {isVideo && (
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/65 backdrop-blur-sm flex items-center justify-center">
+        <div className={`absolute top-2 w-6 h-6 rounded-full bg-black/65 backdrop-blur-sm flex items-center justify-center ${multiMedia ? "left-2" : "right-2"}`}>
           <FontAwesomeIcon icon={faPlay} className="text-white text-[8px] ml-px" />
         </div>
       )}
 
-      {/* Multiple media badge — top right (only when more than 1 file) */}
-      {multiMedia && !isVideo && (
+      {/* Multiple media badge — always shown when more than 1 file */}
+      {multiMedia && (
         <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-1.5 py-0.5">
           <FontAwesomeIcon icon={faImages} className="text-white/70 text-[9px]" />
           <span className="text-white/70 text-[10px] font-semibold leading-none">{post.mediaCount}</span>

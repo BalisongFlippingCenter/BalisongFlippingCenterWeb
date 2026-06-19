@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "../components/header/Header";
+import HeaderNavbarBottom from "../components/navigation/HeaderNavbarBottom";
+import { useAppSelector } from "../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { faFlag, faBug, faXmark, faChevronRight } from "@fortawesome/free-solid-svg-icons";
@@ -148,6 +150,8 @@ const ReportButton = () => {
 const MainLayout = () => {
   const { pathname } = useLocation();
   const showFooter = FOOTER_ROUTES.includes(pathname) || pathname.startsWith("/learn");
+  const user        = useAppSelector((state) => state.auth.user);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   return (
     <>
@@ -158,6 +162,14 @@ const MainLayout = () => {
       </main>
       {showFooter && <SiteFooter />}
       <ReportButton />
+      {user && accessToken && (
+        <aside
+          className="fixed bottom-0 z-30 overflow-visible xsm:left-0 xsm:right-0 xsm:w-full md:left-1/2 md:right-auto md:w-auto md:-translate-x-1/2"
+          style={{ willChange: 'transform' }}
+        >
+          <HeaderNavbarBottom />
+        </aside>
+      )}
     </>
   );
 };
