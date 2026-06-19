@@ -1,4 +1,5 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import HeaderProfileDisplay from "./HeaderProfileDisplay";
 import HeaderNavbar from "../navigation/HeaderNavbar";
@@ -9,8 +10,11 @@ import {
   faBarsStaggered,
   faCircleUser,
   faMagnifyingGlass,
+  faGlobe,
+  faEarthAmericas,
+  faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
-import HeaderNavbarBottom from "../navigation/HeaderNavbarBottom";
+import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import { RootState } from "../../redux/store";
 import useWindowSize from "../../hooks/useWindowSize";
 import { motion, useScroll, useMotionValueEvent } from "motion/react";
@@ -148,19 +152,61 @@ const Navbar = () => {
 
         {/* Mobile dropdown nav */}
         {isMobile && navToggle && (
-          <aside className={`absolute top-full left-0 right-0 w-full backdrop-blur-xl shadow-lg ${
-            location.pathname === "/" ? "bg-[#0a0c10]" : "bg-dark-neutral"
-          }`}>
-            <HeaderNavbar />
-          </aside>
+          <>
+            {/* Scrim via portal — renders at document.body so it escapes the sticky header's
+                stacking context and correctly covers the full viewport */}
+            {createPortal(
+              <div
+                className="fixed inset-0 bg-black/60 z-[25]"
+                onClick={() => toggleNav(false)}
+              />,
+              document.body
+            )}
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="absolute top-full left-0 right-0 w-full z-40 shadow-2xl"
+              style={{ background: "#0d0f14" }}
+            >
+              <div className="flex flex-col">
+                {[
+                  { to: "/community",       icon: faGlobe,         label: "Community",       tagline: "Posts, flips & the feed"    },
+                  { to: "/tutorial-center", icon: faHubspot,       label: "Tutorial Center", tagline: "Tricks, combos & tutorials" },
+                  { to: "/product-world",   icon: faEarthAmericas, label: "Product World",   tagline: "Knives, makers & gear"      },
+                  { to: "/about",           icon: faCircleInfo,    label: "About",           tagline: "What is this place?"        },
+                ].map(({ to, icon, label, tagline }) => {
+                  const isActive = location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
+                  return (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={() => toggleNav(false)}
+                      className={`flex items-center gap-4 pl-4 pr-5 py-3.5 transition-colors duration-150 border-l-[3px] border-b-2 border-b-black ${
+                        isActive
+                          ? "border-blue-primary bg-blue-primary/10"
+                          : "border-transparent hover:bg-white/[0.03]"
+                      }`}
+                    >
+                      <FontAwesomeIcon
+                        icon={icon}
+                        className={`text-base flex-shrink-0 transition-colors duration-150 ${isActive ? "text-blue-primary" : "text-white/40"}`}
+                      />
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <span className={`text-sm font-semibold leading-snug transition-colors duration-150 ${isActive ? "text-blue-primary" : "text-white/80"}`}>
+                          {label}
+                        </span>
+                        <span className="text-white/45 text-xs leading-none">{tagline}</span>
+                      </div>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
         )}
       </motion.header>
 
-      {user && accessToken && (
-        <aside className="fixed bottom-0 z-30 overflow-visible xsm:left-0 xsm:right-0 xsm:w-full md:left-1/2 md:right-auto md:w-auto md:-translate-x-1/2">
-          <HeaderNavbarBottom />
-        </aside>
-      )}
     </>
   );
 };

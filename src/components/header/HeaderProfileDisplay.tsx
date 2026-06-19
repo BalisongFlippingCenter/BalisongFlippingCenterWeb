@@ -101,7 +101,7 @@ const HeaderProfileDisplay = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-white/10 bg-dark-neutral-offset overflow-hidden"
+            className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-white/10 bg-dark-neutral-offset overflow-hidden z-50"
             style={{
               boxShadow: "0 0 40px rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.8)",
             }}

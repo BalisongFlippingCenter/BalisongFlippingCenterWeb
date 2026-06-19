@@ -5,9 +5,10 @@ import { Buffer } from "buffer";
 interface params {
   imageId: string | undefined | null;
   contain?: boolean;
+  objectPosition?: string;
 }
 
-const Image = ({ imageId, contain }: params) => {
+const Image = ({ imageId, contain, objectPosition = "center" }: params) => {
   const [image, setImage] = useState<ImageBufferData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -63,6 +64,7 @@ const Image = ({ imageId, contain }: params) => {
     return (
       <img
         className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+        style={{ objectPosition }}
         src={safeId ?? undefined}
       />
     );
@@ -81,6 +83,7 @@ const Image = ({ imageId, contain }: params) => {
       <video
         src={`data:video/mp4;base64,${image?.data}`}
         className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+        style={{ objectPosition }}
         autoPlay
         controls
         muted
@@ -91,6 +94,7 @@ const Image = ({ imageId, contain }: params) => {
   return (
     <img
       className={contain ? "w-full h-full object-contain" : "w-full h-full object-cover"}
+      style={{ objectPosition }}
       src={`data:image/*;base64,${image?.data}`}
     />
   );
