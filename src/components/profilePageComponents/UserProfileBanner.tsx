@@ -7,12 +7,13 @@ import { faCamera } from "@fortawesome/free-solid-svg-icons";
 const UserProfileBanner = () => {
   const user = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
-  // null = not loaded yet, true = landscape, false = portrait/square
+  // null = detecting, true = landscape, false = portrait/square
   const [isLandscape, setIsLandscape] = useState<boolean | null>(null);
+
+  const hasBanner = Boolean(user?.bannerImg && user.bannerImg !== "");
 
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    // Treat anything wider than 1.8:1 as landscape/banner-safe
     setIsLandscape(img.naturalWidth / img.naturalHeight > 1.8);
   };
 
@@ -21,35 +22,48 @@ const UserProfileBanner = () => {
       className="w-full xsm:h-[150px] md:h-[200px] lg:h-[220px] relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-[#1c1f27] to-[#111318] border-b border-white/10 hover:cursor-pointer group"
       onClick={() => navigate("/configure/profile-banner")}
     >
-      {user?.bannerImg && user.bannerImg !== "" ? (
-        <div className="absolute inset-0">
-          {isLandscape === true ? (
-            /* Landscape/banner image — fill the space, center crop */
+      {hasBanner && (
+        <>
+          {/* Hidden preload — fires onLoad to detect orientation before anything visible renders.
+              Same src means the browser serves the visible images from cache instantly after. */}
+          {isLandscape === null && (
             <img
-              src={user.bannerImg}
+              src={user!.bannerImg!}
               onLoad={handleLoad}
-              className="w-full h-full object-cover object-center"
-              alt="Profile banner"
+              className="absolute opacity-0 w-full h-full pointer-events-none"
+              aria-hidden="true"
+              alt=""
             />
-          ) : (
-            /* Portrait/square — show full image with blurred context fill */
-            <>
-              <img
-                src={user.bannerImg}
-                onLoad={handleLoad}
-                className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50"
-                aria-hidden="true"
-                alt=""
-              />
-              <img
-                src={user.bannerImg}
-                className="absolute inset-0 w-full h-full object-contain"
-                alt="Profile banner"
-              />
-            </>
           )}
-        </div>
-      ) : null}
+
+          {/* Visible layout — only mounts once orientation is known, so there is no DOM swap */}
+          {isLandscape !== null && (
+            <div className="absolute inset-0 animate-[fadeIn_0.25s_ease-out]">
+              {isLandscape ? (
+                <img
+                  src={user!.bannerImg!}
+                  className="w-full h-full object-cover object-center"
+                  alt="Profile banner"
+                />
+              ) : (
+                <>
+                  <img
+                    src={user!.bannerImg!}
+                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50"
+                    aria-hidden="true"
+                    alt=""
+                  />
+                  <img
+                    src={user!.bannerImg!}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    alt="Profile banner"
+                  />
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Edit overlay */}
       <div className="absolute inset-0 flex items-end justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

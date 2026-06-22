@@ -1,10 +1,8 @@
 import { PostCover } from "../modals/Post";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faHeart, faComment, faLock, faBullhorn, faPlay,
-  faGlobe, faEarthAmericas, faImages,
+  faHeart, faComment, faLock, faBullhorn, faPlay, faImages,
 } from "@fortawesome/free-solid-svg-icons";
-import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 
 // ── Post type badge ───────────────────────────────────────────────────────────
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -15,16 +13,6 @@ const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   COMBO:          { label: "Combo",      cls: "text-blue-primary border-blue-primary/50" },
 };
 
-// ── Route destination icon — matches the header nav icons for each section ────
-// GENERIC → Community (faGlobe), BUY_SELL / TRADE → Product World (faEarthAmericas),
-// TRICK_TUTORIAL / COMBO → Tutorial Center (faHubspot)
-const ROUTE_ICON: Record<string, { icon: typeof faGlobe; title: string; cls: string }> = {
-  GENERIC:        { icon: faGlobe,          title: "Community",      cls: "text-white/40" },
-  BUY_SELL:       { icon: faEarthAmericas,  title: "Product World",  cls: "text-gold/50" },
-  TRADE:          { icon: faEarthAmericas,  title: "Product World",  cls: "text-gold/50" },
-  TRICK_TUTORIAL: { icon: faHubspot,        title: "Tutorial Center", cls: "text-green/50" },
-  COMBO:          { icon: faHubspot,        title: "Tutorial Center", cls: "text-green/50" },
-};
 
 const isVideoUrl = (url: string) =>
   /\.(mp4|mov|avi|webm|mkv|m4v)(\?.*)?$/i.test(url);
@@ -41,8 +29,7 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
   const coverSrc = isS3 ? post.coverFile! : null;
   const isVideo  = coverSrc ? isVideoUrl(coverSrc) : false;
 
-  const typeBadge  = post.identifier ? (TYPE_BADGE[post.identifier]  ?? null) : null;
-  const routeIcon  = post.identifier ? (ROUTE_ICON[post.identifier]  ?? null) : null;
+  const typeBadge  = post.identifier ? (TYPE_BADGE[post.identifier] ?? null) : null;
   const multiMedia = post.mediaCount > 1;
 
   return (
@@ -115,23 +102,11 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
         {/* Right side: route icon + like + comment */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
 
-          {/* Route destination icon */}
-          {routeIcon && (
-            <FontAwesomeIcon
-              icon={routeIcon.icon}
-              title={routeIcon.title}
-              className={`text-[11px] ${routeIcon.cls}`}
-            />
-          )}
-
-          {/* Divider */}
-          {routeIcon && <span className="w-px h-3 bg-white/15 flex-shrink-0" />}
-
           <span className="flex items-center gap-1 text-white/75 text-[10px] font-semibold">
             <FontAwesomeIcon icon={faHeart} className="text-[9px]" />
             {post.likes.toLocaleString()}
           </span>
-          <span className="flex items-center gap-1 text-white/75 text-[10px] font-semibold">
+          <span className="xsm:hidden md:flex items-center gap-1 text-white/75 text-[10px] font-semibold">
             <FontAwesomeIcon icon={faComment} className="text-[9px]" />
             {post.comments.toLocaleString()}
           </span>

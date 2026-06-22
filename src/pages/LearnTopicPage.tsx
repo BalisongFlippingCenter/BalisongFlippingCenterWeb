@@ -147,6 +147,11 @@ const CommunityStrip = ({ onLoaded }: { onLoaded: (hasPosts: boolean) => void })
         .strip-track {
           animation: stripScrollLeft 16s linear infinite;
         }
+        @media (max-width: 949px) {
+          .strip-track {
+            animation-duration: 9s;
+          }
+        }
       `}</style>
 
       {/* Header */}

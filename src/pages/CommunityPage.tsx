@@ -480,6 +480,20 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
       )}
 
       {/* ── Offering knife card (buy/sell) ── */}
+      {layout === "buysell" && !post.offeringKnife && (
+        <div className="px-4 pt-3 pb-2">
+          <div className="flex items-center gap-0 rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+            <div className="w-28 h-28 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
+              <FontAwesomeIcon icon={faImage} className="text-white/10 text-2xl" />
+            </div>
+            <div className="flex flex-col gap-1.5 px-4 min-w-0">
+              <span className="text-[10px] text-white/20 uppercase tracking-wider font-medium">Listed Knife</span>
+              <p className="text-white/40 font-medium text-sm">No longer available</p>
+              <p className="text-white/25 text-xs leading-snug">This knife has been removed from the collection</p>
+            </div>
+          </div>
+        </div>
+      )}
       {layout === "buysell" && post.offeringKnife && (
         <div className="px-4 pt-3 pb-2">
           <div

@@ -47,7 +47,11 @@ export default {
         gentle_bounce: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%':       { transform: 'translateY(-7px)' },
-        }
+        },
+        fadeIn: {
+          from: { opacity: '0' },
+          to:   { opacity: '1' },
+        },
       },
       animation: {
         'text-fade':     'fade_in_out 5s linear',
