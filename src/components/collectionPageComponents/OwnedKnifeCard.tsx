@@ -47,6 +47,13 @@ const OwnedKnifeCard = ({ knife, isFeatured = false, ownerDisplayName, ownerIden
           <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
         )}
 
+        {/* Favourite badge — top left */}
+        {isFavorite && (
+          <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-black/60 border border-gold/40 flex items-center justify-center backdrop-blur-sm">
+            <FontAwesomeIcon icon={faStar} className="text-gold text-[9px]" />
+          </div>
+        )}
+
         {/* Score badge — top right */}
         {knife.averageScore !== null && (
           <div className={`absolute top-3 right-3 flex items-center gap-1 bg-black/60 text-gold border px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm ${
@@ -62,21 +69,10 @@ const OwnedKnifeCard = ({ knife, isFeatured = false, ownerDisplayName, ownerIden
           <p className="text-white font-bold text-base truncate leading-tight">
             {knife.displayName}
           </p>
-          <div className="flex items-center justify-between gap-2 mt-1 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-              {isFavorite && (
-                <FontAwesomeIcon icon={faStar} className="text-gold text-[10px] flex-shrink-0" />
-              )}
-              {knife.knifeMaker && (
-                <p className="text-white/60 text-xs truncate font-medium">{knife.knifeMaker}</p>
-              )}
-              {knife.baseKnifeModel && knife.knifeMaker && (
-                <span className="text-white/25 text-xs flex-shrink-0">·</span>
-              )}
-              {knife.baseKnifeModel && (
-                <span className="text-white/50 text-xs truncate">{knife.baseKnifeModel}</span>
-              )}
-            </div>
+          <div className="flex items-end justify-between gap-2 mt-1">
+            <p className="text-white/50 text-[11px] leading-snug flex-1">
+              {[knife.knifeMaker, knife.baseKnifeModel].filter(Boolean).join(" · ")}
+            </p>
             {formatCurrency(knife.msrp, user?.currency) && (
               <span className="text-white/50 text-xs font-medium flex-shrink-0">{formatCurrency(knife.msrp, user?.currency)}</span>
             )}

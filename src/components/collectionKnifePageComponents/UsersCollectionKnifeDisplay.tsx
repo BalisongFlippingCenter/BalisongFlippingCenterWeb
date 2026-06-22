@@ -364,7 +364,7 @@ const UsersCollectionKnifeDisplay = () => {
   const knifeTypeLabel: Record<string, string> = {
     liveblade: "Live Blade",
     trainer:   "Trainer",
-    both:      "Both",
+    both:      "Live/Trainer",
   };
 
   // ── VIEW MODE ──────────────────────────────────────────────────────────────

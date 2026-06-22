@@ -66,7 +66,7 @@ const CollectionOwnedKnivesDisplay = () => {
                 )}
                 {featuredKnife.knifeType && (
                   <span className="text-xs text-white/40 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                    {{ liveblade: "Live Blade", trainer: "Trainer", both: "Both" }[featuredKnife.knifeType.toLowerCase().replace(/_/g, "")] ?? featuredKnife.knifeType}
+                    {{ liveblade: "Live Blade", trainer: "Trainer", both: "Live/Trainer" }[featuredKnife.knifeType.toLowerCase().replace(/_/g, "")] ?? featuredKnife.knifeType}
                   </span>
                 )}
               </div>

@@ -118,7 +118,7 @@ const CollectionKnifeDisplay = () => {
   const knifeTypeLabel: Record<string, string> = {
     liveblade: "Live Blade",
     trainer:   "Trainer",
-    both:      "Both",
+    both:      "Live/Trainer",
   };
 
   const scores = [

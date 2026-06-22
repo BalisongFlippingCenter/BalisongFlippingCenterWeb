@@ -114,13 +114,12 @@ const NewCollectionKnifeForm = ({
   const [handleFinish, setHandleFinish] = useState("Unknown");
 
   // form state values rankings
-  const [averageScore, setAverageScore] = useState<Number | null>(null);
-
   const [qualityScore, setQualityScore] = useState(5);
   const [flippingScore, setFlippingScore] = useState(5);
   const [feelScore, setFeelScore] = useState(5);
   const [soundScore, setSoundScore] = useState(5);
   const [durabilityScore, setDurabilityScore] = useState(5);
+  const averageScore = (qualityScore + flippingScore + feelScore + soundScore + durabilityScore) / 5;
 
   // form state values mod work
 
@@ -163,12 +162,11 @@ const NewCollectionKnifeForm = ({
       setHandleMaterial(collectionKnifeObj.handleMaterial);
       setHandleFinish(collectionKnifeObj.handleFinish);
 
-      setAverageScore(collectionKnifeObj.averageScore);
-      setQualityScore(collectionKnifeObj.qualityScore);
-      setFlippingScore(collectionKnifeObj.flippingScore);
-      setFeelScore(collectionKnifeObj.feelScore);
-      setDurabilityScore(collectionKnifeObj.durabilityScore);
-      setSoundScore(collectionKnifeObj.soundScore);
+      setQualityScore(Number(collectionKnifeObj.qualityScore));
+      setFlippingScore(Number(collectionKnifeObj.flippingScore));
+      setFeelScore(Number(collectionKnifeObj.feelScore));
+      setDurabilityScore(Number(collectionKnifeObj.durabilityScore));
+      setSoundScore(Number(collectionKnifeObj.soundScore));
     }
   };
 
@@ -292,63 +290,28 @@ const NewCollectionKnifeForm = ({
   };
 
   const qualityScaleOnChange = (e: any) => {
-    setQualityScore(e.target.value);
-
-    if (collectionKnifeObj !== null) {
-      setFormNotReadyOnChange();
-    }
-
-    if (averageScore == null) {
-      setAverageScore(0);
-    }
+    setQualityScore(Number(e.target.value));
+    if (collectionKnifeObj !== null) setFormNotReadyOnChange();
   };
 
   const flippingScaleOnChange = (e: any) => {
-    setFlippingScore(e.target.value);
-
-    if (averageScore == null) {
-      setAverageScore(0);
-    }
-
-    if (collectionKnifeObj !== null) {
-      setFormNotReadyOnChange();
-    }
+    setFlippingScore(Number(e.target.value));
+    if (collectionKnifeObj !== null) setFormNotReadyOnChange();
   };
 
   const feelScaleOnChange = (e: any) => {
-    setFeelScore(e.target.value);
-
-    if (averageScore == null) {
-      setAverageScore(0);
-    }
-
-    if (collectionKnifeObj !== null) {
-      setFormNotReadyOnChange();
-    }
+    setFeelScore(Number(e.target.value));
+    if (collectionKnifeObj !== null) setFormNotReadyOnChange();
   };
 
   const soundScaleOnChange = (e: any) => {
-    setSoundScore(e.target.value);
-
-    if (averageScore == null) {
-      setAverageScore(0);
-    }
-
-    if (collectionKnifeObj !== null) {
-      setFormNotReadyOnChange();
-    }
+    setSoundScore(Number(e.target.value));
+    if (collectionKnifeObj !== null) setFormNotReadyOnChange();
   };
 
   const durabilityScaleOnChange = (e: any) => {
-    setDurabilityScore(e.target.value);
-
-    if (averageScore == null) {
-      setAverageScore(0);
-    }
-
-    if (collectionKnifeObj !== null) {
-      setFormNotReadyOnChange();
-    }
+    setDurabilityScore(Number(e.target.value));
+    if (collectionKnifeObj !== null) setFormNotReadyOnChange();
   };
 
   const setKnifeMSRPOnChange = (input: string) => {
@@ -463,18 +426,6 @@ const NewCollectionKnifeForm = ({
       setFormNotReadyOnChange();
     }
   };
-
-  useEffect(() => {
-    if (averageScore != null)
-      setAverageScore(
-        (+qualityScore +
-          +flippingScore +
-          +feelScore +
-          +soundScore +
-          +durabilityScore) /
-          5
-      );
-  }, [qualityScore, flippingScore, feelScore, soundScore, durabilityScore]);
 
   // on mount
   useEffect(() => {

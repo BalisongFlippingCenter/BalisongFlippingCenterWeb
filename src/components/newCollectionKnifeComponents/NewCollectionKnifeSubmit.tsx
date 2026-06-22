@@ -49,7 +49,9 @@ const NewCollectionKnifeSubmit = ({ galleryFiles, newKnifeObj }: params) => {
     formData.append("latchType", newKnifeObj?.latchType!);
     formData.append("pinSystem", newKnifeObj?.pinSystem!);
     formData.append("hasModularBalance", JSON.stringify(newKnifeObj?.hasModularBalance));
-    formData.append("balanceValue", JSON.stringify(newKnifeObj?.balanceValue));
+    if (newKnifeObj?.balanceValue !== null && newKnifeObj?.balanceValue !== undefined) {
+      formData.append("balanceValue", String(newKnifeObj.balanceValue));
+    }
     formData.append("bladeStyle", newKnifeObj?.bladeStyle!);
     formData.append("bladeFinish", newKnifeObj?.bladeFinish!);
     formData.append("bladeMaterial", newKnifeObj?.bladeMaterial!);

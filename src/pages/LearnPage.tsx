@@ -121,6 +121,11 @@ const CommunityCarousel = () => {
         .carousel-track-h {
           animation: carouselScrollLeft 12s linear infinite;
         }
+        @media (max-width: 949px) {
+          .carousel-track-h {
+            animation-duration: 7s;
+          }
+        }
       `}</style>
 
       {/* Vertical — md and above */}

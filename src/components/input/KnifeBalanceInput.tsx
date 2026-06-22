@@ -32,12 +32,15 @@ const KnifeBalanceInput = ({
 
   const handleOnChange = (value: string) => {
     setBalance(value);
-    setBalanceOnChange(value);
+    setBalanceOnChange(Number(value));
   };
 
   useEffect(() => {
-    if (parentBalanceValue) {
+    if (parentBalanceValue !== null && parentBalanceValue !== undefined) {
       setBalance(parentBalanceValue.toString());
+    } else {
+      // Notify parent of the default value so it's never null
+      setBalanceOnChange(Number(balance));
     }
   }, []);
 

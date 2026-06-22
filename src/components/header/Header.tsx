@@ -157,7 +157,7 @@ const Navbar = () => {
                 stacking context and correctly covers the full viewport */}
             {createPortal(
               <div
-                className="fixed inset-0 bg-black/60 z-[25]"
+                className="fixed inset-0 bg-black/85 z-[25]"
                 onClick={() => toggleNav(false)}
               />,
               document.body
@@ -166,8 +166,12 @@ const Navbar = () => {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
-              className="absolute top-full left-0 right-0 w-full z-40 shadow-2xl"
-              style={{ background: "#0d0f14" }}
+              className="absolute top-full left-0 right-0 w-full z-40"
+              style={{
+                background: "#13161d",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.85)",
+              }}
             >
               <div className="flex flex-col">
                 {[
