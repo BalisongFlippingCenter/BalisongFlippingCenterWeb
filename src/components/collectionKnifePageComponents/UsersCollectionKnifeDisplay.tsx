@@ -8,6 +8,7 @@ import {
   faStar,
   faHeart,
   faImage,
+  faPlay,
   faCrown,
   faPencil,
   faXmark,
@@ -406,7 +407,7 @@ const UsersCollectionKnifeDisplay = () => {
         <div className="px-6 flex flex-col gap-6">
 
           {/* ── Hero ── */}
-          <div className="flex xsm:flex-col md:flex-row gap-6 items-start">
+          <div className="flex xsm:flex-col md:flex-row gap-6 xsm:items-stretch md:items-start">
 
             {/* Cover photo */}
             <div className="xsm:w-full md:w-[420px] md:flex-shrink-0 xsm:aspect-[3/2] md:aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 bg-[#13161d]">
@@ -663,14 +664,26 @@ const UsersCollectionKnifeDisplay = () => {
             </h2>
             {k.galleryFiles && k.galleryFiles.length > 0 ? (
               <div className="grid xsm:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                {k.galleryFiles.map((file, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg overflow-hidden border border-white/8 bg-[#13161d]"
-                  >
-                    <img src={file.fileId} alt={`gallery ${i + 1}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
+                {k.galleryFiles.map((file, i) => {
+                  const isVideo = /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(file.fileId);
+                  return (
+                    <div
+                      key={i}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-white/8 bg-[#13161d]"
+                    >
+                      {isVideo ? (
+                        <video src={file.fileId} className="w-full h-full object-cover" muted playsInline />
+                      ) : (
+                        <img src={file.fileId} alt={`gallery ${i + 1}`} className="w-full h-full object-cover" />
+                      )}
+                      {isVideo && (
+                        <div className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/65 backdrop-blur-sm flex items-center justify-center">
+                          <FontAwesomeIcon icon={faPlay} className="text-white text-[11px] ml-px" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="bg-[#13161d] border border-dashed border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center gap-3 text-center">
