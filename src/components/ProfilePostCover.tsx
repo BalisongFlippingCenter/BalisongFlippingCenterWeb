@@ -34,7 +34,7 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
 
   return (
     <div
-      className="relative aspect-[4/5] xsm:rounded-none lg:rounded-xl overflow-hidden group cursor-pointer border border-white/8 hover:border-white/20 transition-all duration-300"
+      className="relative xsm:aspect-[2/3] md:aspect-[4/5] xsm:rounded-none lg:rounded-xl overflow-hidden group cursor-pointer transition-all duration-300"
       onClick={() => post.id && onOpen(post.id)}
     >
 

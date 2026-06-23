@@ -216,8 +216,8 @@ const PublicProfilePostsComponent = ({ accountId }: Props) => {
           </button>
         </div>
       ) : sorted.length > 0 ? (
-        <div className="flex flex-col gap-4 px-6 pt-2 pb-8">
-          <div className="grid xsm:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="flex flex-col xsm:gap-0 lg:gap-4 xsm:px-0 lg:px-6 xsm:pt-0.5 lg:pt-2 pb-8">
+          <div className="grid xsm:grid-cols-3 lg:grid-cols-4 xsm:gap-px lg:gap-3">
             {sorted.map((post) => (
               <ProfilePostCover post={post} key={post.id} onOpen={(id) => navigate(`/post/${id}`)} />
             ))}
