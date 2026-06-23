@@ -56,8 +56,10 @@ const OwnedKnifeCard = ({ knife, isFeatured = false, ownerDisplayName, ownerIden
 
         {/* Score badge — top right */}
         {knife.averageScore !== null && (
-          <div className={`absolute top-3 right-3 flex items-center gap-1 bg-black/60 text-gold border px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm ${
-            isFeatured ? "text-xs border-gold/60" : "text-[10px] border-gold/30"
+          <div className={`absolute top-3 right-3 flex items-center gap-1 bg-black/60 border px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm ${
+            isFeatured
+              ? "text-xs text-gold border-gold/60"
+              : "text-[10px] text-white/60 border-white/20"
           }`}>
             <FontAwesomeIcon icon={faStar} className={isFeatured ? "text-xs" : "text-[8px]"} />
             {knife.averageScore.toFixed(1)}

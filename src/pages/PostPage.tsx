@@ -149,6 +149,13 @@ const VideoCell = ({ url, muted, aspectCls, onMuteToggle }: VideoCellProps) => {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  }, [url]);
+
   return (
     <div ref={containerRef} className={`media-fs-container relative overflow-hidden bg-[#0d0f14] ${aspectCls}`}>
       <video
@@ -161,7 +168,7 @@ const VideoCell = ({ url, muted, aspectCls, onMuteToggle }: VideoCellProps) => {
         loop
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
-        className="w-full h-full object-cover"
+className="w-full h-full object-cover"
       />
       {/* click-to-pause overlay */}
       <div
@@ -417,10 +424,16 @@ const PostPage = () => {
                       </div>
                     )}
                     <div className="flex-1 min-h-0">
-                      {post.offeringKnife?.coverPhoto
-                        ? <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
-                      }
+                      {!post.offeringKnife ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3">
+                          <FontAwesomeIcon icon={faImage} className="text-white/10 text-xl" />
+                          <p className="text-white/25 text-[10px] font-medium text-center leading-snug">No longer available</p>
+                        </div>
+                      ) : post.offeringKnife.coverPhoto ? (
+                        <img src={post.offeringKnife.coverPhoto} alt="Offering" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/15"><FontAwesomeIcon icon={faImage} className="text-2xl" /></div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center justify-center">

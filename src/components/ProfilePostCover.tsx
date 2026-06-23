@@ -47,6 +47,7 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
             muted
             playsInline
             preload="metadata"
+            onLoadedMetadata={(e) => { e.currentTarget.currentTime = 0.001; }}
           />
         ) : (
           <img src={coverSrc} alt={post.caption ?? ""} className="w-full h-full object-cover" />

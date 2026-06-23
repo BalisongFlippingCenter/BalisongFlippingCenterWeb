@@ -4,6 +4,8 @@ import { useAppSelector } from "../../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
 
+const IS_VIDEO = /\.(mp4|mov|webm|avi|mkv)(\?|$)/i;
+
 const UserProfileBanner = () => {
   const user = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ const UserProfileBanner = () => {
   const [isLandscape, setIsLandscape] = useState<boolean | null>(null);
 
   const hasBanner = Boolean(user?.bannerImg && user.bannerImg !== "");
+  const isVideo = hasBanner && IS_VIDEO.test(user!.bannerImg!);
 
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -24,43 +27,59 @@ const UserProfileBanner = () => {
     >
       {hasBanner && (
         <>
-          {/* Hidden preload — fires onLoad to detect orientation before anything visible renders.
-              Same src means the browser serves the visible images from cache instantly after. */}
-          {isLandscape === null && (
-            <img
+          {isVideo ? (
+            /* Video banner — no orientation detection needed, always cover */
+            <video
               src={user!.bannerImg!}
-              onLoad={handleLoad}
-              className="absolute opacity-0 w-full h-full pointer-events-none"
-              aria-hidden="true"
-              alt=""
+              className="absolute inset-0 w-full h-full object-cover animate-[fadeIn_0.25s_ease-out]"
+              autoPlay
+              muted
+              loop
+              playsInline
             />
-          )}
-
-          {/* Visible layout — only mounts once orientation is known, so there is no DOM swap */}
-          {isLandscape !== null && (
-            <div className="absolute inset-0 animate-[fadeIn_0.25s_ease-out]">
-              {isLandscape ? (
+          ) : (
+            <>
+              {/* Hidden preload — fires onLoad to detect orientation before anything visible renders.
+                  Same src means the browser serves the visible images from cache instantly after. */}
+              {isLandscape === null && (
                 <img
                   src={user!.bannerImg!}
-                  className="w-full h-full object-cover object-center"
-                  alt="Profile banner"
+                  onLoad={handleLoad}
+                  className="absolute opacity-0 w-full h-full pointer-events-none"
+                  aria-hidden="true"
+                  alt=""
                 />
-              ) : (
-                <>
-                  <img
-                    src={user!.bannerImg!}
-                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50"
-                    aria-hidden="true"
-                    alt=""
-                  />
-                  <img
-                    src={user!.bannerImg!}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    alt="Profile banner"
-                  />
-                </>
               )}
-            </div>
+
+              {/* Visible layout — only mounts once orientation is known, so there is no DOM swap */}
+              {isLandscape !== null && (
+                <div className="absolute inset-0 animate-[fadeIn_0.25s_ease-out]">
+                  {isLandscape ? (
+                    <img
+                      src={user!.bannerImg!}
+                      className="w-full h-full object-cover object-center"
+                      alt="Profile banner"
+                    />
+                  ) : (
+                    <>
+                      {/* Blurred background — desktop only, too GPU-heavy on mobile */}
+                      <img
+                        src={user!.bannerImg!}
+                        className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50 xsm:hidden md:block"
+                        aria-hidden="true"
+                        alt=""
+                      />
+                      {/* Mobile: cover-crop; desktop: contain centered over blur */}
+                      <img
+                        src={user!.bannerImg!}
+                        className="absolute inset-0 w-full h-full xsm:object-cover md:object-contain"
+                        alt="Profile banner"
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
