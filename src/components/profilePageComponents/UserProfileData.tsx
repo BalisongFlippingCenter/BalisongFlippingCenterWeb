@@ -55,7 +55,7 @@ const UserProfileData = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-6 xsm:pt-16 sm:pt-20 md:pt-6 lg:pt-8 pb-4 text-white gap-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-6 xsm:pt-20 sm:pt-24 md:pt-6 lg:pt-8 pb-4 text-white gap-6">
 
       {/* Left — info section */}
       <div className="flex flex-col gap-3 md:gap-4 md:max-w-xs">
