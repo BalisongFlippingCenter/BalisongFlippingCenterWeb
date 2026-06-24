@@ -405,7 +405,7 @@ const ProductWorldPage = () => {
 
   return (
     <section
-      className="min-h-screen w-full relative overflow-clip"
+      className="min-h-screen w-full relative"
       style={{ background: "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)" }}
     >
 
@@ -580,7 +580,7 @@ const ProductWorldPage = () => {
         <div className="grid xsm:grid-cols-1 md:grid-cols-[240px_600px] lg:grid-cols-[1fr_600px_1fr] gap-6 items-start">
 
           {/* Left sidebar — search history + filters */}
-          <aside className="xsm:hidden md:block lg:max-w-[260px] lg:ml-auto sticky top-[78px] pt-1 w-full">
+          <aside className="xsm:hidden md:block lg:max-w-[260px] lg:ml-auto sticky top-[72px] pt-6 self-start w-full">
             {/* Search history */}
             <div className="flex items-center gap-2 mb-3">
               <FontAwesomeIcon icon={faClock} className="text-white/30 text-xs" />
@@ -678,7 +678,7 @@ const ProductWorldPage = () => {
           </div>
 
           {/* Right sidebar — buying guide CTA */}
-          <aside className="xsm:hidden lg:block lg:max-w-[260px] sticky top-[78px] pt-1 w-full">
+          <aside className="xsm:hidden lg:block lg:max-w-[260px] sticky top-[72px] pt-6 self-start w-full">
             <div
               className="rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0d1117]"
               style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
