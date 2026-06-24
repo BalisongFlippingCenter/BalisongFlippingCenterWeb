@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faXmark, faClock, faStar, faPlus,
+  faMagnifyingGlass, faXmark, faClock, faStar, faPlus, faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
@@ -61,7 +61,7 @@ const SKILL_LEVELS = [
   {
     value: "BEGINNER",
     label: "Beginner",
-    desc: "New to flipping? Start with the fundamentals.",
+    desc: "Learn the basics.",
     dot: "bg-green",
     accentColor: "#22c55e",
     activeBg: "bg-green/10",
@@ -72,7 +72,7 @@ const SKILL_LEVELS = [
   {
     value: "INTERMEDIATE",
     label: "Intermediate",
-    desc: "Level up with more complex techniques.",
+    desc: "Step up your game.",
     dot: "bg-gold",
     accentColor: "#e6b800",
     activeBg: "bg-gold/10",
@@ -83,7 +83,7 @@ const SKILL_LEVELS = [
   {
     value: "ADVANCED",
     label: "Advanced",
-    desc: "Master-level tricks and complex combos.",
+    desc: "Master complex combos.",
     dot: "bg-red",
     accentColor: "#b91c1c",
     activeBg: "bg-red/10",
@@ -112,11 +112,14 @@ const SkillLevelStrip = ({ onNavigate }: { onNavigate: (path: string) => void })
             className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
             style={{ background: accentColor, opacity: 0.5 }}
           />
-          <div className="flex items-center justify-between mb-2 pl-1">
+          <FontAwesomeIcon
+            icon={faChevronRight}
+            className="absolute top-3 right-3 text-[9px] text-white/25 group-hover:text-white/55 transition-colors duration-150"
+          />
+          <div className="mb-1.5 pl-1 pr-4">
             <span className="text-sm font-bold tracking-tight text-white/85">{label}</span>
-            <span className="text-xs text-white/35 group-hover:text-white/65 transition-colors duration-150">→</span>
           </div>
-          <p className="text-[11px] leading-snug pl-1 text-white/50">{desc}</p>
+          <p className="text-[10px] leading-snug pl-1 text-white/50">{desc}</p>
         </button>
       );
     })}
