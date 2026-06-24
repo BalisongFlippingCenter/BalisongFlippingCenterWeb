@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faXmark, faClock, faStar,
+  faMagnifyingGlass, faXmark, faClock, faStar, faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
+import { useAppSelector } from "../redux/hooks";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -50,39 +51,226 @@ const pushRecent = (term: string) => {
 
 // ── Sidebar card constants ────────────────────────────────────────────────────
 
-const CARD_BG    = "bg-[#0d0d14] border border-white/[0.08]";
-const CARD_STYLE = { boxShadow: "0 4px 24px rgba(0,0,0,0.5)" };
-const LABEL      = "text-[10px] font-bold uppercase tracking-widest text-white/30 mb-3 block";
+const CARD_BG    = "bg-[#050f0f] border border-white/[0.09]";
+const CARD_STYLE = { boxShadow: "0 4px 24px rgba(0,0,0,0.55)" };
+const LABEL      = "text-[10px] font-bold uppercase tracking-widest text-white/35 mb-3 block";
 
-// ── Recent search sidebar (desktop left) ─────────────────────────────────────
+// ── Skill level strip ─────────────────────────────────────────────────────────
 
-const RecentSearchSidebar = ({ onSelect }: { onSelect: (term: string) => void }) => {
+const SKILL_LEVELS = [
+  {
+    value: "BEGINNER",
+    label: "Beginner",
+    desc: "New to flipping? Start with the fundamentals.",
+    dot: "bg-green",
+    accentColor: "#22c55e",
+    activeBg: "bg-green/10",
+    activeBorder: "border-green/40",
+    activeText: "text-green",
+    hoverBorder: "hover:border-green/30",
+  },
+  {
+    value: "INTERMEDIATE",
+    label: "Intermediate",
+    desc: "Level up with more complex techniques.",
+    dot: "bg-gold",
+    accentColor: "#e6b800",
+    activeBg: "bg-gold/10",
+    activeBorder: "border-gold/40",
+    activeText: "text-gold",
+    hoverBorder: "hover:border-gold/30",
+  },
+  {
+    value: "ADVANCED",
+    label: "Advanced",
+    desc: "Master-level tricks and complex combos.",
+    dot: "bg-red",
+    accentColor: "#b91c1c",
+    activeBg: "bg-red/10",
+    activeBorder: "border-red/40",
+    activeText: "text-red",
+    hoverBorder: "hover:border-red/30",
+  },
+] as const;
+
+const SkillLevelStrip = ({ onNavigate }: { onNavigate: (path: string) => void }) => (
+  <div className="grid grid-cols-3 gap-3 mt-3">
+    {SKILL_LEVELS.map(({ value, label, desc, accentColor, hoverBorder }) => {
+      return (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onNavigate(`/tutorial-center/${value.toLowerCase()}`)}
+          className={`rounded-xl border border-white/[0.18] p-4 text-left transition-all duration-200 group overflow-hidden relative ${hoverBorder}`}
+          style={{
+            background: "rgba(2,8,8,0.88)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+          }}
+        >
+          {/* Colored left accent bar */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
+            style={{ background: accentColor, opacity: 0.5 }}
+          />
+          <div className="flex items-center justify-between mb-2 pl-1">
+            <span className="text-sm font-bold tracking-tight text-white/85">{label}</span>
+            <span className="text-xs text-white/35 group-hover:text-white/65 transition-colors duration-150">→</span>
+          </div>
+          <p className="text-[11px] leading-snug pl-1 text-white/50">{desc}</p>
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ── Left sidebar (browse by level + recent searches) ─────────────────────────
+
+const LeftSidebarContent = ({
+  onNavigate,
+  onSelect,
+}: {
+  onNavigate: (path: string) => void;
+  onSelect: (term: string) => void;
+}) => {
   const recent = loadList(LS_RECENT_KEY);
 
-  if (recent.length === 0) {
-    return (
-      <p className="text-white/20 text-xs leading-relaxed">
-        Your recent trick searches will appear here.
-      </p>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-0.5 -mx-1">
-      {recent.map((term) => (
-        <button
-          key={term}
-          type="button"
-          onClick={() => onSelect(term)}
-          className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/[0.05] transition-colors duration-100 text-left group"
-        >
-          <FontAwesomeIcon icon={faClock} className="text-white/20 text-[10px] flex-shrink-0 group-hover:text-teal/50 transition-colors duration-100" />
-          <span className="text-white/50 text-xs truncate group-hover:text-white/75 transition-colors duration-100">{term}</span>
-        </button>
-      ))}
+    <div className="flex flex-col gap-3">
+      {/* Browse by Level */}
+      <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
+        <span className={LABEL}>Browse by Level</span>
+        <div className="flex flex-col gap-2">
+          {SKILL_LEVELS.map(({ value, label, accentColor }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onNavigate(`/tutorial-center/${value.toLowerCase()}`)}
+              className="relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 border overflow-hidden border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.03]"
+            >
+              <div
+                className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
+                style={{ background: accentColor, opacity: 0.45 }}
+              />
+              <span className="font-semibold text-xs pl-1 flex-1 text-left text-white/65">{label}</span>
+              <span className="text-[11px] flex-shrink-0 text-white/20">→</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Searches — only if non-empty */}
+      {recent.length > 0 && (
+        <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
+          <span className={LABEL}>Recent Searches</span>
+          <div className="flex flex-col gap-0.5 -mx-1">
+            {recent.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => onSelect(term)}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/[0.05] transition-colors duration-100 text-left group"
+              >
+                <FontAwesomeIcon icon={faClock} className="text-white/20 text-[10px] flex-shrink-0 group-hover:text-teal/50 transition-colors duration-100" />
+                <span className="text-white/50 text-xs truncate group-hover:text-white/75 transition-colors duration-100">{term}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+// ── Create post prompt ────────────────────────────────────────────────────────
+
+const CreatePostPrompt = ({ onNavigate }: { onNavigate: () => void }) => {
+  const user = useAppSelector((state) => state.auth.user);
+
+  if (!user) return null;
+
+  return (
+    <div className="mb-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2 xsm:px-1 md:px-0">Share with the community</p>
+      <button
+        type="button"
+        onClick={onNavigate}
+        className="w-full flex items-center gap-3 border hover:border-teal/40 rounded-2xl px-4 py-4 transition-all duration-200 group"
+        style={{
+          background: "rgba(5,18,18,0.85)",
+          borderColor: "rgba(13,148,136,0.25)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(13,148,136,0.06)",
+        }}
+      >
+        {user.profileImg ? (
+          <img src={user.profileImg} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-white/10" />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-teal/15 border border-teal/25 flex items-center justify-center flex-shrink-0">
+            <span className="text-[#5eead4] text-sm font-bold leading-none">{user.displayName?.charAt(0).toUpperCase() ?? "?"}</span>
+          </div>
+        )}
+        <span className="text-white/40 text-sm group-hover:text-white/60 transition-colors duration-200 flex-1 text-left italic">
+          Share a combo or tutorial...
+        </span>
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <span className="text-teal/50 text-[11px] font-semibold group-hover:text-teal/80 transition-colors duration-150 xsm:hidden sm:block">Post</span>
+          <div className="w-8 h-8 rounded-full bg-teal/15 border border-teal/30 flex items-center justify-center group-hover:bg-teal/25 group-hover:border-teal/50 transition-all duration-150">
+            <FontAwesomeIcon icon={faPlus} className="text-teal text-xs" />
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+};
+
+// ── Start Here card ───────────────────────────────────────────────────────────
+
+const StartHereCard = ({
+  onBeginnerFilter,
+  onLearn,
+}: {
+  onBeginnerFilter: () => void;
+  onLearn: () => void;
+}) => (
+  <div
+    className="rounded-2xl overflow-hidden mb-3 border border-white/[0.08]"
+    style={{
+      background: "linear-gradient(135deg, rgba(5,30,28,0.92) 0%, rgba(4,14,14,0.95) 60%)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
+    }}
+  >
+    <div className="h-[3px] bg-gradient-to-r from-green via-teal to-blue-primary" />
+    <div className="p-4">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-9 h-9 rounded-xl bg-teal/15 border border-teal/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-teal text-base leading-none">✦</span>
+        </div>
+        <div>
+          <p className="text-teal/80 text-[10px] font-bold uppercase tracking-widest mb-0.5">New to flipping?</p>
+          <h3 className="text-white font-semibold text-sm leading-snug">Start your balisong journey</h3>
+        </div>
+      </div>
+      <p className="text-white/40 text-xs leading-relaxed mb-3">
+        Browse beginner-friendly tutorials, learn the fundamentals, and work your way up to advanced combos.
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onBeginnerFilter}
+          className="flex-1 py-2 rounded-lg bg-green/10 border border-green/30 text-green text-xs font-semibold hover:bg-green/20 hover:border-green/50 transition-all duration-150"
+        >
+          Start Learning →
+        </button>
+        <button
+          type="button"
+          onClick={onLearn}
+          className="flex-1 py-2 rounded-lg bg-teal/10 border border-teal/30 text-[#5eead4] text-xs font-semibold hover:bg-teal/20 hover:border-teal/50 transition-all duration-150"
+        >
+          Read the Guide →
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 // ── Filter sidebar (desktop right) ───────────────────────────────────────────
 
@@ -99,20 +287,27 @@ const FilterSidebar = ({ filterType, filterDifficulty, onTypeChange, onDifficult
     <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
       <span className={LABEL}>Post Type</span>
       <div className="flex flex-col gap-1.5">
-        {TYPE_FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onTypeChange(value)}
-            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
-              filterType === value
-                ? "bg-teal/10 border border-teal/40 text-[#5eead4]"
-                : "text-white/40 hover:text-white/70 hover:bg-white/[0.04] border border-transparent"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        {TYPE_FILTERS.map(({ value, label }) => {
+          const isActive = filterType === value;
+          const dotColor = value === "TRICK_TUTORIAL" ? "bg-teal" : value === "COMBO" ? "bg-gold" : null;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onTypeChange(value)}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 border ${
+                isActive
+                  ? "bg-teal/10 border-teal/40 text-[#5eead4]"
+                  : "text-white/55 hover:text-white/80 hover:bg-white/[0.04] border-transparent"
+              }`}
+            >
+              {dotColor && (
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor} ${isActive ? "opacity-100" : "opacity-50"}`} />
+              )}
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
 
@@ -133,7 +328,7 @@ const FilterSidebar = ({ filterType, filterDifficulty, onTypeChange, onDifficult
                   ? "bg-teal/10 border-teal/40 text-[#5eead4]"
                   : isActive
                   ? `${chipCls} border-opacity-60`
-                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.04] border-transparent"
+                  : "text-white/55 hover:text-white/80 hover:bg-white/[0.04] border-transparent"
               }`}
             >
               {label}
@@ -148,6 +343,7 @@ const FilterSidebar = ({ filterType, filterDifficulty, onTypeChange, onDifficult
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const TutorialCenterPage = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filterType       = searchParams.get("type")       ?? "ALL";
@@ -338,7 +534,7 @@ const TutorialCenterPage = () => {
 
   return (
     <div
-      className="w-full min-h-screen relative overflow-clip"
+      className="w-full min-h-screen relative"
       style={{ background: "radial-gradient(ellipse at 50% 40%, #0d6b65 0%, #074440 50%, #021a18 100%)" }}
     >
       {/* Pull-to-refresh indicator */}
@@ -369,12 +565,17 @@ const TutorialCenterPage = () => {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-[1600px] mx-auto xsm:px-0 md:px-4 pt-0 pb-24">
+      <div className="relative z-10 w-full pt-0 pb-24">
+      <div className="w-full max-w-[1440px] mx-auto xsm:px-0 md:px-6">
 
         {/* ── Page header + search bar ── */}
-        <div className="xsm:px-4 md:px-0 xsm:pt-6 md:pt-8 xsm:pb-0 md:pb-2 md:max-w-[1100px] md:mx-auto lg:max-w-none">
-          <p className="text-teal/70 text-[10px] font-bold uppercase tracking-widest mb-1">Tricks & Tutorials</p>
-          <h1 className="text-white font-bold xsm:text-2xl md:text-3xl mb-4">Tutorial Center</h1>
+        <div className="xsm:px-4 md:px-0 xsm:pt-6 md:pt-10 xsm:pb-0 md:pb-3">
+          <p className="text-teal/70 text-[10px] font-bold uppercase tracking-widest mb-2 text-center">Tricks & Tutorials</p>
+          <h1 className="font-bold xsm:text-3xl md:text-4xl lg:text-5xl leading-tight mb-2 text-center">
+            <span className="text-white">Tutorial </span>
+            <span style={{ color: "#5eead4" }}>Center</span>
+          </h1>
+          <p className="xsm:hidden md:block text-white/40 text-sm mb-5 text-center">Browse community combos and tutorials, or filter by skill level to find what to learn next.</p>
 
           {/* Search bar */}
           <div ref={searchWrapRef} className="relative xsm:mb-2 md:mb-0">
@@ -394,12 +595,15 @@ const TutorialCenterPage = () => {
                   if (e.key === "Escape") { setSearchOpen(false); inputRef.current?.blur(); }
                 }}
                 placeholder="Search tricks, tutorials, combos..."
-                className={`w-full border xsm:py-5 md:py-4 pl-12 pr-12 xsm:text-base md:text-sm text-white placeholder-white/30 focus:outline-none transition-all duration-200 ${
+                className={`w-full border xsm:py-5 md:py-4 pl-12 pr-12 xsm:text-base md:text-sm text-white placeholder-white/50 focus:outline-none transition-all duration-200 ${
                   searchOpen
-                    ? "bg-[#031f1e] border-[#0d9488]/50 rounded-t-2xl rounded-b-none"
-                    : "bg-[#021612] border-[#0d9488]/20 rounded-2xl hover:border-[#0d9488]/35"
+                    ? "border-[#0d9488]/60 rounded-t-2xl rounded-b-none"
+                    : "border-[#0d9488]/30 rounded-2xl hover:border-[#0d9488]/50"
                 }`}
-                style={{ boxShadow: searchOpen ? "0 0 0 3px rgba(13,148,136,0.08)" : "0 2px 24px rgba(0,0,0,0.5)" }}
+                style={{
+                  background: searchOpen ? "rgba(2,10,10,0.92)" : "rgba(3,22,20,0.85)",
+                  boxShadow: searchOpen ? "0 0 0 3px rgba(13,148,136,0.1), 0 4px 32px rgba(0,0,0,0.6)" : "0 4px 28px rgba(0,0,0,0.55)",
+                }}
               />
               {query ? (
                 <button
@@ -498,61 +702,43 @@ const TutorialCenterPage = () => {
             })()}
           </div>
 
-          {/* Mobile-only filter chips */}
-          <div className="md:hidden flex flex-col gap-2 xsm:py-2">
-            {/* Type chips */}
-            <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {TYPE_FILTERS.map(({ value, label }) => (
-                <button key={value} type="button" onClick={() => handleTypeChange(value)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-150 ${
-                    filterType === value
-                      ? "bg-[#0d9488]/20 border-[#0d9488]/40 text-[#5eead4]"
-                      : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/60"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {/* Difficulty chips */}
-            <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {DIFFICULTY_FILTERS.map(({ value, label }) => {
-                const isActive = filterDifficulty === value;
-                const chipCls  = value !== "ALL" ? DIFFICULTY_CHIP[value] : "";
-                return (
-                  <button key={value} type="button" onClick={() => handleDifficultyChange(value)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-150 ${
-                      isActive && value === "ALL"
-                        ? "bg-[#0d9488]/20 border-[#0d9488]/40 text-[#5eead4]"
-                        : isActive
-                        ? chipCls
-                        : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/60"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Skill level strip — desktop */}
+          <SkillLevelStrip onNavigate={navigate} />
         </div>
 
         {/* ── Desktop divider ── */}
         <div className="xsm:hidden md:block h-px bg-white/[0.06] md:mb-0" />
 
         {/* ── Layout ── */}
-        <div className="flex items-start justify-center md:gap-6 overflow-x-hidden md:pt-2">
+        <div className="flex items-start md:gap-6">
 
-          {/* Left sidebar — recent searches (lg only) */}
-          <aside className="xsm:hidden lg:block lg:w-[240px] flex-shrink-0 sticky top-[72px]" style={{ marginTop: "-80px" }}>
-            <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
-              <span className={LABEL}>Recent Searches</span>
-              <RecentSearchSidebar onSelect={handleSelectSearch} />
-            </div>
+          {/* Left sidebar — browse by level + recent searches (lg only) */}
+          <aside className="xsm:hidden lg:block flex-1 min-w-0 max-w-[320px] sticky top-[72px] pt-3">
+            <LeftSidebarContent
+              onNavigate={navigate}
+              onSelect={handleSelectSearch}
+            />
           </aside>
 
           {/* ── Feed column ── */}
-          <div className="xsm:w-full md:w-[600px] flex-shrink-0 min-w-0">
+          <div className="xsm:w-full md:w-[680px] lg:max-w-[760px] lg:w-full flex-shrink-0 min-w-0">
+
+            <div className="xsm:px-4 md:px-0" style={{ marginTop: "12px" }}>
+              <StartHereCard
+                onBeginnerFilter={() => navigate("/learn/beginner")}
+                onLearn={() => navigate("/learn")}
+              />
+            </div>
+            <div className="xsm:px-4 md:px-0">
+              <CreatePostPrompt onNavigate={() => navigate("/create-post")} />
+            </div>
+
+            {/* Feed section header */}
+            <div className="xsm:px-4 md:px-0 flex items-center gap-3 mb-3 mt-1">
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(13,148,136,0.3), rgba(13,148,136,0.06))" }} />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-teal/50 flex-shrink-0">Latest Posts</span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, rgba(13,148,136,0.3), rgba(13,148,136,0.06))" }} />
+            </div>
 
             {!initialDone ? (
               <div className="flex justify-center py-24">
@@ -594,7 +780,15 @@ const TutorialCenterPage = () => {
                       }}
                       className="xsm:px-4 md:px-0 pb-3"
                     >
-                      <FeedPostCard post={post} index={vItem.index} />
+                      <div className="rounded-2xl overflow-hidden" style={{
+                        borderTop: post.postType === "TRICK_TUTORIAL"
+                          ? "2px solid rgba(13,148,136,0.5)"
+                          : post.postType === "COMBO"
+                          ? "2px solid rgba(230,184,0,0.4)"
+                          : "2px solid transparent",
+                      }}>
+                        <FeedPostCard post={post} index={vItem.index} />
+                      </div>
                     </div>
                   );
                 })}
@@ -618,11 +812,13 @@ const TutorialCenterPage = () => {
           </div>
 
           {/* Right sidebar */}
-          <aside className="xsm:hidden md:block md:w-[240px] lg:w-[260px] flex-shrink-0 sticky top-[72px] flex flex-col gap-3" style={{ marginTop: "-80px" }}>
-            {/* Recent searches — md only (moves to left at lg) */}
-            <div className={`lg:hidden rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
-              <span className={LABEL}>Recent Searches</span>
-              <RecentSearchSidebar onSelect={handleSelectSearch} />
+          <aside className="xsm:hidden md:block flex-1 min-w-0 max-w-[320px] flex flex-col gap-3 sticky top-[72px] pt-3 self-start">
+            {/* Browse by level + recent searches — md only (moves to left at lg) */}
+            <div className="lg:hidden">
+              <LeftSidebarContent
+                onNavigate={navigate}
+                onSelect={handleSelectSearch}
+              />
             </div>
             {/* Filters — always visible on desktop */}
             <FilterSidebar
@@ -633,6 +829,7 @@ const TutorialCenterPage = () => {
             />
           </aside>
         </div>
+      </div>
       </div>
     </div>
   );
