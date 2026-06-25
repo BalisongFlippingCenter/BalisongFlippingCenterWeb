@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHeart, faComment, faLock, faBullhorn, faPlay, faImages,
 } from "@fortawesome/free-solid-svg-icons";
+import { useAppSelector } from "../redux/hooks";
 
 // ── Post type badge ───────────────────────────────────────────────────────────
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -25,6 +26,9 @@ interface params {
 }
 
 const ProfilePostCover = ({ post, onOpen }: params) => {
+  const likedPostIds = useAppSelector((state) => state.auth.user?.likedPostIds ?? []);
+  const isLiked      = likedPostIds.includes(Number(post.id));
+
   const isS3     = post.coverFile?.startsWith("http://") || post.coverFile?.startsWith("https://");
   const coverSrc = isS3 ? post.coverFile! : null;
   const isVideo  = coverSrc ? isVideoUrl(coverSrc) : false;
@@ -103,9 +107,9 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
         {/* Right side: route icon + like + comment */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
 
-          <span className="flex items-center gap-1 text-white/75 text-[10px] font-semibold">
-            <FontAwesomeIcon icon={faHeart} className="text-[9px]" />
-            {post.likes.toLocaleString()}
+          <span className="flex items-center gap-1 text-[10px] font-semibold">
+            <FontAwesomeIcon icon={faHeart} className={`text-[9px] ${isLiked ? "text-red" : "text-white/75"}`} />
+            <span className={isLiked ? "text-white/90" : "text-white/75"}>{post.likes.toLocaleString()}</span>
           </span>
           <span className="xsm:hidden md:flex items-center gap-1 text-white/75 text-[10px] font-semibold">
             <FontAwesomeIcon icon={faComment} className="text-[9px]" />

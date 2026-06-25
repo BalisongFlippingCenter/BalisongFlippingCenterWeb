@@ -6,6 +6,9 @@ import { Profile } from "../../modals/User";
 const mapAccount = (account: any): Profile => ({
   ...account,
   profileCaption: account.profileCaption ?? account.bio ?? null,
+  measurementUnit: account.measurementUnit?.toLowerCase() ?? null,
+  likedPostIds: account.likedPostIds ?? [],
+  likedCommentIds: account.likedCommentIds ?? [],
 });
 
 interface RegistrationPayload {
@@ -51,7 +54,7 @@ export const login = createAsyncThunk(
         localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
-      return { ...response.data, account: mapAccount(response.data.account) };
+return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
     }
@@ -74,7 +77,7 @@ export const loginWithRefreshToken = createAsyncThunk(
         localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
-      return { ...response.data, account: mapAccount(response.data.account) };
+return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
     }

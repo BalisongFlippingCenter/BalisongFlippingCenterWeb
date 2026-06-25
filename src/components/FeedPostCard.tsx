@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
-  faHeart, faComment,
+  faComment,
   faGlobe, faEarthAmericas,
   faImage, faArrowRightArrowLeft,
   faBullhorn, faLock, faChevronLeft, faChevronRight,
@@ -12,6 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { PostDetail } from "../modals/Post";
 import { useAppSelector } from "../redux/hooks";
+import LikeButton from "./LikeButton";
 import { formatCurrency } from "../utils/unitConversions";
 
 // ── Types & constants ─────────────────────────────────────────────────────────
@@ -92,9 +93,12 @@ export const difficultyStyle = (tag: string): { pill: string; dot: string } => {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
-  const navigate = useNavigate();
+const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: { post: PostDetail; index: number; variant?: "feed" | "page"; commentCountOverride?: number }) => {
+  const navigate       = useNavigate();
   const viewerCurrency = useAppSelector((state) => state.auth.user?.currency);
+  const viewerId       = useAppSelector((state) => state.auth.user?.id);
+  const isOwnPost      = !!viewerId && String(viewerId) === String(post.accountId);
+
   const [descExpanded,  setDescExpanded]  = useState(false);
   const [descOverflows, setDescOverflows] = useState(false);
   const [mediaIndex,    setMediaIndex]    = useState(0);
@@ -193,7 +197,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
   };
 
   return (
-    <div ref={cardRef} className={`w-full border-y border-x-0 lg:border lg:rounded-2xl border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
+    <div ref={cardRef} className={`w-full border-y border-x-0 lg:border border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${variant === "page" ? "lg:rounded-t-2xl" : "lg:rounded-2xl"} ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
 
       {/* ── Card header ── */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
@@ -304,7 +308,9 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
       })() : mediaFiles.length > 0 ? (
         <div
           ref={mediaContainerRef}
-          className="media-fs-container relative aspect-[4/5] lg:aspect-[4/3] overflow-hidden bg-[#0d0f14]"
+          className={`media-fs-container relative overflow-hidden bg-[#0d0f14] ${
+            variant === "page" && layout === "buysell" ? "aspect-video" : "aspect-[4/5] lg:aspect-[4/3]"
+          }`}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
             touchStartY.current = e.touches[0].clientY;
@@ -393,7 +399,7 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
               <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80 text-[11px] font-medium px-2 py-0.5 rounded-full">
                 {mediaIndex + 1} / {mediaFiles.length}
               </div>
-              {mediaFiles.length <= 6 && (
+              {mediaFiles.length <= 6 && variant !== "page" && (
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
                   {mediaFiles.map((_, i) => (
                     <button key={i} type="button" onClick={(e) => goTo(i, e)} className={`h-1.5 rounded-full transition-all duration-200 ${i === mediaIndex ? "w-3 bg-white" : "w-1.5 bg-white/40"}`} />
@@ -413,6 +419,27 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
           </button>
         </div>
       ) : null}
+
+      {/* ── Thumbnail strip — page variant, multi-file ── */}
+      {variant === "page" && mediaFiles.length > 1 && layout !== "trade" && (
+        <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/[0.06]" style={{ scrollbarWidth: "none" }}>
+          {mediaFiles.map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => goTo(i, e)}
+              className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#0d0f14] border-2 transition-all duration-150 ${
+                i === mediaIndex ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+              }`}
+            >
+              {isVideoUrl(url)
+                ? <video src={url} muted playsInline className="w-full h-full object-cover" />
+                : <img src={url} alt="" className="w-full h-full object-cover" />
+              }
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Buy/sell meta ── */}
       {layout === "buysell" && (
@@ -557,18 +584,29 @@ const FeedPostCard = ({ post, index }: { post: PostDetail; index: number }) => {
         </div>
       )}
 
-      {/* ── Engagement counts ── */}
+      {/* ── Engagement ── */}
       <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-4">
-        <span className="flex items-center gap-1.5 text-white/30 text-xs">
-          <FontAwesomeIcon icon={faHeart} className="text-[11px]" />
-          <span className="font-medium">{post.likes.toLocaleString()}</span>
-          <span className="text-white/20">likes</span>
-        </span>
-        <span className="flex items-center gap-1.5 text-white/30 text-xs">
-          <FontAwesomeIcon icon={faComment} className="text-[11px]" />
-          <span className="font-medium">{post.comments.toLocaleString()}</span>
-          <span className="text-white/20">comments</span>
-        </span>
+        <LikeButton postId={post.id} initialCount={post.likes} isOwner={isOwnPost} />
+        {(() => {
+          const count = commentCountOverride ?? post.comments;
+          return variant === "page" ? (
+            <span className="flex items-center gap-1.5 text-white/30 text-xs">
+              <FontAwesomeIcon icon={faComment} className="text-[11px]" />
+              <span className="font-medium">{count.toLocaleString()}</span>
+              <span className="text-white/20">{count === 1 ? "comment" : "comments"}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}?focus=comments`); }}
+              className="flex items-center gap-1.5 text-white/30 text-xs hover:text-white/60 transition-colors duration-150"
+            >
+              <FontAwesomeIcon icon={faComment} className="text-[11px]" />
+              <span className="font-medium">{count.toLocaleString()}</span>
+              <span className="text-white/20">{count === 1 ? "comment" : "comments"}</span>
+            </button>
+          );
+        })()}
       </div>
 
     </div>

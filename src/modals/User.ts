@@ -26,4 +26,7 @@ export interface Profile {
 
   measurementUnit?: "imperial" | "metric" | null;
   currency?: "USD" | "EUR" | null;
+
+  likedPostIds?: number[];
+  likedCommentIds?: number[];
 }
