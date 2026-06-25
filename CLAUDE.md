@@ -119,8 +119,8 @@ Also claude needs to remember that alot of the functionality will need to be imp
 
 ## Known Backend Issues
 
-- **Login/refresh response missing profile fields** — `/auth/login` and `/auth/refresh-token-login` do not return all `Profile` fields (`profileCaption`, `profileImg`, social links, etc.) in the account object. This causes saved values to appear empty after logout/login. Needs to be fixed on the backend so the full account is returned on every auth response.
-- **Post response missing embedded knife reference** — `/posts/any` (and likely `/posts/:id`) returns only `referenceKnifeId` (an integer) inside the post object instead of a full embedded knife object. The frontend needs `displayName`, `knifeMaker`, `baseKnifeModel`, and `coverPhoto` to render the referenced knife card on the feed and post page. The backend needs to join and embed the full `CollectionKnife` data in every post response, the same way it already embeds the `author` object. Until fixed, referenced knives will not display on any post. The frontend mapping in `Post.ts` (`mapPostDetail`) already handles the embedded object shape via `normalizeKnifeRef` — no frontend change needed once the backend sends the data.
+- **Login/refresh response profile fields** — Backend confirms fields (`profileImg`, `bio`/`profileCaption`, social links) are present in the response. Frontend has a debug log (`[auth/login] raw response.data`) to verify the exact response shape. If fields still appear empty after login, check the console log and confirm the account key path matches `response.data.account`. Fields may also be null in the DB for older test accounts — run the SQL fix to set nullable defaults.
+- **Post embedded knife reference** — Fixed in backend commit 99a0e19. Returns full object with `id`, `displayName`, `knifeMaker`, `baseKnifeModel`, `coverPhoto`. Frontend mapping in `Post.ts` (`normalizeKnifeRef`) is already ready. Will be live once the current pipeline deploys.
 
 ## Product World & Tutorial Center — Design Notes
 

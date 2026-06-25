@@ -59,6 +59,18 @@ const authSlice = createSlice({
       state.user = action.payload.newUser;
       state.accessToken = action.payload.newAccessToken;
     },
+    toggleLikedPost: (state, action: PayloadAction<number>) => {
+      if (!state.user) return;
+      const ids = state.user.likedPostIds ?? [];
+      const idx = ids.indexOf(action.payload);
+      state.user.likedPostIds = idx === -1 ? [...ids, action.payload] : ids.filter((id) => id !== action.payload);
+    },
+    toggleLikedComment: (state, action: PayloadAction<number>) => {
+      if (!state.user) return;
+      const ids = state.user.likedCommentIds ?? [];
+      const idx = ids.indexOf(action.payload);
+      state.user.likedCommentIds = idx === -1 ? [...ids, action.payload] : ids.filter((id) => id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -159,6 +171,8 @@ export const {
   setNewAccessToken,
   setNewUser,
   setCredentials,
+  toggleLikedPost,
+  toggleLikedComment,
 } = authSlice.actions;
 
 export default authSlice.reducer;
