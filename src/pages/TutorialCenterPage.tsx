@@ -13,9 +13,11 @@ import { useAppSelector } from "../redux/hooks";
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE      = 20;
-const LS_RECENT_KEY  = "tc_recent_searches";
-const LS_SAVED_KEY   = "tc_saved_searches";
-const MAX_RECENT     = 8;
+const LS_RECENT_KEY          = "tc_recent_searches";
+const LS_SAVED_KEY           = "tc_saved_searches";
+const LS_RECENTLY_VIEWED_KEY = "tc_recently_viewed_tricks";
+const MAX_RECENT             = 8;
+const MAX_RECENTLY_VIEWED    = 5;
 
 const TYPE_FILTERS = [
   { value: "ALL",             label: "All"      },
@@ -47,6 +49,20 @@ const saveList = (key: string, list: string[]) =>
 const pushRecent = (term: string) => {
   const prev = loadList(LS_RECENT_KEY).filter((s) => s !== term);
   saveList(LS_RECENT_KEY, [term, ...prev].slice(0, MAX_RECENT));
+};
+
+interface RecentTrick { name: string; slug: string; level: string }
+
+export const pushRecentlyViewed = (trick: RecentTrick) => {
+  try {
+    const prev: RecentTrick[] = JSON.parse(localStorage.getItem(LS_RECENTLY_VIEWED_KEY) ?? "[]");
+    const deduped = prev.filter((t) => !(t.slug === trick.slug && t.level === trick.level));
+    localStorage.setItem(LS_RECENTLY_VIEWED_KEY, JSON.stringify([trick, ...deduped].slice(0, MAX_RECENTLY_VIEWED)));
+  } catch { /* noop */ }
+};
+
+const loadRecentlyViewed = (): RecentTrick[] => {
+  try { return JSON.parse(localStorage.getItem(LS_RECENTLY_VIEWED_KEY) ?? "[]"); } catch { return []; }
 };
 
 // ── Sidebar card constants ────────────────────────────────────────────────────
@@ -126,44 +142,70 @@ const SkillLevelStrip = ({ onNavigate }: { onNavigate: (path: string) => void })
   </div>
 );
 
+// ── Most Recent Trick card ───────────────────────────────────────────────
+
+const LEVEL_CHIP: Record<string, string> = {
+  beginner:     "bg-green/15 border-green/30 text-green",
+  intermediate: "bg-gold/15 border-gold/30 text-gold",
+  advanced:     "bg-red/15 border-red/30 text-red",
+};
+
+const RecentlyViewedCard = ({ onNavigate, stretch = false }: { onNavigate: (path: string) => void; stretch?: boolean }) => {
+  const tricks = loadRecentlyViewed();
+  const stretchClass = stretch ? "flex-1 flex flex-col" : "";
+
+  if (tricks.length === 0) {
+    return (
+      <div className={`rounded-2xl p-4 ${CARD_BG} ${stretchClass}`} style={CARD_STYLE}>
+        <span className={LABEL}>Most Recent Trick</span>
+        <p className="text-white/25 text-xs leading-relaxed">
+          Tricks you visit will appear here for quick access.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-2xl p-4 ${CARD_BG} ${stretchClass}`} style={CARD_STYLE}>
+      <span className={LABEL}>Most Recent Trick</span>
+      <div className="flex flex-col gap-1 -mx-1">
+        {tricks.map((t) => (
+          <button
+            key={`${t.level}-${t.slug}`}
+            type="button"
+            onClick={() => onNavigate(`/tutorial-center/${t.level}/${t.slug}`)}
+            className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/[0.05] transition-colors duration-100 text-left group"
+          >
+            <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full border flex-shrink-0 ${LEVEL_CHIP[t.level] ?? LEVEL_CHIP.beginner}`}>
+              {t.level.slice(0, 3)}
+            </span>
+            <span className="text-white/55 text-xs truncate group-hover:text-white/85 transition-colors duration-100 flex-1">{t.name}</span>
+            <FontAwesomeIcon icon={faChevronRight} className="text-[9px] text-white/15 group-hover:text-white/35 transition-colors flex-shrink-0" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ── Left sidebar (browse by level + recent searches) ─────────────────────────
 
 const LeftSidebarContent = ({
   onNavigate,
   onSelect,
+  stretch = false,
 }: {
   onNavigate: (path: string) => void;
   onSelect: (term: string) => void;
+  stretch?: boolean;
 }) => {
   const recent = loadList(LS_RECENT_KEY);
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Browse by Level */}
-      <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
-        <span className={LABEL}>Browse by Level</span>
-        <div className="flex flex-col gap-2">
-          {SKILL_LEVELS.map(({ value, label, accentColor }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onNavigate(`/tutorial-center/${value.toLowerCase()}`)}
-              className="relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 border overflow-hidden border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.03]"
-            >
-              <div
-                className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
-                style={{ background: accentColor, opacity: 0.45 }}
-              />
-              <span className="font-semibold text-xs pl-1 flex-1 text-left text-white/65">{label}</span>
-              <span className="text-[11px] flex-shrink-0 text-white/20">→</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className={`flex flex-col gap-3 ${stretch ? "h-full" : ""}`}>
       {/* Recent Searches — only if non-empty */}
       {recent.length > 0 && (
-        <div className={`rounded-2xl p-4 ${CARD_BG}`} style={CARD_STYLE}>
+        <div className={`rounded-2xl p-4 ${CARD_BG} ${stretch ? "flex-1 flex flex-col" : ""}`} style={CARD_STYLE}>
           <span className={LABEL}>Recent Searches</span>
           <div className="flex flex-col gap-0.5 -mx-1">
             {recent.map((term) => (
@@ -180,6 +222,7 @@ const LeftSidebarContent = ({
           </div>
         </div>
       )}
+      <RecentlyViewedCard onNavigate={onNavigate} />
     </div>
   );
 };
@@ -807,21 +850,24 @@ const TutorialCenterPage = () => {
           </div>
 
           {/* Right sidebar */}
-          <aside className="xsm:hidden md:block flex-1 min-w-0 max-w-[320px] flex flex-col gap-3 sticky top-[72px] pt-3 self-start">
-            {/* Browse by level + recent searches — md only (moves to left at lg) */}
-            <div className="lg:hidden">
+          <aside className="xsm:hidden md:block flex-1 min-w-0 max-w-[320px] self-stretch">
+            {/* Recent searches + most recent trick — scroll with page */}
+            <div className="lg:hidden flex flex-col md:h-[270px] pt-3">
               <LeftSidebarContent
                 onNavigate={navigate}
                 onSelect={handleSelectSearch}
+                stretch
               />
             </div>
-            {/* Filters — always visible on desktop */}
-            <FilterSidebar
-              filterType={filterType}
-              filterDifficulty={filterDifficulty}
-              onTypeChange={handleTypeChange}
-              onDifficultyChange={handleDifficultyChange}
-            />
+            {/* Filters — sticky only */}
+            <div className="sticky top-[72px] pt-3 md:mt-[27px] lg:mt-0">
+              <FilterSidebar
+                filterType={filterType}
+                filterDifficulty={filterDifficulty}
+                onTypeChange={handleTypeChange}
+                onDifficultyChange={handleDifficultyChange}
+              />
+            </div>
           </aside>
         </div>
       </div>

@@ -11,6 +11,7 @@ import ProtectedRoutes from "./routes/ProtectedRoutes";
 import TutorialCenterPage from "./pages/TutorialCenterPage";
 import TutorialCenterLevelPage from "./pages/TutorialCenterLevelPage";
 import TutorialCenterGettingStartedPage from "./pages/TutorialCenterGettingStartedPage";
+import TrickTutorialPage from "./pages/TrickTutorialPage";
 import ProductWorldPage from "./pages/ProductWorldPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import HomePage from "./pages/HomePage";
@@ -145,6 +146,7 @@ const App = () => {
 
           <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/tutorial-center/getting-started" element={<TutorialCenterGettingStartedPage />} />
+          <Route path="/tutorial-center/:level/:trickSlug" element={<TrickTutorialPage />} />
           <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
           <Route path="/product-world" element={<ProductWorldPage />} />
           <Route path="/about" element={<AboutPage />} />
