@@ -1,5 +1,7 @@
-import { motion } from "motion/react";
-import { Route, Routes } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { Route, Routes, useLocation } from "react-router-dom";
+import PostDrawer from "./components/PostDrawer";
+import { PostDetail } from "./modals/Post";
 import MainLayout from "./layouts/MainLayout";
 import { LoginPage } from "./pages/auth/LoginPage";
 
@@ -7,6 +9,8 @@ import ProfilePage from "./pages/ProfilePage";
 import AuthProtectedRoutes from "./routes/AuthProtectedRoutes";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import TutorialCenterPage from "./pages/TutorialCenterPage";
+import TutorialCenterLevelPage from "./pages/TutorialCenterLevelPage";
+import TutorialCenterGettingStartedPage from "./pages/TutorialCenterGettingStartedPage";
 import ProductWorldPage from "./pages/ProductWorldPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import HomePage from "./pages/HomePage";
@@ -40,6 +44,12 @@ import PostPage from "./pages/PostPage";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const location       = useLocation();
+  const locationState  = location.state as { backgroundLocation?: ReturnType<typeof useLocation>; post?: PostDetail } | null;
+  const bgLocation     = locationState?.backgroundLocation;
+  const drawerPostId   = bgLocation ? location.pathname.split("/post/")[1]?.split("?")[0] : null;
+  const drawerPost     = locationState?.post;
+  const focusComments  = location.search.includes("focus=comments");
 
   const user = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
@@ -125,7 +135,8 @@ const App = () => {
     );
   } else {
     return (
-      <Routes>
+      <>
+      <Routes location={bgLocation ?? location}>
         <Route path="/" element={<MainLayout />}>
           {/*Public Routes*/}
           <Route path="/" element={<HomePage />} />
@@ -133,6 +144,8 @@ const App = () => {
           <Route path="/post/:postId" element={<PostPage />} />
 
           <Route path="/tutorial-center" element={<TutorialCenterPage />} />
+          <Route path="/tutorial-center/getting-started" element={<TutorialCenterGettingStartedPage />} />
+          <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
           <Route path="/product-world" element={<ProductWorldPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/learn" element={<LearnPage />} />
@@ -255,6 +268,18 @@ const App = () => {
           <Route path="*" element={<h1>404</h1>} />
         </Route>
       </Routes>
+
+      <AnimatePresence>
+        {bgLocation && drawerPostId && (
+          <PostDrawer
+            key={drawerPostId}
+            postId={drawerPostId}
+            post={drawerPost}
+            focusComments={focusComments}
+          />
+        )}
+      </AnimatePresence>
+      </>
     );
   }
 };

@@ -4,7 +4,7 @@ import { axiosApiInstance } from "../api/axios";
 import ProfilePostCover from "./ProfilePostCover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown, faTableCells } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 const FILTER_OPTIONS = ["All", "Sell/Trade", "Flipping", "Show-Off", "Collection", "Mod-Work"] as const;
@@ -37,6 +37,7 @@ const PublicProfilePostsComponent = ({ accountId }: Props) => {
   const [fetchError, setFetchError]     = useState(false);
 
   const navigate  = useNavigate();
+  const location  = useLocation();
   const filterRef = useRef<HTMLDivElement>(null);
   const sortRef   = useRef<HTMLDivElement>(null);
 
@@ -219,7 +220,7 @@ const PublicProfilePostsComponent = ({ accountId }: Props) => {
         <div className="flex flex-col xsm:gap-0 lg:gap-4 xsm:px-0 lg:px-6 xsm:pt-0.5 lg:pt-2 pb-8">
           <div className="grid xsm:grid-cols-3 lg:grid-cols-4 xsm:gap-px lg:gap-3">
             {sorted.map((post) => (
-              <ProfilePostCover post={post} key={post.id} onOpen={(id) => navigate(`/post/${id}`)} />
+              <ProfilePostCover post={post} key={post.id} onOpen={(id) => navigate(`/post/${id}`, { state: { backgroundLocation: location } })} />
             ))}
           </div>
 

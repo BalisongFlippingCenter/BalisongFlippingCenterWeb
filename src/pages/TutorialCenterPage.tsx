@@ -94,7 +94,7 @@ const SKILL_LEVELS = [
 ] as const;
 
 const SkillLevelStrip = ({ onNavigate }: { onNavigate: (path: string) => void }) => (
-  <div className="grid grid-cols-3 gap-3 mt-3">
+  <div className="grid xsm:grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
     {SKILL_LEVELS.map(({ value, label, desc, accentColor, hoverBorder }) => {
       return (
         <button
@@ -380,22 +380,14 @@ const TutorialCenterPage = () => {
 
     const params: Record<string, unknown> = { page: pageIndex, size: PAGE_SIZE };
     if (filterTypeRef.current !== "ALL") params.postType = filterTypeRef.current;
-    // TODO: pass difficulty param once backend supports it
-    // if (filterDifficultyRef.current !== "ALL") params.difficulty = filterDifficultyRef.current;
+    if (filterDifficultyRef.current !== "ALL") params.difficultyTag = filterDifficultyRef.current;
 
     axiosApiInstance
       .get("/posts/any", { params })
       .then((res) => {
-        let mapped: PostDetail[] = (res.data?.content ?? [])
+        const mapped: PostDetail[] = (res.data?.content ?? [])
           .map(mapPostDetail)
           .filter((p: PostDetail) => p.postType === "COMBO" || p.postType === "TRICK_TUTORIAL");
-
-        // Client-side difficulty filter until backend supports it
-        if (filterDifficultyRef.current !== "ALL") {
-          mapped = mapped.filter(
-            (p) => p.difficultyTag?.toUpperCase() === filterDifficultyRef.current
-          );
-        }
 
         if (pageIndex === 0) setPosts(mapped);
         else setPosts((prev) => [...prev, ...mapped]);
@@ -728,7 +720,7 @@ const TutorialCenterPage = () => {
 
             <div className="xsm:px-4 md:px-0" style={{ marginTop: "12px" }}>
               <StartHereCard
-                onBeginnerFilter={() => navigate("/learn/beginner")}
+                onBeginnerFilter={() => navigate("/tutorial-center/getting-started")}
                 onLearn={() => navigate("/learn")}
               />
             </div>

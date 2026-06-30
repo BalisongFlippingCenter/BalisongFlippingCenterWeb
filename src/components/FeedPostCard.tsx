@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
@@ -95,6 +95,7 @@ export const difficultyStyle = (tag: string): { pill: string; dot: string } => {
 
 const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: { post: PostDetail; index: number; variant?: "feed" | "page"; commentCountOverride?: number }) => {
   const navigate       = useNavigate();
+  const location       = useLocation();
   const viewerCurrency = useAppSelector((state) => state.auth.user?.currency);
   const viewerId       = useAppSelector((state) => state.auth.user?.id);
   const isOwnPost      = !!viewerId && String(viewerId) === String(post.accountId);
@@ -171,6 +172,11 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     }
   };
 
+  const goToPost = () => {
+    if (variant === "page") return;
+    navigate(`/post/${post.id}`, { state: { backgroundLocation: location, post } });
+  };
+
   const mediaFiles = post.mediaFiles;
   const currentUrl = mediaFiles[mediaIndex] ?? "";
   const isVid      = !!currentUrl && isVideoUrl(currentUrl);
@@ -197,7 +203,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   };
 
   return (
-    <div ref={cardRef} className={`w-full border-y border-x-0 lg:border border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${variant === "page" ? "lg:rounded-t-2xl" : "lg:rounded-2xl"} ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
+    <div ref={cardRef} onClick={goToPost} className={`w-full border-y border-x-0 lg:border border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${variant === "page" ? "lg:rounded-t-2xl" : "lg:rounded-2xl cursor-pointer"} ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
 
       {/* ── Card header ── */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
@@ -590,20 +596,20 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
         {(() => {
           const count = commentCountOverride ?? post.comments;
           return variant === "page" ? (
-            <span className="flex items-center gap-1.5 text-white/30 text-xs">
+            <span className="flex items-center gap-1.5 text-white/55 text-xs">
               <FontAwesomeIcon icon={faComment} className="text-[11px]" />
               <span className="font-medium">{count.toLocaleString()}</span>
-              <span className="text-white/20">{count === 1 ? "comment" : "comments"}</span>
+              <span className="text-white/40">{count === 1 ? "comment" : "comments"}</span>
             </span>
           ) : (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}?focus=comments`); }}
-              className="flex items-center gap-1.5 text-white/30 text-xs hover:text-white/60 transition-colors duration-150"
+              onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}?focus=comments`, { state: { backgroundLocation: location, post } }); }}
+              className="flex items-center gap-1.5 text-white/55 text-xs hover:text-white/80 transition-colors duration-150"
             >
               <FontAwesomeIcon icon={faComment} className="text-[11px]" />
               <span className="font-medium">{count.toLocaleString()}</span>
-              <span className="text-white/20">{count === 1 ? "comment" : "comments"}</span>
+              <span className="text-white/40">{count === 1 ? "comment" : "comments"}</span>
             </button>
           );
         })()}

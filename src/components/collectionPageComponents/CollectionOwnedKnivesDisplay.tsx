@@ -36,7 +36,7 @@ const CollectionOwnedKnivesDisplay = () => {
           <div className="flex items-stretch">
 
             {/* Cover image */}
-            <div className="xsm:w-44 xsm:h-44 md:w-64 md:h-56 flex-shrink-0 overflow-hidden">
+            <div className="xsm:w-36 md:w-56 flex-shrink-0 overflow-hidden self-stretch">
               {featuredKnife.coverPhoto && featuredKnife.coverPhoto !== "" ? (
                 <Image imageId={featuredKnife.coverPhoto} />
               ) : (

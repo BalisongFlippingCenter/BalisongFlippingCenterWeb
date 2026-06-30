@@ -99,7 +99,7 @@ const CommentsSection = ({ postId, commentCount: initialCount, focusInput, onTot
       {/* Input */}
       <div className="px-4 pt-3 pb-3">
         {isLoggedIn
-          ? <CommentInput onSubmit={handlePost} autoFocus={focusInput} />
+          ? <CommentInput onSubmit={handlePost} />
           : <p className="text-white/25 text-xs text-center py-2">Log in to leave a comment.</p>
         }
       </div>

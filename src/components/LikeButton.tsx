@@ -50,7 +50,7 @@ const LikeButton = ({ postId, initialCount, isOwner = false, className = "" }: L
       type="button"
       onClick={handleLike}
       className={`flex items-center gap-1.5 text-xs transition-colors duration-150 ${
-        isOwner ? "text-white/15 cursor-not-allowed" : liked ? "text-red" : "text-white/30 hover:text-white/60"
+        isOwner ? "text-white/15 cursor-not-allowed" : liked ? "text-red" : "text-white/55 hover:text-white/80"
       } ${!isLoggedIn || isOwner ? "cursor-default" : "cursor-pointer"} ${className}`}
     >
       <FontAwesomeIcon
@@ -58,7 +58,7 @@ const LikeButton = ({ postId, initialCount, isOwner = false, className = "" }: L
         className={`text-[11px] transition-transform duration-150 ${liked ? "scale-110" : "scale-100"}`}
       />
       <span className="font-medium">{likeCount.toLocaleString()}</span>
-      <span className={liked ? "text-red/60" : "text-white/20"}>{likeCount === 1 ? "like" : "likes"}</span>
+      <span className={liked ? "text-red/70" : "text-white/40"}>{likeCount === 1 ? "like" : "likes"}</span>
     </button>
   );
 };
