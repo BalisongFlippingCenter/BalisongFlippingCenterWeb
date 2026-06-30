@@ -1,0 +1,36 @@
+[
+  {
+    "slug": "double-rollout",
+    "level": "beginner",
+    "name": "Double Rollout",
+    "duration": "~2 min",
+    "description": "The foundational trick of balisong flipping. Nearly every other trick builds on this motion — master it before moving on to anything else.",
+    "videoUrl": null,
+    "steps": [
+      {
+        "title": "Start closed, safe handle in hand",
+        "body": "Y-grip on the safe handle, latch facing up."
+      },
+      {
+        "title": "Drop the bite handle outward",
+        "body": "Let it swing away from your body as the blade opens. Keep your grip on the safe handle."
+      },
+      {
+        "title": "Roll it over the back of your hand",
+        "body": "Let the momentum carry it over. Don't force it — the weight does the work."
+      },
+      {
+        "title": "Catch and close",
+        "body": "Catch the bite handle as it comes around and reverse the motion to close. That full sequence is the double rollout."
+      }
+    ],
+    "tips": [
+      {
+        "type": "warning",
+        "body": "Gripping too tightly through the whole motion kills the momentum. Let the knife swing freely — your hand guides, not controls."
+      }
+    ],
+    "buildsInto": [
+    ]
+  }
+]

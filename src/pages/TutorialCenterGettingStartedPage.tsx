@@ -72,7 +72,7 @@ const TutorialCenterGettingStartedPage = () => {
   return (
     <div className="w-full min-h-screen text-white relative">
       <TutorialCenterPageBackground />
-      <div className="relative z-10 max-w-[720px] mx-auto xsm:px-4 md:px-6 lg:px-8 xsm:pt-8 xsm:pb-28 md:pt-8 md:pb-24">
+      <div className="relative z-10 max-w-[1100px] mx-auto xsm:px-4 md:px-6 lg:px-10 xsm:pt-8 xsm:pb-28 md:pt-8 md:pb-24">
 
         {/* Back */}
         <button

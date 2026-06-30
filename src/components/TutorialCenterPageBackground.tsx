@@ -2,14 +2,12 @@ const MAZE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' 
 
 const TutorialCenterPageBackground = () => (
   <div className="absolute inset-0 pointer-events-none">
-    {/* Teal gradient — bright at top, very dark teal at bottom */}
     <div
       className="absolute inset-0"
       style={{
-        background: "linear-gradient(to bottom, #032825 0%, #011410 8%, #010a08 20%, #010a08 100%)",
+        background: "radial-gradient(ellipse at 50% 40%, #0d6b65 0%, #074440 50%, #021a18 100%)",
       }}
     />
-    {/* Maze pattern across full height */}
     <div
       className="absolute inset-0"
       style={{ backgroundImage: MAZE, backgroundSize: "80px 80px" }}
