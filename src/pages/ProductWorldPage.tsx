@@ -3,16 +3,15 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faXmark, faSliders, faClock, faStar,
+  faMagnifyingGlass, faXmark, faSliders, faClock, faStar, faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
+import { useAppSelector } from "../redux/hooks";
 
 const PAGE_SIZE       = 20;
-const LS_RECENT_KEY  = "pw_recent_searches";
-const LS_SAVED_KEY   = "pw_saved_searches";
 const MAX_RECENT     = 8;
 
 const TYPE_FILTERS = [
@@ -31,10 +30,10 @@ const saveList = (key: string, list: string[]) => {
   localStorage.setItem(key, JSON.stringify(list));
 };
 
-const pushRecent = (term: string) => {
+const pushRecent = (term: string, key: string) => {
   if (!term.trim()) return;
-  const prev = loadList(LS_RECENT_KEY).filter((s) => s !== term);
-  saveList(LS_RECENT_KEY, [term, ...prev].slice(0, MAX_RECENT));
+  const prev = loadList(key).filter((s) => s !== term);
+  saveList(key, [term, ...prev].slice(0, MAX_RECENT));
 };
 
 // ── Filter sidebar ────────────────────────────────────────────────────────────
@@ -81,38 +80,42 @@ const FilterSidebar = ({ filterType, onTypeChange }: { filterType: string; onTyp
 
 const SearchSidebar = ({
   onSelect,
+  lsRecentKey,
+  lsSavedKey,
 }: {
   onSelect: (term: string) => void;
+  lsRecentKey: string;
+  lsSavedKey: string;
 }) => {
-  const [recent, setRecent] = useState<string[]>(() => loadList(LS_RECENT_KEY));
-  const [saved,  setSaved]  = useState<string[]>(() => loadList(LS_SAVED_KEY));
+  const [recent, setRecent] = useState<string[]>(() => loadList(lsRecentKey));
+  const [saved,  setSaved]  = useState<string[]>(() => loadList(lsSavedKey));
 
   const refresh = () => {
-    setRecent(loadList(LS_RECENT_KEY));
-    setSaved(loadList(LS_SAVED_KEY));
+    setRecent(loadList(lsRecentKey));
+    setSaved(loadList(lsSavedKey));
   };
 
   const removeRecent = (term: string) => {
     const next = recent.filter((s) => s !== term);
-    saveList(LS_RECENT_KEY, next);
+    saveList(lsRecentKey, next);
     setRecent(next);
   };
 
   const clearRecent = () => {
-    saveList(LS_RECENT_KEY, []);
+    saveList(lsRecentKey, []);
     setRecent([]);
   };
 
   const toggleSaved = (term: string) => {
     const isSaved = saved.includes(term);
     const next = isSaved ? saved.filter((s) => s !== term) : [term, ...saved];
-    saveList(LS_SAVED_KEY, next);
+    saveList(lsSavedKey, next);
     setSaved(next);
   };
 
   const removeSaved = (term: string) => {
     const next = saved.filter((s) => s !== term);
-    saveList(LS_SAVED_KEY, next);
+    saveList(lsSavedKey, next);
     setSaved(next);
   };
 
@@ -179,7 +182,7 @@ const SearchSidebar = ({
           <p className="text-white/20 text-xs">No recent searches.</p>
         ) : (
           <div className="flex flex-col gap-1">
-            {recent.map((term) => (
+            {recent.slice(0, 3).map((term) => (
               <div key={term} className="flex items-center gap-2 group">
                 <button
                   type="button"
@@ -299,6 +302,11 @@ const CompactPostCard = ({ post }: { post: PostDetail }) => {
 const ProductWorldPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate      = useNavigate();
+
+  const user        = useAppSelector((state) => state.auth.user);
+  const uid         = user?.identifierCode ?? "guest";
+  const lsRecentKey = `pw_recent_searches_${uid}`;
+  const lsSavedKey  = `pw_saved_searches_${uid}`;
   const filterType    = searchParams.get("type") ?? "ALL";
   const filterTypeRef = useRef(filterType);
 
@@ -310,13 +318,13 @@ const ProductWorldPage = () => {
   const [query,        setQuery]       = useState("");
   const [searchOpen,   setSearchOpen]  = useState(false);
 
-  const listRef      = useRef<HTMLDivElement>(null);
-  const inputRef     = useRef<HTMLInputElement>(null);
+  const listRef       = useRef<HTMLDivElement>(null);
+  const inputRef      = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
-  const isFetching   = useRef(false);
+  const isFetching    = useRef(false);
 
   // Track saved state at page level so SearchSidebar star icons stay in sync
-  const [savedSearches, setSavedSearches] = useState<string[]>(() => loadList(LS_SAVED_KEY));
+  const [savedSearches, setSavedSearches] = useState<string[]>([]);
 
   const fetchPosts = useCallback((pageIndex: number) => {
     if (isFetching.current) return;
@@ -334,7 +342,6 @@ const ProductWorldPage = () => {
           .map(mapPostDetail)
           .filter((p: PostDetail) => {
             if (p.postType !== "BUY_SELL" && p.postType !== "TRADE") return false;
-            // Hide selling/trade posts with no knife attached (knife was removed from collection)
             if (p.postType === "TRADE" && !p.offeringKnife) return false;
             if (p.postType === "BUY_SELL" && p.mode !== "BUYING" && !p.offeringKnife) return false;
             return true;
@@ -374,11 +381,12 @@ const ProductWorldPage = () => {
   const handleSearchSubmit = useCallback((term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
-    pushRecent(trimmed);
-    setSavedSearches(loadList(LS_SAVED_KEY));
-    setQuery(trimmed);
-    // TODO: trigger filtered fetch when backend supports query param
-  }, []);
+    pushRecent(trimmed, lsRecentKey);
+    setSavedSearches(loadList(lsSavedKey));
+    setQuery("");
+    setSearchOpen(false);
+    navigate(`/product-world/search?q=${encodeURIComponent(trimmed)}`);
+  }, [navigate]);
 
   const handleSelectSearch = (term: string) => {
     setQuery(term);
@@ -453,18 +461,13 @@ const ProductWorldPage = () => {
                 >
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
-              ) : (
-                <div className="absolute right-4 xsm:hidden md:flex items-center gap-1.5 pointer-events-none">
-                  <kbd className="text-white/15 text-[10px] font-medium border border-white/[0.08] rounded px-1.5 py-0.5 bg-white/[0.04]">⌘</kbd>
-                  <kbd className="text-white/15 text-[10px] font-medium border border-white/[0.08] rounded px-1.5 py-0.5 bg-white/[0.04]">K</kbd>
-                </div>
-              )}
+              ) : null}
             </div>
 
             {/* Dropdown */}
             {searchOpen && (() => {
-              const recent  = loadList(LS_RECENT_KEY);
-              const saved   = loadList(LS_SAVED_KEY);
+              const recent  = loadList(lsRecentKey);
+              const saved   = loadList(lsSavedKey);
               const filtered = query.trim()
                 ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(query.toLowerCase()))
                 : [];
@@ -526,15 +529,18 @@ const ProductWorldPage = () => {
                     <div className="px-5 py-4 text-white/25 text-xs">No saved or recent searches match "{query}"</div>
                   )}
 
-                  {/* Footer hint */}
                   {query.trim() && (
-                    <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
-                      <span className="text-white/25 text-xs">Press <kbd className="border border-white/10 rounded px-1 py-0.5 bg-white/[0.04] text-white/30">Enter</kbd> to search</span>
-                      <button type="button" onMouseDown={() => { handleSearchSubmit(query); setSearchOpen(false); }}
-                        className="text-gold/60 text-xs font-semibold hover:text-gold transition-colors duration-150">
-                        Search →
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onMouseDown={() => handleSearchSubmit(query)}
+                      className="w-full flex items-center gap-3 px-5 py-3.5 border-t border-white/[0.06] hover:bg-white/[0.04] transition-colors duration-100 text-left group"
+                    >
+                      <FontAwesomeIcon icon={faMagnifyingGlass} className="text-gold/40 text-[10px] flex-shrink-0 group-hover:text-gold/70 transition-colors" />
+                      <span className="text-white/45 text-sm group-hover:text-white/70 transition-colors duration-100">
+                        Search for <span className="text-gold/70 font-medium group-hover:text-gold">"{query.trim()}"</span>
+                      </span>
+                      <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 ml-auto flex-shrink-0 group-hover:text-white/35 transition-colors" />
+                    </button>
                   )}
                 </div>
               );
@@ -589,6 +595,8 @@ const ProductWorldPage = () => {
             <SearchSidebar
               key={savedSearches.join(",")}
               onSelect={handleSelectSearch}
+              lsRecentKey={lsRecentKey}
+              lsSavedKey={lsSavedKey}
             />
 
             {/* Filters */}

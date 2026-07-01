@@ -9,13 +9,11 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { useAppSelector } from "../redux/hooks";
+import tricksData from "../data/tricks.json";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE      = 20;
-const LS_RECENT_KEY          = "tc_recent_searches";
-const LS_SAVED_KEY           = "tc_saved_searches";
-const LS_RECENTLY_VIEWED_KEY = "tc_recently_viewed_tricks";
 const MAX_RECENT             = 8;
 const MAX_RECENTLY_VIEWED    = 5;
 
@@ -46,23 +44,23 @@ const loadList = (key: string): string[] => {
 const saveList = (key: string, list: string[]) =>
   localStorage.setItem(key, JSON.stringify(list));
 
-const pushRecent = (term: string) => {
-  const prev = loadList(LS_RECENT_KEY).filter((s) => s !== term);
-  saveList(LS_RECENT_KEY, [term, ...prev].slice(0, MAX_RECENT));
+const pushRecent = (term: string, key: string) => {
+  const prev = loadList(key).filter((s) => s !== term);
+  saveList(key, [term, ...prev].slice(0, MAX_RECENT));
 };
 
 interface RecentTrick { name: string; slug: string; level: string }
 
-export const pushRecentlyViewed = (trick: RecentTrick) => {
+export const pushRecentlyViewed = (trick: RecentTrick, key: string) => {
   try {
-    const prev: RecentTrick[] = JSON.parse(localStorage.getItem(LS_RECENTLY_VIEWED_KEY) ?? "[]");
+    const prev: RecentTrick[] = JSON.parse(localStorage.getItem(key) ?? "[]");
     const deduped = prev.filter((t) => !(t.slug === trick.slug && t.level === trick.level));
-    localStorage.setItem(LS_RECENTLY_VIEWED_KEY, JSON.stringify([trick, ...deduped].slice(0, MAX_RECENTLY_VIEWED)));
+    localStorage.setItem(key, JSON.stringify([trick, ...deduped].slice(0, MAX_RECENTLY_VIEWED)));
   } catch { /* noop */ }
 };
 
-const loadRecentlyViewed = (): RecentTrick[] => {
-  try { return JSON.parse(localStorage.getItem(LS_RECENTLY_VIEWED_KEY) ?? "[]"); } catch { return []; }
+const loadRecentlyViewed = (key: string): RecentTrick[] => {
+  try { return JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { return []; }
 };
 
 // ── Sidebar card constants ────────────────────────────────────────────────────
@@ -150,8 +148,8 @@ const LEVEL_CHIP: Record<string, string> = {
   advanced:     "bg-red/15 border-red/30 text-red",
 };
 
-const RecentlyViewedCard = ({ onNavigate, stretch = false }: { onNavigate: (path: string) => void; stretch?: boolean }) => {
-  const tricks = loadRecentlyViewed();
+const RecentlyViewedCard = ({ onNavigate, stretch = false, lsViewedKey }: { onNavigate: (path: string) => void; stretch?: boolean; lsViewedKey: string }) => {
+  const tricks = loadRecentlyViewed(lsViewedKey);
   const stretchClass = stretch ? "flex-1 flex flex-col" : "";
 
   if (tricks.length === 0) {
@@ -194,12 +192,16 @@ const LeftSidebarContent = ({
   onNavigate,
   onSelect,
   stretch = false,
+  lsRecentKey,
+  lsViewedKey,
 }: {
   onNavigate: (path: string) => void;
   onSelect: (term: string) => void;
   stretch?: boolean;
+  lsRecentKey: string;
+  lsViewedKey: string;
 }) => {
-  const recent = loadList(LS_RECENT_KEY);
+  const recent = loadList(lsRecentKey);
 
   return (
     <div className={`flex flex-col gap-3 ${stretch ? "h-full" : ""}`}>
@@ -208,7 +210,7 @@ const LeftSidebarContent = ({
         <div className={`rounded-2xl p-4 ${CARD_BG} ${stretch ? "flex-1 flex flex-col" : ""}`} style={CARD_STYLE}>
           <span className={LABEL}>Recent Searches</span>
           <div className="flex flex-col gap-0.5 -mx-1">
-            {recent.map((term) => (
+            {recent.slice(0, 3).map((term) => (
               <button
                 key={term}
                 type="button"
@@ -222,7 +224,7 @@ const LeftSidebarContent = ({
           </div>
         </div>
       )}
-      <RecentlyViewedCard onNavigate={onNavigate} />
+      <RecentlyViewedCard onNavigate={onNavigate} lsViewedKey={lsViewedKey} />
     </div>
   );
 };
@@ -296,7 +298,7 @@ const StartHereCard = ({
         </div>
       </div>
       <p className="text-white/40 text-xs leading-relaxed mb-3">
-        Browse beginner-friendly tutorials, learn the fundamentals, and work your way up to advanced combos.
+        Learn the basics and get started with your first trick, or browse the Balisong basics.
       </p>
       <div className="flex gap-2">
         <button
@@ -392,6 +394,12 @@ const TutorialCenterPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const user = useAppSelector((state) => state.auth.user);
+  const uid  = user?.identifierCode ?? "guest";
+  const lsRecentKey  = `tc_recent_searches_${uid}`;
+  const lsSavedKey   = `tc_saved_searches_${uid}`;
+  const lsViewedKey  = `tc_recently_viewed_tricks_${uid}`;
+
   const filterType       = searchParams.get("type")       ?? "ALL";
   const filterDifficulty = searchParams.get("difficulty") ?? "ALL";
   const filterTypeRef       = useRef(filterType);
@@ -405,7 +413,7 @@ const TutorialCenterPage = () => {
 
   const [query,       setQuery]       = useState("");
   const [searchOpen,  setSearchOpen]  = useState(false);
-  const [, setSavedSearches] = useState<string[]>(() => loadList(LS_SAVED_KEY));
+  const [, setSavedSearches] = useState<string[]>([]);
 
   const listRef      = useRef<HTMLDivElement>(null);
   const inputRef     = useRef<HTMLInputElement>(null);
@@ -475,12 +483,12 @@ const TutorialCenterPage = () => {
   const handleSearchSubmit = useCallback((term: string) => {
     const trimmed = term.trim();
     if (!trimmed) return;
-    pushRecent(trimmed);
-    setSavedSearches(loadList(LS_SAVED_KEY));
-    setQuery(trimmed);
+    pushRecent(trimmed, lsRecentKey);
+    setSavedSearches(loadList(lsSavedKey));
+    setQuery("");
     setSearchOpen(false);
-    // TODO: navigate to /tutorial-center/search?q=trimmed when that page exists
-  }, []);
+    navigate(`/tutorial-center/search?q=${encodeURIComponent(trimmed)}`);
+  }, [navigate]);
 
   const handleSelectSearch = (term: string) => {
     setQuery(term);
@@ -490,9 +498,9 @@ const TutorialCenterPage = () => {
 
   const handleStarSearch = (term: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const saved = loadList(LS_SAVED_KEY);
+    const saved = loadList(lsSavedKey);
     const next  = saved.includes(term) ? saved.filter((s) => s !== term) : [term, ...saved];
-    saveList(LS_SAVED_KEY, next);
+    saveList(lsSavedKey, next);
     setSavedSearches(next);
   };
 
@@ -651,26 +659,44 @@ const TutorialCenterPage = () => {
                 >
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
-              ) : (
-                <div className="absolute right-4 xsm:hidden md:flex items-center gap-1.5 pointer-events-none">
-                  <kbd className="text-white/15 text-[10px] font-medium border border-white/[0.08] rounded px-1.5 py-0.5 bg-white/[0.04]">⌘</kbd>
-                  <kbd className="text-white/15 text-[10px] font-medium border border-white/[0.08] rounded px-1.5 py-0.5 bg-white/[0.04]">K</kbd>
-                </div>
-              )}
+              ) : null}
             </div>
 
             {/* Dropdown */}
             {searchOpen && (() => {
-              const recent   = loadList(LS_RECENT_KEY);
-              const saved    = loadList(LS_SAVED_KEY);
-              const filtered = query.trim()
-                ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(query.toLowerCase()))
+              const recent   = loadList(lsRecentKey);
+              const saved    = loadList(lsSavedKey);
+              const q = query.trim().toLowerCase();
+              const trickNameMatches = (name: string, aliases?: string[]) => {
+                const candidates = [name, ...(aliases ?? [])];
+                for (const candidate of candidates) {
+                  const c = candidate.toLowerCase();
+                  if (c.includes(q)) return true;
+                  const tokens = q.split(/\s+/).filter(Boolean);
+                  if (tokens.length > 1 && tokens.every((tok) => c.includes(tok))) return true;
+                }
+                const qNorm = q.replace(/\s+/g, "");
+                if (name.toLowerCase().replace(/\s+/g, "").includes(qNorm)) return true;
+                return false;
+              };
+              const matchedTricks = q
+                ? (tricksData as { slug: string; level: string; name: string; aliases?: string[] }[])
+                    .filter((t) => trickNameMatches(t.name, t.aliases))
+                    .slice(0, 5)
                 : [];
-              const showSaved   = !query.trim() && saved.length > 0;
-              const showRecent  = !query.trim() && recent.length > 0;
-              const showResults = query.trim() && filtered.length > 0;
-              const showEmpty   = query.trim() && filtered.length === 0;
-              const showBlank   = !query.trim() && recent.length === 0 && saved.length === 0;
+              const matchedLevels = q
+                ? SKILL_LEVELS.filter((l) => l.label.toLowerCase().includes(q))
+                : [];
+              const filtered = q
+                ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(q))
+                : [];
+              const showSaved    = !q && saved.length > 0;
+              const showRecent   = !q && recent.length > 0;
+              const showTricks   = q && matchedTricks.length > 0;
+              const showLevels   = q && matchedLevels.length > 0;
+              const showResults  = q && filtered.length > 0;
+              const showEmpty    = q && matchedTricks.length === 0 && matchedLevels.length === 0 && filtered.length === 0;
+              const showBlank    = !q && recent.length === 0 && saved.length === 0;
 
               return (
                 <div
@@ -711,29 +737,69 @@ const TutorialCenterPage = () => {
                       ))}
                     </div>
                   )}
+                  {showTricks && (
+                    <div className="pt-3 pb-2">
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Tricks</p>
+                      {matchedTricks.map((t) => (
+                        <button
+                          key={`${t.level}-${t.slug}`}
+                          type="button"
+                          onMouseDown={() => { setSearchOpen(false); navigate(`/tutorial-center/${t.level}/${t.slug}`); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left"
+                        >
+                          <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full border flex-shrink-0 ${LEVEL_CHIP[t.level] ?? LEVEL_CHIP.beginner}`}>
+                            {t.level.slice(0, 3)}
+                          </span>
+                          <span className="text-white/75 text-sm truncate">{t.name}</span>
+                          <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 ml-auto flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showLevels && (
+                    <div className="pt-3 pb-2">
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Levels</p>
+                      {matchedLevels.map((l) => (
+                        <button
+                          key={l.value}
+                          type="button"
+                          onMouseDown={() => { setSearchOpen(false); navigate(`/tutorial-center/${l.value.toLowerCase()}`); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left"
+                        >
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${l.dot}`} />
+                          <span className="text-white/75 text-sm truncate">{l.label} Tricks</span>
+                          <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 ml-auto flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {showResults && (
                     <div className="pt-3 pb-2">
-                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Suggestions</p>
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Recent</p>
                       {filtered.map((term) => (
                         <button key={term} type="button" onMouseDown={() => handleSelectSearch(term)}
                           className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left">
-                          <FontAwesomeIcon icon={faMagnifyingGlass} className="text-white/20 text-[10px] flex-shrink-0" />
+                          <FontAwesomeIcon icon={faClock} className="text-white/20 text-[10px] flex-shrink-0" />
                           <span className="text-white/70 text-sm truncate">{term}</span>
                         </button>
                       ))}
                     </div>
                   )}
                   {showEmpty && (
-                    <div className="px-5 py-4 text-white/25 text-xs">No saved or recent searches match "{query}"</div>
+                    <div className="px-5 py-4 text-white/25 text-xs">No tricks or searches match "{query}"</div>
                   )}
                   {query.trim() && (
-                    <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
-                      <span className="text-white/25 text-xs">Press <kbd className="border border-white/10 rounded px-1 py-0.5 bg-white/[0.04] text-white/30">Enter</kbd> to search</span>
-                      <button type="button" onMouseDown={() => handleSearchSubmit(query)}
-                        className="text-[#5eead4]/70 text-xs font-semibold hover:text-[#5eead4] transition-colors duration-150">
-                        Search →
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onMouseDown={() => handleSearchSubmit(query)}
+                      className="w-full flex items-center gap-3 px-5 py-3.5 border-t border-white/[0.06] hover:bg-white/[0.04] transition-colors duration-100 text-left group"
+                    >
+                      <FontAwesomeIcon icon={faMagnifyingGlass} className="text-[#5eead4]/40 text-[10px] flex-shrink-0 group-hover:text-[#5eead4]/70 transition-colors" />
+                      <span className="text-white/45 text-sm group-hover:text-white/70 transition-colors duration-100">
+                        Search for <span className="text-[#5eead4]/70 font-medium group-hover:text-[#5eead4]">"{query.trim()}"</span>
+                      </span>
+                      <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 ml-auto flex-shrink-0 group-hover:text-white/35 transition-colors" />
+                    </button>
                   )}
                 </div>
               );
@@ -755,6 +821,8 @@ const TutorialCenterPage = () => {
             <LeftSidebarContent
               onNavigate={navigate}
               onSelect={handleSelectSearch}
+              lsRecentKey={lsRecentKey}
+              lsViewedKey={lsViewedKey}
             />
           </aside>
 
@@ -816,9 +884,9 @@ const TutorialCenterPage = () => {
                         width: "100%",
                         transform: `translateY(${vItem.start - virtualizer.options.scrollMargin}px)`,
                       }}
-                      className="xsm:px-4 md:px-0 pb-3"
+                      className="pb-3"
                     >
-                      <div className="rounded-2xl overflow-hidden" style={{
+                      <div className="md:rounded-2xl md:overflow-hidden" style={{
                         borderTop: post.postType === "TRICK_TUTORIAL"
                           ? "2px solid rgba(13,148,136,0.5)"
                           : post.postType === "COMBO"
@@ -857,6 +925,8 @@ const TutorialCenterPage = () => {
                 onNavigate={navigate}
                 onSelect={handleSelectSearch}
                 stretch
+                lsRecentKey={lsRecentKey}
+                lsViewedKey={lsViewedKey}
               />
             </div>
             {/* Filters — sticky only */}

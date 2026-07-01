@@ -169,12 +169,13 @@ const LevelFeed = ({ levelValue }: { levelValue: string }) => {
   return (
     <div className="flex flex-col xsm:gap-3 lg:gap-4">
       {posts.map((post, i) => (
-        <FeedPostCard
-          key={post.id}
-          post={post}
-          index={i}
-          variant="feed"
-        />
+        <div key={post.id} className="xsm:-mx-4 md:mx-0">
+          <FeedPostCard
+            post={post}
+            index={i}
+            variant="feed"
+          />
+        </div>
       ))}
       {hasMore && (
         <div className="flex justify-center pt-2 pb-4">
@@ -222,13 +223,14 @@ const TutorialCenterLevelPage = () => {
   return (
     <div className="w-full min-h-screen text-white relative">
       <TutorialCenterPageBackground />
-      <div className="relative z-10 max-w-[900px] mx-auto xsm:px-4 md:px-6 lg:px-8 xsm:pt-8 xsm:pb-28 md:py-8">
+      <div className="relative z-10 max-w-[900px] mx-auto md:px-6 lg:px-8 xsm:pt-8 xsm:pb-28 md:py-8">
 
         {/* Back link */}
         <button
           type="button"
           onClick={() => navigate("/tutorial-center")}
-          className="flex items-center gap-2 text-white/55 hover:text-white/85 text-sm mb-6 transition-colors duration-150"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.12] text-white/70 hover:text-white hover:border-white/20 text-sm font-medium mb-6 xsm:mx-4 md:mx-0 transition-all duration-150"
+          style={{ background: "rgba(0,0,0,0.3)" }}
         >
           <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
           Tutorial Center
@@ -236,7 +238,7 @@ const TutorialCenterLevelPage = () => {
 
         {/* Hero */}
         <div
-          className="w-full rounded-2xl border xsm:p-6 md:p-10 mb-6 relative overflow-hidden"
+          className="w-full md:rounded-2xl border-y md:border xsm:p-6 md:p-10 mb-6 relative overflow-hidden"
           style={{
             borderColor: `${config.accentColor}40`,
             background: "rgba(2,8,8,0.75)",
@@ -274,7 +276,7 @@ const TutorialCenterLevelPage = () => {
 
         {/* Content card */}
         <div
-          className="rounded-2xl border border-white/[0.07] p-6 flex flex-col gap-8"
+          className="md:rounded-2xl border-y md:border border-white/[0.07] p-6 flex flex-col gap-8"
           style={{ background: "rgba(2,8,8,0.82)" }}
         >
           {/* Trick Library */}
