@@ -5,9 +5,9 @@ import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import {
   faChevronLeft,
   faChevronRight,
+  faChevronDown,
   faImage,
   faXmark,
-  faChevronDown,
   faVideo,
   faPen,
   faArrowRightArrowLeft,
@@ -17,6 +17,8 @@ import {
   faEarthAmericas,
   faCrown,
   faGlobe,
+  faTag,
+  faBolt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppSelector } from "../redux/hooks";
 import { axiosApiInstanceAuth } from "../api/axios";
@@ -106,6 +108,24 @@ const LAYOUT_BADGE: Record<PostLayout, { label: string; cls: string }> = {
   trade:    { label: "Trade",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10" },
   tutorial: { label: "Tutorial",  cls: "text-green border-green/30 bg-green/10" },
   combo:    { label: "Combo",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10" },
+};
+
+// ─── Layout card config ────────────────────────────────────────────────────
+const LAYOUT_CARD: Record<PostLayout, { icon: typeof faGlobe; color: string; activeBorder: string; bg: string; iconBg: string; ringBg: string }> = {
+  generic:  { icon: faGlobe,              color: "text-white/80",     activeBorder: "border-white/30",          bg: "bg-white/[0.05]",       iconBg: "bg-white/15",          ringBg: "bg-white/20"          },
+  buysell:  { icon: faTag,                color: "text-gold",         activeBorder: "border-gold/50",           bg: "bg-gold/[0.08]",        iconBg: "bg-gold/20",           ringBg: "bg-gold/25"           },
+  trade:    { icon: faArrowRightArrowLeft, color: "text-blue-primary", activeBorder: "border-blue-primary/50",   bg: "bg-blue-primary/[0.09]",iconBg: "bg-blue-primary/20",   ringBg: "bg-blue-primary/25"   },
+  tutorial: { icon: faVideo,              color: "text-green",        activeBorder: "border-green/50",          bg: "bg-green/[0.08]",       iconBg: "bg-green/20",          ringBg: "bg-green/25"          },
+  combo:    { icon: faBolt,               color: "text-teal",         activeBorder: "border-teal/50",           bg: "bg-teal/[0.08]",        iconBg: "bg-teal/20",           ringBg: "bg-teal/25"           },
+};
+
+// ─── Page theme config (drives page-level color shifts) ───────────────────
+const LAYOUT_THEME: Record<PostLayout, { tint: string; btnBg: string; btnShadow: string }> = {
+  generic:  { tint: "rgba(255,255,255,0.0)",  btnBg: "linear-gradient(135deg,#108198,#0a6475)", btnShadow: "0 4px 28px rgba(16,129,152,0.40)"  },
+  buysell:  { tint: "rgba(230,184,0,0.20)",   btnBg: "linear-gradient(135deg,#e6b800,#b38a00)", btnShadow: "0 4px 28px rgba(230,184,0,0.40)"   },
+  trade:    { tint: "rgba(16,129,152,0.20)",  btnBg: "linear-gradient(135deg,#108198,#0a6475)", btnShadow: "0 4px 28px rgba(16,129,152,0.40)"  },
+  tutorial: { tint: "rgba(34,197,94,0.20)",   btnBg: "linear-gradient(135deg,#22c55e,#16a34a)", btnShadow: "0 4px 28px rgba(34,197,94,0.40)"   },
+  combo:    { tint: "rgba(13,148,136,0.20)",  btnBg: "linear-gradient(135deg,#0d9488,#0a7569)", btnShadow: "0 4px 28px rgba(13,148,136,0.40)"  },
 };
 
 // ─── Post Preview Overlay ──────────────────────────────────────────────────
@@ -533,7 +553,6 @@ const CreatePostPage = () => {
   const collectionData   = useAppSelector((state) => state.collection.collection);
 
   const [layout, setLayout] = useState<PostLayout>("generic");
-  const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
   const [caption, setCaption] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -701,8 +720,13 @@ const CreatePostPage = () => {
       .finally(() => setIsLoading(false));
   };
 
+  const theme = LAYOUT_THEME[layout];
+
   return (
-    <section className="w-full min-h-screen bg-[#080a0e] flex justify-center px-4 pt-14 pb-28">
+    <section
+      className="w-full min-h-screen flex justify-center px-4 pt-14 pb-28 transition-[background] duration-700"
+      style={{ background: `linear-gradient(to bottom, ${theme.tint} 0%, ${theme.tint.replace(/[\d.]+\)$/, "0.10)")} 22%, ${theme.tint.replace(/[\d.]+\)$/, "0.02)")} 45%, rgba(0,0,0,0) 60%), #030405` }}
+    >
       <div className="w-full max-w-[600px] flex flex-col gap-6">
 
         {/* Header */}
@@ -718,60 +742,48 @@ const CreatePostPage = () => {
         </div>
 
         {/* Layout selector */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">Post Type</p>
-          <div className="relative">
-            {/* Trigger */}
-            <button
-              type="button"
-              onClick={() => setLayoutPickerOpen((p) => !p)}
-              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border bg-[#13161d] text-left transition-all duration-200 ${
-                layoutPickerOpen ? "border-blue-primary/40" : "border-white/10 hover:border-white/20"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="text-sm font-semibold text-white">
-                  {LAYOUTS.find((l) => l.key === layout)?.label}
-                </span>
-                <span className="text-xs text-white/35 truncate hidden sm:block">
-                  {LAYOUTS.find((l) => l.key === layout)?.description}
-                </span>
-              </div>
-              <FontAwesomeIcon
-                icon={faChevronDown}
-                className={`text-white/30 text-xs flex-shrink-0 transition-transform duration-200 ${layoutPickerOpen ? "rotate-180" : ""}`}
-              />
-            </button>
 
-            {/* Dropdown */}
-            {layoutPickerOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-2xl">
-                {LAYOUTS.map(({ key, label, description }) => {
-                  const isActive = layout === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => { handleLayoutChange(key); setLayoutPickerOpen(false); }}
-                      className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-white/[0.05] last:border-0 transition-colors duration-150 ${
-                        isActive ? "bg-blue-primary/10" : "hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      <div className={`mt-0.5 w-3 h-3 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-150 ${
-                        isActive ? "border-blue-primary" : "border-white/20"
-                      }`}>
-                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-primary" />}
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className={`text-sm font-semibold ${isActive ? "text-blue-primary" : "text-white/80"}`}>{label}</span>
-                        <span className="text-xs text-white/35 leading-relaxed">{description}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          {/* 2-col grid — last card spans full width */}
+          <div className="grid grid-cols-2 gap-2">
+            {LAYOUTS.map(({ key, label }, i) => {
+              const isActive = layout === key;
+              const cfg = LAYOUT_CARD[key];
+              const isLast = i === LAYOUTS.length - 1;
+              const isOdd = LAYOUTS.length % 2 !== 0;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleLayoutChange(key)}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-2xl border text-left transition-all duration-200 ${
+                    isLast && isOdd ? "col-span-2" : ""
+                  } ${
+                    isActive
+                      ? `${cfg.activeBorder} ${cfg.bg}`
+                      : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
+                    isActive ? cfg.iconBg : "bg-white/[0.07]"
+                  }`}>
+                    <FontAwesomeIcon
+                      icon={cfg.icon}
+                      className={`text-sm transition-colors duration-200 ${isActive ? cfg.color : "text-white/30"}`}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className={`text-sm font-semibold leading-tight transition-colors duration-200 ${isActive ? cfg.color : "text-white/60"}`}>
+                      {label}
+                    </span>
+                    <span className="text-[11px] text-white/25 leading-snug line-clamp-1">{LAYOUTS.find(l => l.key === key)?.description}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
+
         </div>
 
         {/* Caption */}
@@ -1404,7 +1416,8 @@ const CreatePostPage = () => {
           type="button"
           onClick={() => setShowPreview(true)}
           disabled={!canSubmit || isLoading}
-          className="w-full py-3 rounded-xl bg-blue-primary text-white text-sm font-semibold hover:bg-blue-primary/80 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-all duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: theme.btnBg, boxShadow: theme.btnShadow }}
         >
           Preview Post
         </button>

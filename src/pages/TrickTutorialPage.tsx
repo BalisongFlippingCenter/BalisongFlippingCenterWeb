@@ -9,6 +9,7 @@ import {
 import tricks from "../data/tricks.json";
 import { axiosApiInstance } from "../api/axios";
 import { pushRecentlyViewed } from "./TutorialCenterPage";
+import { useAppSelector } from "../redux/hooks";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import TutorialCenterPageBackground from "../components/TutorialCenterPageBackground";
@@ -145,7 +146,9 @@ const TrickFeed = ({ trickName }: { trickName: string }) => {
   return (
     <div className="flex flex-col xsm:gap-3 lg:gap-4">
       {posts.map((post, i) => (
-        <FeedPostCard key={post.id} post={post} index={i} variant="feed" />
+        <div key={post.id} className="xsm:-mx-4 md:mx-0">
+          <FeedPostCard post={post} index={i} variant="feed" />
+        </div>
       ))}
       {hasMore && (
         <div className="flex justify-center pt-2 pb-4">
@@ -168,13 +171,15 @@ const TrickFeed = ({ trickName }: { trickName: string }) => {
 const TrickTutorialPage = () => {
   const { level, trickSlug } = useParams<{ level: string; trickSlug: string }>();
   const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+  const lsViewedKey = `tc_recently_viewed_tricks_${user?.identifierCode ?? "guest"}`;
 
   const trick = (tricks as Trick[]).find(
     (t) => t.slug === trickSlug && t.level === level
   ) ?? null;
 
   useEffect(() => {
-    if (trick) pushRecentlyViewed({ name: trick.name, slug: trick.slug, level: trick.level });
+    if (trick) pushRecentlyViewed({ name: trick.name, slug: trick.slug, level: trick.level }, lsViewedKey);
   }, [trick?.slug]);
 
   const levelStyle = level && level in LEVEL_STYLES ? LEVEL_STYLES[level] : LEVEL_STYLES.beginner;
@@ -195,20 +200,21 @@ const TrickTutorialPage = () => {
   return (
     <div className="w-full min-h-screen text-white relative">
       <TutorialCenterPageBackground />
-      <div className="relative z-10 max-w-[1100px] mx-auto xsm:px-4 md:px-6 lg:px-10 xsm:pt-8 xsm:pb-28 md:pt-8 md:pb-24">
+      <div className="relative z-10 max-w-[1100px] mx-auto md:px-6 lg:px-10 xsm:pt-8 xsm:pb-28 md:pt-8 md:pb-24">
 
         {/* Back */}
         <button
           type="button"
           onClick={() => navigate(`/tutorial-center/${level}`)}
-          className="flex items-center gap-2 text-white/55 hover:text-white/85 text-sm mb-6 transition-colors duration-150"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.12] text-white/70 hover:text-white hover:border-white/20 text-sm font-medium mb-6 xsm:mx-4 md:mx-0 transition-all duration-150"
+          style={{ background: "rgba(0,0,0,0.3)" }}
         >
           <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
           {level ? level.charAt(0).toUpperCase() + level.slice(1) : ""} Tricks
         </button>
 
         {/* Hero */}
-        <div className="mb-8">
+        <div className="mb-8 xsm:px-4 md:px-0">
           <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border ${levelStyle.badge}`}>
             {trick.level}
           </span>
@@ -220,7 +226,7 @@ const TrickTutorialPage = () => {
 
         {/* Content card */}
         <div
-          className="rounded-2xl border border-white/[0.07] xsm:p-4 md:p-8 flex flex-col gap-10"
+          className="md:rounded-2xl border-y md:border border-white/[0.07] xsm:p-4 md:p-8 flex flex-col gap-10"
           style={{ background: "rgba(2,8,8,0.82)" }}
         >
 
