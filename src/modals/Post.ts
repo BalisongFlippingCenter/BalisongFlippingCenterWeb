@@ -175,18 +175,18 @@ export interface PostDetail {
  */
 export const mapPostDetail = (data: any): PostDetail => {
   const p = data.post   ?? data;   // post fields
-  const a = data.author ?? {};     // author fields
+  const a = data.author ?? null;   // null when account was deleted
   return {
     id:                    p.id                   ?? "",
-    accountId:             p.accountId            ?? a.accountId ?? p.creatorId ?? "",
+    accountId:             p.accountId            ?? a?.accountId ?? p.creatorId ?? "",
     postType:              p.postType              ?? "GENERIC",
     caption:               p.caption              ?? "",
     description:           p.description          ?? null,
     mediaFiles:            extractMediaUrls(p.mediaFiles ?? p.files ?? []),
     tags:                  p.tags                 ?? [],
-    creatorDisplayName:    a.displayName          ?? p.creatorDisplayName ?? p.creatorName ?? "",
-    creatorIdentifierCode: a.identifierCode       ?? p.creatorIdentifierCode ?? null,
-    creatorProfileImg:     a.profileImg           ?? p.creatorProfileImg   ?? null,
+    creatorDisplayName:    a?.displayName         ?? p.creatorDisplayName ?? p.creatorName ?? "[deleted]",
+    creatorIdentifierCode: a?.identifierCode      ?? p.creatorIdentifierCode ?? null,
+    creatorProfileImg:     a?.profileImg          ?? p.creatorProfileImg   ?? null,
     creationDate:          p.creationDate         ?? "",
     likes:                 p.likeCount            ?? p.likes    ?? 0,
     comments:              p.commentCount         ?? p.comments ?? 0,

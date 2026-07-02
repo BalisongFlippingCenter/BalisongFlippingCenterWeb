@@ -21,6 +21,7 @@ import CommunityPage from "./pages/CommunityPage";
 import CreatePostPage from "./pages/CreatePostPage";
 import UserCollectionPage from "./pages/UserCollectionPage";
 import ProfileConfigurePage from "./pages/configuration/ProfileConfigurePage";
+import GoogleSetupPage from "./pages/GoogleSetupPage";
 import AboutPage from "./pages/AboutPage";
 import LearnPage from "./pages/LearnPage";
 import LearnTopicPage from "./pages/LearnTopicPage";
@@ -44,6 +45,8 @@ import CollectionKnifePage from "./pages/CollectionKnifePage";
 import TestPage from "./pages/TestPage";
 import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +160,8 @@ const App = () => {
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:topic" element={<LearnTopicPage />} />
           <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />
+          <Route path="/google/setup" element={<GoogleSetupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/test" element={<TestPage />} />
 
           <Route path="/:account/:identifier" element={<ProfilePage />} />
@@ -271,7 +276,7 @@ const App = () => {
           </Route>
 
           {/*Catch all 404*/}
-          <Route path="*" element={<h1>404</h1>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
 

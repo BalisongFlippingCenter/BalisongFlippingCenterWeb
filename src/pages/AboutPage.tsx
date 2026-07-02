@@ -25,7 +25,7 @@ const pillars = [
   },
 ];
 
-const CONTACT_EMAIL = "contact@balisongflippingcenter.com";
+const CONTACT_EMAIL = "support.balisongflippingcenter@gmail.com";
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 const MAX_LENGTH = 1000;
 

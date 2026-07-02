@@ -16,16 +16,16 @@ export interface Comment {
 // Response shape: { comment: {...}, author: {...} }
 export const mapComment = (raw: any): Comment => {
   const c = raw.comment ?? raw;
-  const a = raw.author ?? {};
+  const a = raw.author ?? null;   // null when account was deleted
   return {
     id: c.id,
     postId: c.postId,
     parentCommentId: c.parentCommentId ?? null,
     creationDate: c.creationDate ?? "",
-    creatorId: String(a.accountId ?? c.accountId ?? ""),
-    creatorDisplayName: a.displayName ?? "",
-    creatorIdentifierCode: a.identifierCode ?? "",
-    creatorProfileImg: a.profileImg ?? null,
+    creatorId: String(a?.accountId ?? c.accountId ?? ""),
+    creatorDisplayName: a?.displayName ?? "[deleted]",
+    creatorIdentifierCode: a?.identifierCode ?? "",
+    creatorProfileImg: a?.profileImg ?? null,
     content: c.content ?? "",
     likes: c.likeCount ?? c.likes ?? 0,
     replyCount: c.replyCount ?? 0,

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Profile } from "../../modals/User";
 import {
   login,
+  loginWithGoogle,
   loginWithRefreshToken,
   logout,
   registerNewUser,
@@ -144,6 +145,22 @@ const authSlice = createSlice({
           state.errorMsg = action.payload;
         }
       )
+      .addCase(loginWithGoogle.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        loginWithGoogle.fulfilled,
+        (state, action: PayloadAction<{ accessToken: string; account: Profile | null }>) => {
+          state.accessToken = action.payload.accessToken;
+          state.user = action.payload.account;
+          state.loading = false;
+        }
+      )
+      .addCase(loginWithGoogle.rejected, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.error = true;
+        state.errorMsg = action.payload;
+      })
       .addCase(logout.pending, (state) => {
         // handle loading logout
         state.loading = true;

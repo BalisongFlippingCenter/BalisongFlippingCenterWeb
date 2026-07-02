@@ -9,6 +9,9 @@ const mapAccount = (account: any): Profile => ({
   measurementUnit: account.measurementUnit?.toLowerCase() ?? null,
   likedPostIds: account.likedPostIds ?? [],
   likedCommentIds: account.likedCommentIds ?? [],
+  postCount:      account.postCount      ?? 0,
+  followerCount:  account.followerCount  ?? 0,
+  followingCount: account.followingCount ?? 0,
 });
 
 interface RegistrationPayload {
@@ -80,6 +83,31 @@ export const loginWithRefreshToken = createAsyncThunk(
 return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Payload: Google access token from useGoogleLogin (implicit flow)
+// Backend: POST /auth/google — verify token, find-or-create user, return same shape as /auth/login
+// Response shape: { accessToken, account, collection, isNewUser? }
+export const loginWithGoogle = createAsyncThunk(
+  "auth/loginWithGoogle",
+  async (googleAccessToken: string, thunkAPI) => {
+    try {
+      const response = await axiosApiInstance.request({
+        url: "/auth/google",
+        method: "post",
+        withCredentials: true,
+        data: { googleAccessToken },
+      });
+
+      if (response.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+      }
+
+      return { ...response.data, account: mapAccount(response.data.account) };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data ?? "Google login failed");
     }
   }
 );

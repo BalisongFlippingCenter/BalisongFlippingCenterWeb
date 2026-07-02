@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppSelector } from "../../redux/hooks";
-import { axiosApiInstance } from "../../api/axios";
+import { useAppSelector, useAppDispatch } from "../../redux/hooks";
+import { axiosApiInstance, axiosApiInstanceAuth } from "../../api/axios";
+import { setNewUser } from "../../redux/auth/authSlice";
+import { Profile } from "../../modals/User";
 import PublicProfilePostsComponent from "../PublicProfilePostsComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -37,6 +39,9 @@ interface PublicProfile {
   discordLink: string | null;
   personalEmailLink: string | null;
   personalWebsiteLink: string | null;
+  postCount: number;
+  followerCount: number;
+  followingCount: number;
 }
 
 const mapPublicProfile = (data: any): PublicProfile => ({
@@ -55,6 +60,9 @@ const mapPublicProfile = (data: any): PublicProfile => ({
   discordLink:         data.discordLink         ?? null,
   personalEmailLink:   data.personalEmailLink   ?? null,
   personalWebsiteLink: data.personalWebsiteLink ?? null,
+  postCount:           data.postCount            ?? 0,
+  followerCount:       data.followerCount        ?? 0,
+  followingCount:      data.followingCount       ?? 0,
 });
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -78,18 +86,23 @@ interface Params {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
-  const navigate  = useNavigate();
-  const loggedIn  = !!useAppSelector((state) => state.auth.user);
+  const navigate   = useNavigate();
+  const dispatch   = useAppDispatch();
+  const loggedInUser = useAppSelector((state) => state.auth.user);
+  const loggedIn   = !!loggedInUser;
 
-  const [profile, setProfile]       = useState<PublicProfile | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(false);
-  const [linksOpen, setLinksOpen]   = useState(false);
-  const [bioExpanded, setBioExpanded] = useState(false);
+  const [profile, setProfile]           = useState<PublicProfile | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(false);
+  const [linksOpen, setLinksOpen]       = useState(false);
+  const [bioExpanded, setBioExpanded]   = useState(false);
   const [bioOverflows, setBioOverflows] = useState(false);
+  const [isFollowing, setIsFollowing]   = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  // local followerCount so we can update it optimistically after follow/unfollow
+  const [localFollowerCount, setLocalFollowerCount] = useState<number | null>(null);
 
-  const bioRef    = useRef<HTMLSpanElement>(null);
-  const STAT_DUMMY = { posts: 0, followers: 0, following: 0 };
+  const bioRef = useRef<HTMLSpanElement>(null);
 
   // ── Fetch public profile ───────────────────────────────────────────────────
   useEffect(() => {
@@ -98,7 +111,9 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
     axiosApiInstance
       .get(`/accounts/any`, { params: { displayName, identifierCode } })
       .then((res) => {
-        setProfile(mapPublicProfile(res.data));
+        const mapped = mapPublicProfile(res.data);
+        setProfile(mapped);
+        setLocalFollowerCount(mapped.followerCount);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -110,6 +125,27 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
       setBioOverflows(bioRef.current.scrollHeight > bioRef.current.clientHeight);
     }
   }, [profile?.profileCaption]);
+
+  // ── Follow / unfollow ─────────────────────────────────────────────────────
+  const handleFollowToggle = async () => {
+    if (!profile || followLoading) return;
+    setFollowLoading(true);
+    try {
+      const res = isFollowing
+        ? await axiosApiInstanceAuth.delete(`/accounts/any/${profile.id}/follow`)
+        : await axiosApiInstanceAuth.post(`/accounts/any/${profile.id}/follow`);
+      // Update logged-in user's Redux state with returned UserDto
+      if (res.data && loggedInUser) {
+        dispatch(setNewUser({ ...loggedInUser, ...res.data } as Profile));
+      }
+      setIsFollowing((p) => !p);
+      setLocalFollowerCount((c) => (c ?? 0) + (isFollowing ? -1 : 1));
+    } catch {
+      // silent — button returns to previous state naturally
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   // ── Social links array ────────────────────────────────────────────────────
   const socialLinks = profile ? [
@@ -223,16 +259,20 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
               </span>
             </div>
 
-            {/* Follow button — only shown to logged-in users; wired when backend supports it */}
-            {loggedIn && (
+            {/* Follow button — shown to logged-in users viewing another account */}
+            {loggedIn && loggedInUser?.id !== profile.id && (
               <button
                 type="button"
-                disabled
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-primary/15 border border-blue-primary/30 text-blue-primary/60 cursor-not-allowed transition-all duration-200"
-                title="Follow feature coming soon"
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isFollowing
+                    ? "bg-white/5 border border-white/15 text-white/60 hover:bg-red/10 hover:border-red/30 hover:text-red/70"
+                    : "bg-blue-primary/15 border border-blue-primary/30 text-blue-primary hover:bg-blue-primary/25"
+                }`}
               >
                 <FontAwesomeIcon icon={faUserPlus} className="text-xs" />
-                Follow
+                {isFollowing ? "Following" : "Follow"}
               </button>
             )}
           </div>
@@ -327,11 +367,11 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
 
           {/* Stats */}
           <div className="flex items-center gap-5 md:pt-1">
-            <StatBlock value={STAT_DUMMY.posts}     label="Posts"     />
+            <StatBlock value={profile.postCount}              label="Posts"     />
             <div className="w-px h-8 bg-white/10 self-center" />
-            <StatBlock value={STAT_DUMMY.followers} label="Followers" />
+            <StatBlock value={localFollowerCount ?? profile.followerCount} label="Followers" />
             <div className="w-px h-8 bg-white/10 self-center" />
-            <StatBlock value={STAT_DUMMY.following} label="Following" />
+            <StatBlock value={profile.followingCount}         label="Following" />
           </div>
         </div>
 

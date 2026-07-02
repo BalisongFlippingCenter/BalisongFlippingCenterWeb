@@ -93,7 +93,7 @@ const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProp
             </button>
           </div>
         ) : (
-          <div className="xsm:px-0 lg:px-4 py-6 pb-24">
+          <div className="xsm:px-0 lg:px-4 xsm:pt-0 md:pt-6 pb-24">
             <div className="w-full max-w-[600px] mx-auto flex flex-col">
               <FeedPostCard post={post} index={0} variant="page" commentCountOverride={liveCommentCount} />
               <CommentsSection

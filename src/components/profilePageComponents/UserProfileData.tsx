@@ -13,8 +13,6 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-const STAT_DUMMY = { posts: 0, followers: 0, following: 0 };
-
 const StatBlock = ({ value, label }: { value: number; label: string }) => (
   <div className="flex flex-col gap-1">
     <span className="text-white font-bold text-2xl leading-none">
@@ -182,11 +180,11 @@ const UserProfileData = () => {
 
         {/* Stats row */}
         <div className="flex items-center gap-5 md:pt-1">
-          <StatBlock value={STAT_DUMMY.posts}     label="Posts"     />
+          <StatBlock value={user?.postCount      ?? 0} label="Posts"     />
           <div className="w-px h-8 bg-white/10 self-center" />
-          <StatBlock value={STAT_DUMMY.followers} label="Followers" />
+          <StatBlock value={user?.followerCount  ?? 0} label="Followers" />
           <div className="w-px h-8 bg-white/10 self-center" />
-          <StatBlock value={STAT_DUMMY.following} label="Following" />
+          <StatBlock value={user?.followingCount ?? 0} label="Following" />
         </div>
 
       </div>

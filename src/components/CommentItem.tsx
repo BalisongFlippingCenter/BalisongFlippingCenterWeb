@@ -90,17 +90,24 @@ const CommentItem = ({ postId, comment, onReply, onDelete, depth = 0 }: CommentI
   return (
     <div className={`flex gap-3 ${depth > 0 ? "ml-9 mt-3" : ""}`}>
       {/* Avatar */}
-      <div className="w-9 h-9 rounded-full bg-blue-primary/20 border border-blue-primary/30 flex-shrink-0 overflow-hidden flex items-center justify-center mt-0.5">
-        {comment.creatorProfileImg
-          ? <img src={comment.creatorProfileImg} alt="" className="w-full h-full object-cover" />
-          : <span className="text-blue-primary text-sm font-bold">{comment.creatorDisplayName.charAt(0).toUpperCase()}</span>
-        }
-      </div>
+      {(() => {
+        const isDeleted = comment.creatorDisplayName === "[deleted]";
+        return (
+          <div className={`w-9 h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center mt-0.5 ${isDeleted ? "bg-white/[0.04] border border-white/10" : "bg-blue-primary/20 border border-blue-primary/30"}`}>
+            {comment.creatorProfileImg
+              ? <img src={comment.creatorProfileImg} alt="" className="w-full h-full object-cover" />
+              : isDeleted
+              ? <span className="text-white/20 text-sm font-bold">?</span>
+              : <span className="text-blue-primary text-sm font-bold">{comment.creatorDisplayName.charAt(0).toUpperCase()}</span>
+            }
+          </div>
+        );
+      })()}
 
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="text-white text-sm font-semibold">{comment.creatorDisplayName}</span>
+          <span className={`text-sm font-semibold ${comment.creatorDisplayName === "[deleted]" ? "text-white/30 italic" : "text-white"}`}>{comment.creatorDisplayName}</span>
           {comment.creatorIdentifierCode && (
             <span className="text-white/30 text-xs">#{comment.creatorIdentifierCode}</span>
           )}
@@ -164,7 +171,7 @@ const CommentItem = ({ postId, comment, onReply, onDelete, depth = 0 }: CommentI
           <div className="mt-3">
             <CommentInput
               onSubmit={handleReply}
-              placeholder={`Reply to ${comment.creatorDisplayName}...`}
+              placeholder={comment.creatorDisplayName === "[deleted]" ? "Write a reply..." : `Reply to ${comment.creatorDisplayName}...`}
               onCancel={() => setShowReply(false)}
               autoFocus
             />

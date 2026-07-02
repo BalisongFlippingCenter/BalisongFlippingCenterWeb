@@ -159,6 +159,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   const avatar      = post.creatorProfileImg;
   const displayName = post.creatorDisplayName || "Unknown";
   const identifier  = post.creatorIdentifierCode ? `#${post.creatorIdentifierCode}` : "";
+  const isDeleted   = post.creatorDisplayName === "[deleted]" && !post.creatorIdentifierCode;
 
   const displayTags: string[] =
     layout === "tutorial" || layout === "combo"
@@ -207,16 +208,18 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Card header ── */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
-        <button type="button" onClick={goToProfile} className="flex items-center gap-3 min-w-0 group">
-          <div className="w-9 h-9 rounded-full bg-blue-primary/20 border border-blue-primary/30 flex-shrink-0 overflow-hidden flex items-center justify-center group-hover:border-blue-primary/60 transition-colors duration-200">
+        <button type="button" onClick={isDeleted ? undefined : goToProfile} className={`flex items-center gap-3 min-w-0 ${isDeleted ? "cursor-default" : "group"}`}>
+          <div className={`w-9 h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center transition-colors duration-200 ${isDeleted ? "bg-white/[0.04] border border-white/10" : "bg-blue-primary/20 border border-blue-primary/30 group-hover:border-blue-primary/60"}`}>
             {avatar
               ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+              : isDeleted
+              ? <span className="text-white/20 text-sm font-bold">?</span>
               : <span className="text-blue-primary text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
             }
           </div>
           <div className="flex flex-col items-start gap-0.5 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-white text-sm font-semibold leading-none group-hover:text-blue-primary transition-colors duration-200">{displayName}</span>
+              <span className={`text-sm font-semibold leading-none transition-colors duration-200 ${isDeleted ? "text-white/30 italic" : "text-white group-hover:text-blue-primary"}`}>{displayName}</span>
               {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
             </div>
             {post.creationDate && (
