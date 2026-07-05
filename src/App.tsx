@@ -47,6 +47,9 @@ import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import KnifeDetailPage from "./pages/KnifeDetailPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -156,7 +159,10 @@ const App = () => {
           <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
           <Route path="/product-world" element={<ProductWorldPage />} />
           <Route path="/product-world/search" element={<ProductWorldSearchPage />} />
+          <Route path="/product-world/knife/:knifeSlug/:version?/:variant?" element={<KnifeDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:topic" element={<LearnTopicPage />} />
           <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />

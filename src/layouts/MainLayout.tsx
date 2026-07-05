@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, Link } from "react-router-dom";
 import Header from "../components/header/Header";
 import HeaderNavbarBottom from "../components/navigation/HeaderNavbarBottom";
 import { useAppSelector } from "../redux/hooks";
@@ -10,8 +10,6 @@ import { faFlag, faBug, faXmark, faChevronRight } from "@fortawesome/free-solid-
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 
 // Routes that show the footer
-const FOOTER_ROUTES = ["/", "/community", "/tutorial-center", "/product-world", "/about", "/terms", "/privacy"];
-
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -21,23 +19,49 @@ const ScrollToTop = () => {
 };
 
 const SiteFooter = () => (
-  <footer className="w-full bg-[#0a0c10] border-t border-white/[0.06] pb-28">
-    <div className="max-w-[1775px] mx-auto px-6 py-14 flex flex-col sm:flex-row items-center justify-between gap-6">
-      {/* Left — branding */}
-      <div className="flex flex-col items-center sm:items-start gap-1">
+  <footer className="w-full bg-[#0a0c10] border-t border-white/[0.06]">
+    {/* Mobile layout */}
+    <div className="md:hidden flex flex-col items-center gap-5 px-6 pt-8 pb-28">
+      {/* Discord CTA */}
+      <a
+        href={DISCORD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/25 text-[#5865F2] text-sm font-semibold hover:bg-[#5865F2]/20 transition-colors duration-200"
+      >
+        <FontAwesomeIcon icon={faDiscord} className="text-base" />
+        Join our Discord
+      </a>
+
+      {/* Nav links */}
+      <div className="flex items-center gap-5 text-white/40 text-xs font-medium">
+        <Link to="/about"   className="hover:text-white/70 transition-colors duration-200">About</Link>
+        <Link to="/about"   className="hover:text-white/70 transition-colors duration-200">Contact</Link>
+        <Link to="/terms"   className="hover:text-white/70 transition-colors duration-200">Terms</Link>
+        <Link to="/privacy" className="hover:text-white/70 transition-colors duration-200">Privacy</Link>
+      </div>
+
+      {/* Brand + copyright */}
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-white/60 font-semibold text-xs">Balisong Flipping Center</span>
+        <span className="text-white/25 text-[11px]">© {new Date().getFullYear()} All rights reserved.</span>
+      </div>
+    </div>
+
+    {/* Desktop layout */}
+    <div className="hidden md:flex max-w-[1775px] mx-auto px-6 py-14 flex-row items-center justify-between gap-6">
+      <div className="flex flex-col items-start gap-1">
         <span className="text-white font-bold text-sm">Balisong Flipping Center</span>
         <span className="text-white/30 text-xs">© {new Date().getFullYear()} All rights reserved.</span>
       </div>
 
-      {/* Center — nav links */}
       <div className="flex items-center gap-6 text-white/40 text-xs font-medium">
-        <a href="/about" className="hover:text-white/70 transition-colors duration-200">About</a>
-        <a href="/about" className="hover:text-white/70 transition-colors duration-200">Contact</a>
-        <a href="/terms" className="hover:text-white/70 transition-colors duration-200">Terms</a>
-        <a href="/privacy" className="hover:text-white/70 transition-colors duration-200">Privacy</a>
+        <Link to="/about"   className="hover:text-white/70 transition-colors duration-200">About</Link>
+        <Link to="/about"   className="hover:text-white/70 transition-colors duration-200">Contact</Link>
+        <Link to="/terms"   className="hover:text-white/70 transition-colors duration-200">Terms</Link>
+        <Link to="/privacy" className="hover:text-white/70 transition-colors duration-200">Privacy</Link>
       </div>
 
-      {/* Right — Discord */}
       <a
         href={DISCORD_URL}
         target="_blank"
@@ -148,8 +172,7 @@ const ReportButton = () => {
 };
 
 const MainLayout = () => {
-  const { pathname } = useLocation();
-  const showFooter = FOOTER_ROUTES.includes(pathname) || pathname.startsWith("/learn");
+  const showFooter = true;
   const user        = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 

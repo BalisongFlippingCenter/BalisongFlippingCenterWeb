@@ -9,11 +9,13 @@ import {
   faImage, faArrowRightArrowLeft,
   faBullhorn, faLock, faChevronLeft, faChevronRight,
   faVolumeMute, faVolumeUp, faPlay, faExpand, faCompress,
+  faFlag,
 } from "@fortawesome/free-solid-svg-icons";
 import { PostDetail } from "../modals/Post";
 import { useAppSelector } from "../redux/hooks";
 import LikeButton from "./LikeButton";
 import { formatCurrency } from "../utils/unitConversions";
+import ReportModal from "./ReportModal";
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -107,6 +109,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   const [muted,         setMuted]         = useState(true);
   const [videoPaused,   setVideoPaused]   = useState(false);
   const [isFullscreen,  setIsFullscreen]  = useState(false);
+  const [reportOpen,    setReportOpen]    = useState(false);
 
   const descRef           = useRef<HTMLParagraphElement>(null);
   const cardRef           = useRef<HTMLDivElement>(null);
@@ -616,7 +619,25 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
             </button>
           );
         })()}
+
+        {!isOwnPost && viewerId && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}
+            title="Report post"
+            className="ml-auto text-white/20 hover:text-red/60 transition-colors duration-150 text-xs"
+          >
+            <FontAwesomeIcon icon={faFlag} />
+          </button>
+        )}
       </div>
+
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="POST"
+        targetId={post.id}
+      />
 
     </div>
   );

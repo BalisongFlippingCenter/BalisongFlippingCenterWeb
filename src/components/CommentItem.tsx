@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faChevronDown, faChevronUp, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faChevronDown, faChevronUp, faPenToSquare, faFlag } from "@fortawesome/free-solid-svg-icons";
 import { useAppSelector } from "../redux/hooks";
 import { axiosApiInstance, axiosApiInstanceAuth } from "../api/axios";
 import { Comment, mapComment } from "../modals/Comment";
 import CommentLikeButton from "./CommentLikeButton";
 import CommentInput from "./CommentInput";
+import ReportModal from "./ReportModal";
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return "";
@@ -41,6 +42,7 @@ const CommentItem = ({ postId, comment, onReply, onDelete, depth = 0 }: CommentI
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [isEditing,      setIsEditing]      = useState(false);
   const [content,        setContent]        = useState(comment.content);
+  const [reportOpen,     setReportOpen]     = useState(false);
 
   const loadReplies = async () => {
     if (replies.length > 0) { setShowReplies(true); return; }
@@ -163,6 +165,17 @@ const CommentItem = ({ postId, comment, onReply, onDelete, depth = 0 }: CommentI
                 </button>
               </div>
             )}
+
+            {!isOwner && user && comment.creatorDisplayName !== "[deleted]" && (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                title="Report comment"
+                className="ml-auto text-white/20 text-[11px] hover:text-red/60 transition-colors duration-150"
+              >
+                <FontAwesomeIcon icon={faFlag} />
+              </button>
+            )}
           </div>
         )}
 
@@ -212,6 +225,13 @@ const CommentItem = ({ postId, comment, onReply, onDelete, depth = 0 }: CommentI
           </div>
         )}
       </div>
+
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="COMMENT"
+        targetId={comment.id}
+      />
     </div>
   );
 };

@@ -12,7 +12,8 @@ import makersData from "../data/makers.json";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface KnifeEntry  { slug: string; maker: string; name: string; bladeStyle: string; priceRange: string }
+interface KnifeVersion { versionSlug: string; version: string; discontinued: boolean; releaseYear: number }
+interface KnifeEntry  { slug: string; maker: string; name: string; bladeStyle: string; priceRange: string; versions: KnifeVersion[] }
 interface MakerEntry  { slug: string; name: string; country: string; knownFor: string }
 
 // ── Filters ───────────────────────────────────────────────────────────────────
@@ -51,31 +52,50 @@ const tokenMatch = (haystack: string, query: string): boolean => {
 // ── Knife results ─────────────────────────────────────────────────────────────
 
 const KnifeResults = ({ query, onNavigate }: { query: string; onNavigate: (path: string) => void }) => {
-  const matches = (knivesData as KnifeEntry[]).filter(
-    (k) => tokenMatch(k.name, query) || tokenMatch(k.maker, query) || tokenMatch(k.bladeStyle, query)
-  );
+  const matches = (knivesData as KnifeEntry[])
+    .filter((k) => tokenMatch(k.name, query) || tokenMatch(k.maker, query) || tokenMatch(k.bladeStyle, query));
   if (matches.length === 0) return null;
   return (
     <div className="mb-2">
       <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-3">Knife Pages</p>
       <div className="flex flex-col gap-2">
-        {matches.map((k) => (
-          <button
-            key={k.slug}
-            type="button"
-            onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06] transition-all duration-150 text-left group"
-          >
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-white/80 text-sm font-semibold truncate">{k.name}</span>
-              <span className="text-white/35 text-xs truncate">{k.maker} · {k.bladeStyle}</span>
-            </div>
-            {k.priceRange && (
-              <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRange}</span>
-            )}
-            <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
-          </button>
-        ))}
+        {matches.map((k) => {
+          const hasActiveVersion = k.versions.some((v) => !v.discontinued);
+          const versionCount = k.versions.length;
+          return (
+            <button
+              key={k.slug}
+              type="button"
+              onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
+                hasActiveVersion
+                  ? "border-green/25 bg-green/5 hover:border-green/40 hover:bg-green/[0.08]"
+                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
+              }`}
+            >
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-sm font-semibold truncate ${hasActiveVersion ? "text-white/80" : "text-white/50"}`}>{k.name}</span>
+                  {versionCount > 1 && (
+                    <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-white/40 border border-white/15 bg-white/5 px-1.5 py-0.5 rounded-md leading-none">
+                      {versionCount} versions
+                    </span>
+                  )}
+                  {!hasActiveVersion && (
+                    <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wider text-gold/50 border border-gold/20 bg-gold/5 px-1.5 py-0.5 rounded-md leading-none">
+                      All Discontinued
+                    </span>
+                  )}
+                </div>
+                <span className="text-white/35 text-xs truncate">{k.maker} · {k.bladeStyle}</span>
+              </div>
+              {k.priceRange && (
+                <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRange}</span>
+              )}
+              <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -287,6 +307,20 @@ const ProductWorldSearchPage = () => {
           className="flex-1 md:rounded-2xl border-y md:border border-white/[0.07] flex flex-col gap-7 xsm:p-4 md:p-6"
           style={{ background: "rgba(8,0,0,0.88)" }}
         >
+          {/* Header */}
+          <div>
+            <p className="text-white/35 text-xs font-semibold uppercase tracking-widest mb-0.5">Results for</p>
+            <h1 className="text-white font-bold text-2xl md:text-3xl leading-tight break-words">"{query}"</h1>
+          </div>
+
+          {/* Knife page matches */}
+          {query && <KnifeResults query={query} onNavigate={navigate} />}
+
+          {/* Maker page matches */}
+          {query && <MakerResults query={query} onNavigate={navigate} />}
+
+          <div className="h-px bg-white/[0.06]" />
+
           {/* Filters */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/25">Listing</span>
@@ -301,20 +335,6 @@ const ProductWorldSearchPage = () => {
               ))}
             </div>
           </div>
-
-          <div className="h-px bg-white/[0.06]" />
-
-          {/* Header */}
-          <div>
-            <p className="text-white/35 text-xs font-semibold uppercase tracking-widest mb-0.5">Results for</p>
-            <h1 className="text-white font-bold text-2xl md:text-3xl leading-tight break-words">"{query}"</h1>
-          </div>
-
-          {/* Knife page matches */}
-          {query && <KnifeResults query={query} onNavigate={navigate} />}
-
-          {/* Maker page matches */}
-          {query && <MakerResults query={query} onNavigate={navigate} />}
 
           {/* Community listings */}
           <div>
