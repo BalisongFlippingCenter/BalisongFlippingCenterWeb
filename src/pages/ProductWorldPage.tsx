@@ -3,13 +3,28 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faXmark, faSliders, faClock, faStar, faChevronRight,
+  faMagnifyingGlass, faXmark, faSliders, faClock, faStar, faChevronRight, faBook,
 } from "@fortawesome/free-solid-svg-icons";
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { useAppSelector } from "../redux/hooks";
+import knivesData from "../data/knives.json";
+import makersData from "../data/makers.json";
+
+// ── Knife / maker suggestion types ───────────────────────────────────────────
+
+interface KnifeVersion { discontinued: boolean }
+interface KnifeSuggestion { slug: string; name: string; maker: string; versions: KnifeVersion[] }
+interface MakerSuggestion { slug: string; name: string; country: string }
+
+const suggestionMatch = (haystack: string, q: string): boolean => {
+  const h = haystack.toLowerCase();
+  const query = q.toLowerCase().trim();
+  if (!query) return false;
+  return h.includes(query);
+};
 
 const PAGE_SIZE       = 20;
 const MAX_RECENT     = 8;
@@ -468,14 +483,27 @@ const ProductWorldPage = () => {
             {searchOpen && (() => {
               const recent  = loadList(lsRecentKey);
               const saved   = loadList(lsSavedKey);
-              const filtered = query.trim()
-                ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(query.toLowerCase()))
+              const q = query.trim();
+
+              const knifeMatches = q
+                ? (knivesData as KnifeSuggestion[]).filter(
+                    (k) => suggestionMatch(k.name, q) || suggestionMatch(k.maker, q)
+                  ).slice(0, 4)
                 : [];
-              const showRecent  = !query.trim() && recent.length > 0;
-              const showSaved   = !query.trim() && saved.length > 0;
-              const showResults = query.trim() && filtered.length > 0;
-              const showEmpty   = query.trim() && filtered.length === 0;
-              const showBlank   = !query.trim() && recent.length === 0 && saved.length === 0;
+              const makerMatches = q
+                ? (makersData as MakerSuggestion[]).filter(
+                    (m) => suggestionMatch(m.name, q) || suggestionMatch(m.country, q)
+                  ).slice(0, 3)
+                : [];
+
+              const filteredHistory = q
+                ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(q.toLowerCase()))
+                : [];
+
+              const showBlank   = !q && recent.length === 0 && saved.length === 0;
+              const showSaved   = !q && saved.length > 0;
+              const showRecent  = !q && recent.length > 0;
+              const showHistory = q && filteredHistory.length > 0;
 
               return (
                 <div
@@ -486,6 +514,59 @@ const ProductWorldPage = () => {
                     <div className="px-5 py-4 text-white/25 text-xs">Start typing to search knives, makers, or models</div>
                   )}
 
+                  {/* Knife page matches */}
+                  {knifeMatches.length > 0 && (
+                    <div className="pt-3 pb-1">
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Knife Pages</p>
+                      {knifeMatches.map((k) => {
+                        const hasActive = k.versions.some((v) => !v.discontinued);
+                        return (
+                          <button
+                            key={k.slug}
+                            type="button"
+                            onMouseDown={() => { setSearchOpen(false); navigate(`/product-world/knife/${k.slug}`); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left group"
+                          >
+                            <FontAwesomeIcon icon={faBook} className="text-gold/40 text-[10px] flex-shrink-0" />
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-white/80 text-sm truncate font-medium">{k.name}</span>
+                              <span className="text-white/35 text-xs truncate">{k.maker}</span>
+                            </div>
+                            {hasActive && (
+                              <span className="text-[9px] font-semibold text-green/70 border border-green/25 bg-green/5 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                In Production
+                              </span>
+                            )}
+                            <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Maker page matches */}
+                  {makerMatches.length > 0 && (
+                    <div className="pt-3 pb-1">
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Maker Pages</p>
+                      {makerMatches.map((m) => (
+                        <button
+                          key={m.slug}
+                          type="button"
+                          onMouseDown={() => { setSearchOpen(false); navigate(`/product-world/maker/${m.slug}`); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left group"
+                        >
+                          <FontAwesomeIcon icon={faBook} className="text-blue-primary/50 text-[10px] flex-shrink-0" />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-white/80 text-sm truncate font-medium">{m.name}</span>
+                            <span className="text-white/35 text-xs truncate">{m.country}</span>
+                          </div>
+                          <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Saved searches (no query) */}
                   {showSaved && (
                     <div className="pt-3 pb-1">
                       <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Saved</p>
@@ -499,6 +580,7 @@ const ProductWorldPage = () => {
                     </div>
                   )}
 
+                  {/* Recent searches (no query) */}
                   {showRecent && (
                     <div className="pt-3 pb-2">
                       <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Recent</p>
@@ -512,10 +594,11 @@ const ProductWorldPage = () => {
                     </div>
                   )}
 
-                  {showResults && (
+                  {/* History matches (with query) */}
+                  {showHistory && (
                     <div className="pt-3 pb-2">
-                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Suggestions</p>
-                      {filtered.map((term) => (
+                      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Recent Searches</p>
+                      {filteredHistory.map((term) => (
                         <button key={term} type="button" onMouseDown={() => handleSelectSearch(term)}
                           className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left">
                           <FontAwesomeIcon icon={faMagnifyingGlass} className="text-white/20 text-[10px] flex-shrink-0" />
@@ -525,11 +608,8 @@ const ProductWorldPage = () => {
                     </div>
                   )}
 
-                  {showEmpty && (
-                    <div className="px-5 py-4 text-white/25 text-xs">No saved or recent searches match "{query}"</div>
-                  )}
-
-                  {query.trim() && (
+                  {/* Search for "..." */}
+                  {q && (
                     <button
                       type="button"
                       onMouseDown={() => handleSearchSubmit(query)}
@@ -537,7 +617,7 @@ const ProductWorldPage = () => {
                     >
                       <FontAwesomeIcon icon={faMagnifyingGlass} className="text-gold/40 text-[10px] flex-shrink-0 group-hover:text-gold/70 transition-colors" />
                       <span className="text-white/45 text-sm group-hover:text-white/70 transition-colors duration-100">
-                        Search for <span className="text-gold/70 font-medium group-hover:text-gold">"{query.trim()}"</span>
+                        Search for <span className="text-gold/70 font-medium group-hover:text-gold">"{q}"</span>
                       </span>
                       <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 ml-auto flex-shrink-0 group-hover:text-white/35 transition-colors" />
                     </button>

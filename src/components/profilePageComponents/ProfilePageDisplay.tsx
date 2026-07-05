@@ -11,6 +11,7 @@ import {
   faLink,
   faArrowUpRightFromSquare,
   faUserPlus,
+  faFlag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookSquare,
@@ -21,6 +22,7 @@ import {
   faDiscord,
 } from "@fortawesome/free-brands-svg-icons";
 import { motion, AnimatePresence } from "motion/react";
+import ReportModal from "../ReportModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,6 +101,7 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
   const [bioOverflows, setBioOverflows] = useState(false);
   const [isFollowing, setIsFollowing]   = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [reportOpen, setReportOpen]     = useState(false);
   // local followerCount so we can update it optimistically after follow/unfollow
   const [localFollowerCount, setLocalFollowerCount] = useState<number | null>(null);
 
@@ -259,21 +262,31 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
               </span>
             </div>
 
-            {/* Follow button — shown to logged-in users viewing another account */}
+            {/* Follow + Report — grouped so they never wrap independently */}
             {loggedIn && loggedInUser?.id !== profile.id && (
-              <button
-                type="button"
-                onClick={handleFollowToggle}
-                disabled={followLoading}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isFollowing
-                    ? "bg-white/5 border border-white/15 text-white/60 hover:bg-red/10 hover:border-red/30 hover:text-red/70"
-                    : "bg-blue-primary/15 border border-blue-primary/30 text-blue-primary hover:bg-blue-primary/25"
-                }`}
-              >
-                <FontAwesomeIcon icon={faUserPlus} className="text-xs" />
-                {isFollowing ? "Following" : "Follow"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isFollowing
+                      ? "bg-white/5 border border-white/15 text-white/60 hover:bg-red/10 hover:border-red/30 hover:text-red/70"
+                      : "bg-blue-primary/15 border border-blue-primary/30 text-blue-primary hover:bg-blue-primary/25"
+                  }`}
+                >
+                  <FontAwesomeIcon icon={faUserPlus} className="text-xs" />
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  title="Report profile"
+                  className="w-7 h-7 rounded-full flex items-center justify-center border border-white/10 text-white/25 hover:text-red/60 hover:border-red/25 transition-all duration-200"
+                >
+                  <FontAwesomeIcon icon={faFlag} className="text-xs" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -403,6 +416,15 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
 
       {/* Posts grid */}
       <PublicProfilePostsComponent accountId={profile.id} />
+
+      {profile && loggedIn && loggedInUser?.id !== profile.id && (
+        <ReportModal
+          isOpen={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetType="PROFILE"
+          targetId={profile.id}
+        />
+      )}
 
     </section>
   );
