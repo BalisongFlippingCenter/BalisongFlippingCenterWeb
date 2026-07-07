@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { axiosApiInstanceAuth } from "../../api/axios";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setNewUser } from "../../redux/auth/authSlice";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { Profile } from "../../modals/User";
 import { useNavigate } from "react-router-dom";
 
@@ -41,11 +42,13 @@ const ProfileCaptionConfiguration = () => {
       })
       .then(() => {
         dispatch(setNewUser({ ...user, profileCaption: caption.trim() } as Profile));
+        dispatch(addUIToast({ type: "success", message: "Profile caption updated!" }));
         navigate(-1);
       })
       .catch((err) => {
         console.log(err);
         setIsError(true);
+        dispatch(addUIToast({ type: "error", message: "Failed to update caption. Please try again." }));
       })
       .finally(() => setIsLoading(false));
   };

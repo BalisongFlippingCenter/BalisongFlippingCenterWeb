@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { Collection } from "../../modals/Collection";
 import { setCollection } from "../../redux/collection/collectionSlice";
 import { mapCollectionKnife } from "../../redux/collection/collectionActions";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 
 interface params {
   galleryFiles: Array<File> | null;
@@ -89,11 +90,13 @@ const NewCollectionKnifeSubmit = ({ galleryFiles, newKnifeObj }: params) => {
           collectedKnives: [...(collectionData?.collectedKnives ?? []), mapCollectionKnife(res.data)],
         } as Collection;
         dispatch(setCollection(newCollectionData));
+        dispatch(addUIToast({ type: "success", message: "Knife added to your collection!" }));
       })
       .catch((err) => {
         console.log("adding new knife error", err);
         setIsError(true);
         setErrorMsg(err);
+        dispatch(addUIToast({ type: "error", message: "Failed to add knife. Please try again." }));
       })
       .finally(() => {
         setIsLoading(false);

@@ -26,6 +26,7 @@ const POST_REASONS: ReasonOption[] = [
   { value: "INAPPROPRIATE_CONTENT",label: "Inappropriate content",        description: "Content that violates community standards" },
   { value: "HARASSMENT",           label: "Harassment or hate speech",    description: "Targeted harassment or discriminatory content" },
   { value: "MISINFORMATION",       label: "Misinformation",               description: "False or misleading information" },
+  { value: "UNSAFE_CONTENT",       label: "Unsafe or dangerous content",  description: "Demonstrates reckless handling or unsafe technique without appropriate warnings" },
   { value: "OTHER",                label: "Other",                        description: "Something else not listed above" },
 ];
 
@@ -33,6 +34,7 @@ const COMMENT_REASONS: ReasonOption[] = [
   { value: "SPAM",                  label: "Spam or misleading",        description: "Repetitive, irrelevant, or deceptive content" },
   { value: "INAPPROPRIATE_CONTENT", label: "Inappropriate content",     description: "Content that violates community standards" },
   { value: "HARASSMENT",            label: "Harassment or hate speech", description: "Targeted harassment or discriminatory content" },
+  { value: "MISINFORMATION",        label: "Misinformation",            description: "False or misleading information" },
   { value: "OTHER",                 label: "Other",                     description: "Something else not listed above" },
 ];
 

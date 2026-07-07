@@ -3,6 +3,7 @@ import { axiosApiInstanceAuth } from "../../api/axios";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { Profile } from "../../modals/User";
 import { setNewUser } from "../../redux/auth/authSlice";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useNavigate } from "react-router-dom";
 
 type LinkType = "facebook" | "instagram" | "twitter" | "youtube" | "reddit" | "discord" | "email" | "website";
@@ -151,12 +152,14 @@ const LinkConfiguration = ({ linkType }: Props) => {
       })
       .then(() => {
         dispatch(setNewUser({ ...user, [config.userField]: trimmed } as Profile));
+        dispatch(addUIToast({ type: "success", message: `${config.label} link updated!` }));
         navigate(-1);
       })
       .catch((err) => {
         console.log(err);
         setIsError(true);
         setErrMsg("Something went wrong. Please try again.");
+        dispatch(addUIToast({ type: "error", message: `Failed to update ${config.label} link.` }));
       })
       .finally(() => setIsLoading(false));
   };
@@ -180,12 +183,14 @@ const LinkConfiguration = ({ linkType }: Props) => {
       .request({ url: config.apiUrl, method: "post", data: payload })
       .then(() => {
         dispatch(setNewUser({ ...user, [config.userField]: null } as Profile));
+        dispatch(addUIToast({ type: "success", message: `${config.label} link removed.` }));
         navigate(-1);
       })
       .catch((err) => {
         console.log(err);
         setIsError(true);
         setErrMsg("Something went wrong. Please try again.");
+        dispatch(addUIToast({ type: "error", message: `Failed to remove ${config.label} link.` }));
       })
       .finally(() => setIsRemoving(false));
   };

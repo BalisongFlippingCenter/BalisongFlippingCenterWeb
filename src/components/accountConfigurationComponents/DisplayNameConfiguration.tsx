@@ -3,6 +3,7 @@ import { axiosApiInstanceAuth } from "../../api/axios";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { clearCollection } from "../../redux/collection/collectionSlice";
 import { logout } from "../../redux/auth/authActions";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { setNewUser } from "../../redux/auth/authSlice";
 import { Profile } from "../../modals/User";
 import { useNavigate } from "react-router-dom";
@@ -51,16 +52,18 @@ const DisplayNameConfiguration = () => {
       })
       .then((res) => {
         console.log("Display name update response:", res.data);
-        // backend may return full user object or just the new display name string
         const updatedName = typeof res.data === "object" ? res.data.displayName : res.data;
         const updatedCode = typeof res.data === "object" ? res.data.identifierCode : user?.identifierCode;
         dispatch(setNewUser({ ...user, displayName: updatedName, identifierCode: updatedCode } as Profile));
+        dispatch(addUIToast({ type: "success", message: "Display name updated!" }));
         navigate(`/${updatedName}/${updatedCode}`, { replace: true });
       })
       .catch((err) => {
         console.log("Display name update error:", err);
+        const msg = err.response?.data?.message ?? "Failed to update display name. Please try again.";
         setIsError(true);
-        setErrMsg(err.response?.data?.message ?? "Failed to update display name. Please try again.");
+        setErrMsg(msg);
+        dispatch(addUIToast({ type: "error", message: msg }));
         if (err.response?.status === 401) {
           dispatch(clearCollection());
           dispatch(logout());

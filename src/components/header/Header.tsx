@@ -13,15 +13,28 @@ import {
   faGlobe,
   faEarthAmericas,
   faCircleInfo,
+  faChevronDown,
+  faBookOpen,
+  faEnvelope,
+  faFileLines,
+  faShield,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import { RootState } from "../../redux/store";
 import useWindowSize from "../../hooks/useWindowSize";
-import { motion, useScroll, useMotionValueEvent } from "motion/react";
+import { AnimatePresence, motion, useScroll, useMotionValueEvent } from "motion/react";
+
+const ABOUT_SUBITEMS = [
+  { to: "/learn",   icon: faBookOpen,  label: "Learn",            tagline: "Guides & hardware explained" },
+  { to: "/about",   icon: faEnvelope,  label: "Contact",          tagline: "Get in touch with us" },
+  { to: "/terms",   icon: faFileLines, label: "Terms of Service", tagline: "Rules & user agreements" },
+  { to: "/privacy", icon: faShield,    label: "Privacy Policy",   tagline: "How we handle your data" },
+];
 
 const Navbar = () => {
   const [hidden, setHidden] = useState(false);
   const [navToggle, toggleNav] = useState(false);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
   const [searchBarToggle, setSearchBarToggle] = useState(false);
   const [accountToggle, setAccountToggle] = useState(false);
   const [currURL, setCurrURL] = useState("");
@@ -49,6 +62,7 @@ const Navbar = () => {
     if (location.pathname !== currURL) {
       setCurrURL(location.pathname);
       toggleNav(false);
+      setAboutExpanded(false);
       if (accountToggle) setAccountToggle(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,11 +188,11 @@ const Navbar = () => {
               }}
             >
               <div className="flex flex-col">
+                {/* Top-level nav links */}
                 {[
                   { to: "/community",       icon: faGlobe,         label: "Community",       tagline: "Posts, flips & the feed"    },
                   { to: "/tutorial-center", icon: faHubspot,       label: "Tutorial Center", tagline: "Tricks, combos & tutorials" },
                   { to: "/product-world",   icon: faEarthAmericas, label: "Product World",   tagline: "Knives, makers & gear"      },
-                  { to: "/about",           icon: faCircleInfo,    label: "About",           tagline: "What is this place?"        },
                 ].map(({ to, icon, label, tagline }) => {
                   const isActive = location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
                   return (
@@ -205,6 +219,86 @@ const Navbar = () => {
                     </NavLink>
                   );
                 })}
+
+                {/* About — accordion */}
+                {(() => {
+                  const aboutActive = ["/about", "/learn", "/terms", "/privacy"].some(
+                    (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+                  );
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAboutExpanded((prev) => !prev)}
+                        className={`flex items-center gap-4 pl-4 pr-5 py-3.5 transition-colors duration-150 border-l-[3px] border-b-2 border-b-black w-full text-left ${
+                          aboutActive
+                            ? "border-blue-primary bg-blue-primary/10"
+                            : "border-transparent hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <FontAwesomeIcon
+                          icon={faCircleInfo}
+                          className={`text-base flex-shrink-0 transition-colors duration-150 ${aboutActive ? "text-blue-primary" : "text-white/40"}`}
+                        />
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                          <span className={`text-sm font-semibold leading-snug transition-colors duration-150 ${aboutActive ? "text-blue-primary" : "text-white/80"}`}>
+                            About
+                          </span>
+                          <span className="text-white/45 text-xs leading-none">What is this place?</span>
+                        </div>
+                        <FontAwesomeIcon
+                          icon={faChevronDown}
+                          className={`text-[10px] text-white/30 transition-transform duration-200 flex-shrink-0 ${aboutExpanded ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {aboutExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                            style={{ background: "rgba(255,255,255,0.02)" }}
+                          >
+                            {ABOUT_SUBITEMS.map(({ to, icon, label, tagline }) => {
+                              const isActive = location.pathname === to;
+                              return (
+                                <NavLink
+                                  key={to}
+                                  to={to}
+                                  onClick={() => toggleNav(false)}
+                                  className={`flex items-center gap-4 pl-10 pr-5 py-3 transition-colors duration-150 border-l-[3px] border-b border-b-black/30 ${
+                                    isActive
+                                      ? "border-blue-primary bg-blue-primary/10"
+                                      : "border-transparent hover:bg-white/[0.03]"
+                                  }`}
+                                >
+                                  <div
+                                    className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                                    style={{ background: isActive ? "rgba(16,129,152,0.2)" : "rgba(255,255,255,0.06)" }}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={icon}
+                                      className={`text-[10px] ${isActive ? "text-blue-primary" : "text-white/35"}`}
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                    <span className={`text-sm font-semibold leading-snug transition-colors duration-150 ${isActive ? "text-blue-primary" : "text-white/80"}`}>
+                                      {label}
+                                    </span>
+                                    <span className="text-white/35 text-xs leading-none">{tagline}</span>
+                                  </div>
+                                </NavLink>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  );
+                })()}
               </div>
             </motion.div>
           </>

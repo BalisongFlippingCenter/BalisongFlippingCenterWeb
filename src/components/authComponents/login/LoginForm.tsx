@@ -6,6 +6,7 @@ import { login } from "../../../redux/auth/authActions";
 import { setToRememberLoginInfo, toggleOffRememberLoginInfo } from "../../../redux/auth/authSlice";
 import { setCollection } from "../../../redux/collection/collectionSlice";
 import { mapCollection } from "../../../redux/collection/collectionActions";
+import { addUIToast } from "../../../redux/uiToast/uiToastSlice";
 import GoogleLoginComponent from "./GoogleLoginComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
@@ -56,6 +57,7 @@ const LoginForm = () => {
       .then((res) => {
         if (rememberInfo) localStorage.setItem("saved-user-email", email);
         dispatch(setCollection(mapCollection(res.collection)));
+        dispatch(addUIToast({ type: "success", message: "Welcome back!" }));
         navigate("/community");
       })
       .catch((err: string) => {
@@ -67,6 +69,7 @@ const LoginForm = () => {
         } else {
           setTopError(err);
         }
+        dispatch(addUIToast({ type: "error", message: "Sign in failed. Please check your credentials." }));
       })
       .finally(() => {
         setIsLoading(false);

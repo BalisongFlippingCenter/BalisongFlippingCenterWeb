@@ -4,6 +4,7 @@ import Image from "../Image";
 import { axiosApiInstanceAuth } from "../../api/axios";
 import { Profile } from "../../modals/User";
 import { setNewUser } from "../../redux/auth/authSlice";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
@@ -42,11 +43,13 @@ const BannerConfiguration = () => {
       .then((res) => {
         const newUser = { ...user, bannerImg: res.data } as Profile;
         dispatch(setNewUser(newUser));
+        dispatch(addUIToast({ type: "success", message: "Profile banner updated!" }));
         navigate(-1);
       })
       .catch((error) => {
         console.log(error);
         setIsError(true);
+        dispatch(addUIToast({ type: "error", message: "Failed to update banner. Please try again." }));
       })
       .finally(() => setIsLoading(false));
   };
