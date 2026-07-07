@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import PostDrawer from "./components/PostDrawer";
+import WebSocketManager from "./components/WebSocketManager";
 import { PostDetail } from "./modals/Post";
 import MainLayout from "./layouts/MainLayout";
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -39,6 +40,10 @@ import { setCredentials, setToRememberLoginInfo } from "./redux/auth/authSlice";
 import { loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
 import { mapCollection } from "./redux/collection/collectionActions";
+import { setUnreadCount } from "./redux/notifications/notificationSlice";
+import { axiosApiInstanceAuth } from "./api/axios";
+import NotificationToastContainer from "./components/NotificationToastContainer";
+import UIToastContainer from "./components/UIToastContainer";
 import ProfileConfigurationCollectionBannerImagePage from "./pages/configuration/ProfileConfigurationCollectionBannerImagePage";
 import ProfileConfigurationCollectionKnifeCoverPage from "./pages/configuration/ProfileConfigurationCollectionKnifeCoverPage";
 import CollectionKnifePage from "./pages/CollectionKnifePage";
@@ -64,6 +69,15 @@ const App = () => {
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const dispatch = useAppDispatch();
+
+  // Fetch unread count whenever a session becomes active (fast badge, no full list)
+  useEffect(() => {
+    if (!user || !accessToken) return;
+    axiosApiInstanceAuth
+      .get("/notifications/unread-count")
+      .then((res) => dispatch(setUnreadCount(res.data ?? 0)))
+      .catch(() => {});
+  }, [user?.id, accessToken]);
 
   useEffect(() => {
     // get remember login state
@@ -145,6 +159,9 @@ const App = () => {
   } else {
     return (
       <>
+      <WebSocketManager />
+      <NotificationToastContainer />
+      <UIToastContainer />
       <Routes location={bgLocation ?? location}>
         <Route path="/" element={<MainLayout />}>
           {/*Public Routes*/}

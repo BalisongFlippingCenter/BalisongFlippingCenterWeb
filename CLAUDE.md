@@ -130,7 +130,7 @@ When building out the **Product World** and **Tutorial Center** pages, include a
 ### Video upload strategy
 Native video uploads are capped at **90 seconds / ~150–200MB per file** — enough for trick clips, combo runs, and short show-off content. For longer tutorial content (full breakdowns, YouTube-length tutorials), the platform supports **YouTube URL embeds** rather than direct uploads. This keeps storage and infrastructure costs manageable while still surfacing long-form tutorial content in the community.
 
-- **Short native clips** (trick combos, show-offs, buy/sell footage) → direct upload, enforced duration/size cap
+- **Short native clips** (trick combos, show-offs, buy/sell footage) → direct upload, 2 minute / 150 MB cap enforced on the frontend
 - **Long tutorials** → YouTube embed via URL, video lives on YouTube's infrastructure
 - The Tutorial Center post type should support a `youtubeUrl` field on the backend alongside the existing `mediaFiles` field. The frontend should render an embedded YouTube player when this field is present.
 - This approach benefits creators too — their tutorials drive YouTube engagement while also reaching the balisong community on this platform.

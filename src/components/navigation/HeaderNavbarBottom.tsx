@@ -11,9 +11,9 @@ const NOTCH_D  = 20;   // notch depth
 const NOTCH_S  = 10;   // shoulder smoothing
 const CORNER_R = 28;   // pill corner radius
 
-const buildPillPath = (W: number, H: number, cx: number, depth: number): string => {
+const buildPillPath = (W: number, H: number, cx: number, depth: number, cornerR = CORNER_R): string => {
   if (!W || !H) return '';
-  const r = CORNER_R;
+  const r = cornerR;
 
   const notchSection = [
     `L ${cx - NOTCH_HW - NOTCH_S} 0`,
@@ -153,7 +153,7 @@ const HeaderNavbarBottom = () => {
   }, [notchX]);
 
   const effectiveCx = notchX > 0 ? notchX : dims.w / 2;
-  const svgPath = buildPillPath(dims.w, dims.h, effectiveCx, notchDepth);
+  const svgPath = buildPillPath(dims.w, dims.h, effectiveCx, notchDepth, isMobile ? 0 : CORNER_R);
 
   const navItemProps = { springConfig, floatY, activeScale, hoverScale };
 

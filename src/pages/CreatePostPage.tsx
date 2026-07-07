@@ -20,7 +20,8 @@ import {
   faTag,
   faBolt,
 } from "@fortawesome/free-solid-svg-icons";
-import { useAppSelector } from "../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { addUIToast } from "../redux/uiToast/uiToastSlice";
 import { axiosApiInstanceAuth } from "../api/axios";
 import { CollectionKnife } from "../modals/CollectionKnife";
 import { Profile } from "../modals/User";
@@ -39,6 +40,19 @@ const VIDEO_ONLY_LAYOUTS: PostLayout[] = ["tutorial", "combo"];
 const SINGLE_FILE_LAYOUTS: PostLayout[] = ["tutorial", "combo"];
 const MAX_FILES = 10;
 const MAX_TAGS = 5;
+
+const MAX_IMAGE_SIZE_MB    = 15;
+const MAX_VIDEO_SIZE_MB    = 150;
+const MAX_VIDEO_DURATION_S = 120;
+
+const getVideoDuration = (file: File): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(video.duration); };
+    video.onerror = () => reject();
+    video.src = URL.createObjectURL(file);
+  });
 
 // ─── Backend field mappings ────────────────────────────────────────────────
 const POST_TYPE_MAP: Record<PostLayout, string> = {
@@ -548,6 +562,7 @@ const PostPreviewOverlay = ({
 // ─── Create Post Page ──────────────────────────────────────────────────────
 const CreatePostPage = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const collectionKnives = useAppSelector((state) => state.collection.collectionKnives);
   const collectionData   = useAppSelector((state) => state.collection.collection);
@@ -564,6 +579,7 @@ const CreatePostPage = () => {
   const [lookingFor, setLookingFor] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [tradeSoughtFile, setTradeSoughtFile] = useState<File | null>(null);
+  const [mediaError, setMediaError] = useState("");
   const [taggedKnifeId, setTaggedKnifeId] = useState<string | null>(null);
   const [knifePickerOpen, setKnifePickerOpen] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -636,26 +652,63 @@ const CreatePostPage = () => {
   };
 
   // --- file handling ---
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const incoming = Array.from(e.target.files ?? []);
     if (!incoming.length) return;
+    if (fileRef.current) fileRef.current.value = "";
+
+    setMediaError("");
+    const rejected: string[] = [];
+    const valid: File[] = [];
+
+    for (const file of incoming) {
+      const isVideo = file.type.startsWith("video/");
+      const sizeMB  = file.size / (1024 * 1024);
+
+      if (!isVideo && sizeMB > MAX_IMAGE_SIZE_MB) {
+        rejected.push(`"${file.name}" exceeds the ${MAX_IMAGE_SIZE_MB} MB image limit.`);
+        continue;
+      }
+      if (isVideo && sizeMB > MAX_VIDEO_SIZE_MB) {
+        rejected.push(`"${file.name}" exceeds the ${MAX_VIDEO_SIZE_MB} MB video limit.`);
+        continue;
+      }
+      if (isVideo) {
+        try {
+          const dur = await getVideoDuration(file);
+          if (dur > MAX_VIDEO_DURATION_S) {
+            rejected.push(`"${file.name}" is ${Math.round(dur)}s — videos must be ${MAX_VIDEO_DURATION_S}s or shorter.`);
+            continue;
+          }
+        } catch {
+          rejected.push(`"${file.name}" could not be read.`);
+          continue;
+        }
+      }
+      valid.push(file);
+    }
+
+    if (rejected.length > 0) setMediaError(rejected[0]);
 
     if (isSingleFile) {
-      setSelectedFiles([incoming[0]]);
-      if (fileRef.current) fileRef.current.value = "";
+      if (valid.length > 0) setSelectedFiles([valid[0]]);
       return;
     }
 
     const merged = [...selectedFiles];
-    for (const file of incoming) {
+    for (const file of valid) {
       if (merged.length >= mediaMax) break;
-      const isDupe = merged.some(
-        (f) => f.name === file.name && f.size === file.size
-      );
+      const isDupe = merged.some((f) => f.name === file.name && f.size === file.size);
       if (!isDupe) merged.push(file);
     }
+
+    const totalMB = merged.reduce((sum, f) => sum + f.size / (1024 * 1024), 0);
+    if (totalMB > 500) {
+      setMediaError("Total upload size cannot exceed 500 MB.");
+      return;
+    }
+
     setSelectedFiles(merged);
-    if (fileRef.current) fileRef.current.value = "";
   };
 
   const removeFile = (index: number) => {
@@ -712,10 +765,14 @@ const CreatePostPage = () => {
 
     await axiosApiInstanceAuth
       .request({ url: "/posts/create", method: "post", data: fd })
-      .then(() => navigate(-1))
+      .then(() => {
+        dispatch(addUIToast({ type: "success", message: "Post published!" }));
+        navigate(-1);
+      })
       .catch((err) => {
         console.log(err);
         setError("Something went wrong. Please try again.");
+        dispatch(addUIToast({ type: "error", message: "Failed to publish post. Please try again." }));
       })
       .finally(() => setIsLoading(false));
   };
@@ -991,7 +1048,14 @@ const CreatePostPage = () => {
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) setTradeSoughtFile(f);
+                    if (f) {
+                      if (f.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) {
+                        setMediaError(`"${f.name}" exceeds the ${MAX_IMAGE_SIZE_MB} MB image limit.`);
+                      } else {
+                        setMediaError("");
+                        setTradeSoughtFile(f);
+                      }
+                    }
                     e.target.value = "";
                   }}
                 />
@@ -1193,6 +1257,9 @@ const CreatePostPage = () => {
               className="hidden"
               onChange={handleFileChange}
             />
+            {mediaError && (
+              <p className="text-red text-xs font-medium mt-1">{mediaError}</p>
+            )}
           </div>
         )}
 

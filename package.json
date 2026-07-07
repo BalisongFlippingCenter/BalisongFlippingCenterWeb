@@ -17,6 +17,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@react-oauth/google": "^0.12.1",
     "@reduxjs/toolkit": "^2.2.8",
+    "@stomp/stompjs": "^7.3.0",
     "@tanstack/react-virtual": "^3.14.2",
     "aws-amplify": "^6.12.1",
     "axios": "^1.7.2",

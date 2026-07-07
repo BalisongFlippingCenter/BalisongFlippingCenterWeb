@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { axiosApiInstanceAuth } from "../../api/axios";
 import { Profile } from "../../modals/User";
 import { setNewUser } from "../../redux/auth/authSlice";
+import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
@@ -42,11 +43,13 @@ const ProfileImageConfiguration = () => {
       .then((res) => {
         const newUser = { ...user, profileImg: res.data } as Profile;
         dispatch(setNewUser(newUser));
+        dispatch(addUIToast({ type: "success", message: "Profile image updated!" }));
         navigate(-1);
       })
       .catch((error) => {
         console.log(error);
         setIsError(true);
+        dispatch(addUIToast({ type: "error", message: "Failed to update profile image. Please try again." }));
       })
       .finally(() => setIsLoading(false));
   };
