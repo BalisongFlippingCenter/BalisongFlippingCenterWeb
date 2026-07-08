@@ -241,8 +241,6 @@ const SearchSidebar = ({
 
 // ── Compact post card (mobile 2-col grid) ────────────────────────────────────
 
-const isVideoUrl = (url: string) => /\.(mp4|mov|avi|webm|mkv|m4v)(\?.*)?$/i.test(url);
-
 const compactBadge = (post: PostDetail): { label: string; cls: string } => {
   if (post.postType === "TRADE")  return { label: "Trade",   cls: "text-blue-primary border-blue-primary/50 bg-black/70" };
   if (post.mode === "BUYING")     return { label: "Buying",  cls: "text-[#5bc8f5] border-[#5bc8f5]/40 bg-black/70" };
@@ -259,22 +257,22 @@ const knifeLabel = (post: PostDetail): string | null => {
 
 const CompactPostCard = ({ post }: { post: PostDetail }) => {
   const badge    = compactBadge(post);
-  const media    = post.mediaFiles[0] ?? "";
-  const isVid    = !!media && isVideoUrl(media);
-  const hasMedia = !!media;
-  const knife    = knifeLabel(post);
+  const mediaFile = post.mediaFiles[0];
+  const isVid     = mediaFile?.isVideo ?? false;
+  const hasMedia  = !!mediaFile;
+  const knife     = knifeLabel(post);
 
   const coverImg = post.postType === "TRADE"
-    ? (post.offeringKnife?.coverPhoto ?? media)
-    : media;
+    ? (post.offeringKnife?.coverPhoto ?? mediaFile?.url)
+    : mediaFile?.url;
 
   return (
     <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0f14] border border-white/[0.07]">
       {/* Thumbnail */}
       {hasMedia ? (
         isVid
-          ? <video src={coverImg} className="w-full h-full object-cover" muted playsInline preload="metadata" onLoadedMetadata={(e) => { e.currentTarget.currentTime = 0.001; }} />
-          : <img src={coverImg} alt="" className="w-full h-full object-cover" />
+          ? <video src={coverImg ?? ""} className="w-full h-full object-cover" muted playsInline preload="metadata" onLoadedMetadata={(e) => { e.currentTarget.currentTime = 0.001; }} />
+          : <img src={coverImg ?? ""} alt="" className="w-full h-full object-cover" />
       ) : post.offeringKnife?.coverPhoto ? (
         <img src={post.offeringKnife.coverPhoto} alt="" className="w-full h-full object-cover" />
       ) : (
