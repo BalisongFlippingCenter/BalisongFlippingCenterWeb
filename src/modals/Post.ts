@@ -58,18 +58,37 @@ const pickUrl = (v: any): string | null => {
   return null;
 };
 
+// ── Per-file media item (new backend shape) ───────────────────────────────────
+export interface MediaFile {
+  url: string;
+  isVideo: boolean;
+  description: string | null;
+  referenceKnifeId: number | null;
+  referenceKnife: PostKnifeRef | null;
+}
+
+const VIDEO_EXT = /\.(mp4|mov|avi|webm|mkv|m4v)(\?.*)?$/i;
+
 /**
- * Converts a raw mediaFiles array (either string[] or {url,video}[]) to string[].
- * Used wherever the frontend needs a flat list of S3 URLs.
+ * Converts a raw mediaFiles array (string[] legacy OR {url,isVideo,description}[] new)
+ * to MediaFile[]. Falls back to URL extension sniffing when isVideo is absent.
  */
-const extractMediaUrls = (arr: any[]): string[] =>
+const extractMediaFiles = (arr: any[]): MediaFile[] =>
   arr
-    .map((item) => {
-      if (typeof item === "string") return item;
-      if (item && typeof item === "object" && typeof item.url === "string") return item.url;
+    .map((item): MediaFile | null => {
+      if (typeof item === "string" && item.length > 0)
+        return { url: item, isVideo: VIDEO_EXT.test(item), description: null, referenceKnifeId: null, referenceKnife: null };
+      if (item && typeof item === "object" && typeof item.url === "string" && item.url.length > 0)
+        return {
+          url: item.url,
+          isVideo: typeof item.isVideo === "boolean" ? item.isVideo : typeof item.video === "boolean" ? item.video : VIDEO_EXT.test(item.url),
+          description: item.description ?? null,
+          referenceKnifeId: item.referenceKnifeId ?? null,
+          referenceKnife: normalizeKnifeRef(item.referenceKnife ?? null),
+        };
       return null;
     })
-    .filter((u): u is string => u !== null && u.length > 0);
+    .filter((m): m is MediaFile => m !== null);
 
 /**
  * Maps a raw backend response to PostCover.
@@ -143,7 +162,7 @@ export interface PostDetail {
   postType: string;             // GENERIC | BUY_SELL | TRADE | TRICK_TUTORIAL | COMBO
   caption: string;
   description: string | null;
-  mediaFiles: string[];         // S3 URLs
+  mediaFiles: MediaFile[];
   tags: string[];               // GENERIC tags (SCREAMING_SNAKE_CASE from backend)
   // Creator
   creatorDisplayName: string;
@@ -182,7 +201,7 @@ export const mapPostDetail = (data: any): PostDetail => {
     postType:              p.postType              ?? "GENERIC",
     caption:               p.caption              ?? "",
     description:           p.description          ?? null,
-    mediaFiles:            extractMediaUrls(p.mediaFiles ?? p.files ?? []),
+    mediaFiles:            extractMediaFiles(p.mediaFiles ?? p.files ?? []),
     tags:                  p.tags                 ?? [],
     creatorDisplayName:    a?.displayName         ?? p.creatorDisplayName ?? p.creatorName ?? "[deleted]",
     creatorIdentifierCode: a?.identifierCode      ?? p.creatorIdentifierCode ?? null,

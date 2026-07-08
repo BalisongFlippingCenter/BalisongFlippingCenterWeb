@@ -42,6 +42,8 @@ import HandleConstructionInput from "../input/HandleConstructionInput";
 import HandleMaterialInput from "../input/HandleMaterialInput";
 import HandleFinishInput from "../input/HandleFinishInput";
 import KnifeBalanceInput from "../input/KnifeBalanceInput";
+import GalleryLightbox from "./GalleryLightbox";
+import { AnimatePresence } from "motion/react";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -200,6 +202,7 @@ const initEditState = (k: CollectionKnife): EditState => ({
 const UsersCollectionKnifeDisplay = () => {
   const [collectionKnife, setCollectionKnife] = useState<CollectionKnife | null>(null);
   const [pageState, setPageState]             = useState<"loading" | "error" | "success">("loading");
+  const [lightboxIndex, setLightboxIndex]     = useState<number | null>(null);
   const [featuredLoading, setFeaturedLoading] = useState(false);
 
   // Edit mode state
@@ -665,23 +668,26 @@ const UsersCollectionKnifeDisplay = () => {
             {k.galleryFiles && k.galleryFiles.length > 0 ? (
               <div className="grid xsm:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                 {k.galleryFiles.map((file, i) => {
-                  const isVideo = /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(file.fileId);
+                  const isVid = /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(file.fileId);
                   return (
-                    <div
+                    <button
                       key={i}
-                      className="relative aspect-square rounded-lg overflow-hidden border border-white/8 bg-[#13161d]"
+                      type="button"
+                      onClick={() => setLightboxIndex(i)}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-white/8 bg-[#13161d] cursor-pointer group"
                     >
-                      {isVideo ? (
+                      {isVid ? (
                         <video src={file.fileId} className="w-full h-full object-cover" muted playsInline />
                       ) : (
                         <img src={file.fileId} alt={`gallery ${i + 1}`} className="w-full h-full object-cover" />
                       )}
-                      {isVideo && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-150" />
+                      {isVid && (
                         <div className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/65 backdrop-blur-sm flex items-center justify-center">
                           <FontAwesomeIcon icon={faPlay} className="text-white text-[11px] ml-px" />
                         </div>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -692,6 +698,18 @@ const UsersCollectionKnifeDisplay = () => {
               </div>
             )}
           </div>
+
+          {/* Lightbox */}
+          <AnimatePresence>
+            {lightboxIndex !== null && k.galleryFiles && (
+              <GalleryLightbox
+                items={k.galleryFiles}
+                index={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onNavigate={setLightboxIndex}
+              />
+            )}
+          </AnimatePresence>
 
         </div>
       </section>

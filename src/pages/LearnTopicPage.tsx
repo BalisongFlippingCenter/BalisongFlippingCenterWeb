@@ -93,7 +93,7 @@ const CommunityStrip = ({ onLoaded }: { onLoaded: (hasPosts: boolean) => void })
 
   const PostCard = ({ post }: { post: PostDetail }) => {
     const thumb = post.mediaFiles[0] ?? null;
-    const isVideo = thumb ? /\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(thumb) : false;
+    const isVideo = thumb?.isVideo ?? false;
     const badge = POST_TYPE_LABEL[post.postType] ?? null;
     return (
       <button
@@ -104,9 +104,9 @@ const CommunityStrip = ({ onLoaded }: { onLoaded: (hasPosts: boolean) => void })
         <div className="w-full aspect-[3/4] bg-[#13161d] overflow-hidden">
           {thumb ? (
             isVideo ? (
-              <video src={thumb} muted playsInline className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <video src={thumb.url} muted playsInline className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
             ) : (
-              <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <img src={thumb.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
             )
           ) : (
             <div className="w-full h-full flex items-center justify-center">

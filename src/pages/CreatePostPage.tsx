@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
@@ -27,6 +28,7 @@ import { CollectionKnife } from "../modals/CollectionKnife";
 import { Profile } from "../modals/User";
 
 type PostLayout = "generic" | "buysell" | "trade" | "tutorial" | "combo";
+type FileMetadata = { description: string; knifeId: string | null };
 
 const LAYOUTS: { key: PostLayout; label: string; description: string }[] = [
   { key: "generic",  label: "Generic",   description: "Share anything — photos, clips, or a mix. No specific format required." },
@@ -157,6 +159,8 @@ interface PostPreviewOverlayProps {
   currency: string;
   taggedKnife: CollectionKnife | null;
   sellingKnife: CollectionKnife | null;
+  fileMetadata: FileMetadata[];
+  collectionKnives: CollectionKnife[];
   user: Profile | null;
   isLoading: boolean;
   error: string;
@@ -192,7 +196,8 @@ const difficultyStylePreview = (tag: string): { pill: string } => {
 const PostPreviewOverlay = ({
   layout, caption, description, tags, selectedFiles,
   tradeSoughtFile, tradeOfferingKnife, lookingFor, price, buySellTag,
-  currency, taggedKnife, sellingKnife, user, isLoading, error, onEdit, onConfirm,
+  currency, taggedKnife, sellingKnife, fileMetadata, collectionKnives,
+  user, isLoading, error, onEdit, onConfirm,
 }: PostPreviewOverlayProps) => {
   const badge = LAYOUT_BADGE[layout];
   const displayName    = user?.displayName ?? "You";
@@ -205,11 +210,22 @@ const PostPreviewOverlay = ({
   const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
   const descRef = useRef<HTMLParagraphElement>(null);
 
+  const isPerFilePrev = fileMetadata.length > 0 && (layout === "generic" || (layout === "buysell" && buySellTag === "Selling"));
+  const activeDescription = isPerFilePrev ? (fileMetadata[selectedMediaIdx]?.description ?? "") : description;
+  const activeKnife = isPerFilePrev
+    ? (collectionKnives.find(k => k.id === fileMetadata[selectedMediaIdx]?.knifeId) ?? null)
+    : taggedKnife;
+
+  useEffect(() => {
+    setDescExpanded(false);
+    setDescOverflows(false);
+  }, [selectedMediaIdx]);
+
   useEffect(() => {
     if (descRef.current) {
       setDescOverflows(descRef.current.scrollHeight > descRef.current.clientHeight);
     }
-  }, [description]);
+  }, [activeDescription]);
 
   const mediaFiles = layout === "trade" ? [] : selectedFiles;
 
@@ -472,13 +488,13 @@ const PostPreviewOverlay = ({
           )}
 
           {/* ── Description ── */}
-          {description.trim() && (
+          {activeDescription.trim() && (
             <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
               <p
                 ref={descRef}
                 className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
               >
-                {description}
+                {activeDescription}
               </p>
               {descOverflows && (
                 <button
@@ -492,12 +508,12 @@ const PostPreviewOverlay = ({
             </div>
           )}
 
-          {/* ── Reference knife card (generic/tutorial/combo) ── */}
-          {taggedKnife && layout !== "buysell" && layout !== "trade" && (
+          {/* ── Reference knife card ── */}
+          {activeKnife && layout !== "trade" && (
             <div className="px-4 pt-1 pb-4">
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
-                {taggedKnife.coverPhoto ? (
-                  <img src={taggedKnife.coverPhoto} alt={taggedKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
+                {activeKnife.coverPhoto ? (
+                  <img src={activeKnife.coverPhoto} alt={activeKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-16 h-16 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
                     <FontAwesomeIcon icon={faImage} className="text-white/15 text-lg" />
@@ -505,9 +521,9 @@ const PostPreviewOverlay = ({
                 )}
                 <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
                   <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
-                  <p className="text-white font-semibold text-sm truncate">{taggedKnife.displayName}</p>
+                  <p className="text-white font-semibold text-sm truncate">{activeKnife.displayName}</p>
                   <p className="text-white/50 text-xs truncate">
-                    {taggedKnife.knifeMaker}{taggedKnife.baseKnifeModel ? ` · ${taggedKnife.baseKnifeModel}` : ""}
+                    {activeKnife.knifeMaker}{activeKnife.baseKnifeModel ? ` · ${activeKnife.baseKnifeModel}` : ""}
                   </p>
                 </div>
               </div>
@@ -586,6 +602,9 @@ const CreatePostPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fileMetadata, setFileMetadata] = useState<FileMetadata[]>([]);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
+  const [fileKnifePickerOpen, setFileKnifePickerOpen] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const tradeSoughtRef = useRef<HTMLInputElement>(null);
@@ -599,6 +618,7 @@ const CreatePostPage = () => {
   const currencySymbol = currency === "EUR" ? "€" : "$"; // used in price input prefix
   const taggedKnife = collectionKnives.find((k) => k.id === taggedKnifeId) ?? null;
 
+  const isPerFileMetadata = layout === "generic" || (layout === "buysell" && buySellTag === "Selling");
   const tradeBlocked = layout === "trade" && collectionKnives.length === 0;
   const sellBlocked = layout === "buysell" && buySellTag === "Selling" && collectionKnives.length === 0;
 
@@ -631,6 +651,9 @@ const CreatePostPage = () => {
     setLookingFor("");
     setTags([]);
     setError("");
+    setFileMetadata([]);
+    setActiveFileIndex(0);
+    setFileKnifePickerOpen(false);
   };
 
   // --- tags ---
@@ -708,11 +731,16 @@ const CreatePostPage = () => {
       return;
     }
 
+    const nextMeta = [...fileMetadata];
+    while (nextMeta.length < merged.length) nextMeta.push({ description: "", knifeId: null });
+    setFileMetadata(nextMeta.slice(0, merged.length));
     setSelectedFiles(merged);
   };
 
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileMetadata((prev) => prev.filter((_, i) => i !== index));
+    setActiveFileIndex((prev) => (prev >= index && prev > 0 ? prev - 1 : prev));
   };
 
   // --- submit ---
@@ -726,12 +754,14 @@ const CreatePostPage = () => {
     // Common fields
     fd.append("postType", POST_TYPE_MAP[layout]);
     fd.append("caption", caption.trim());
-    if (description.trim()) fd.append("description", description.trim());
+    if (!isPerFileMetadata && description.trim()) fd.append("description", description.trim());
 
     if (layout === "generic") {
       selectedFiles.forEach((f) => fd.append("mediaFiles", f));
-      if (taggedKnifeId) fd.append("referenceKnifeId", taggedKnifeId);
       tags.forEach((t) => fd.append("tags", GENERIC_TAG_MAP[t] ?? t));
+      fd.append("fileMetadata", JSON.stringify(
+        fileMetadata.map(m => ({ description: m.description.trim() || null, referenceKnifeId: m.knifeId || null }))
+      ));
     }
 
     if (layout === "buysell") {
@@ -745,6 +775,9 @@ const CreatePostPage = () => {
             : parseFloat(price).toFixed(2);
           fd.append("price", priceUsd);
         }
+        fd.append("fileMetadata", JSON.stringify(
+          fileMetadata.map(m => ({ description: m.description.trim() || null, referenceKnifeId: m.knifeId || null }))
+        ));
       }
     }
 
@@ -761,6 +794,7 @@ const CreatePostPage = () => {
       tags
         .filter((t) => getTrickTagGroup(t) === "Technique")
         .forEach((t) => fd.append("techniqueTags", TECHNIQUE_TAG_MAP[t] ?? t.toUpperCase()));
+      if (taggedKnifeId) fd.append("referenceKnifeId", taggedKnifeId);
     }
 
     await axiosApiInstanceAuth
@@ -778,6 +812,14 @@ const CreatePostPage = () => {
   };
 
   const theme = LAYOUT_THEME[layout];
+
+  const activeMeta = fileMetadata[activeFileIndex] ?? { description: "", knifeId: null };
+  const updateActiveMeta = (updates: Partial<FileMetadata>) =>
+    setFileMetadata(prev => prev.map((m, i) => i === activeFileIndex ? { ...m, ...updates } : m));
+  const activeFileKnife = isPerFileMetadata
+    ? (collectionKnives.find(k => k.id === activeMeta.knifeId) ?? null)
+    : null;
+  const activeFileKnifeIsFeatured = !!collectionData?.featuredKnifeId && !!activeFileKnife && String(activeFileKnife.id) === String(collectionData.featuredKnifeId);
 
   return (
     <section
@@ -874,7 +916,7 @@ const CreatePostPage = () => {
                 <button
                   key={option}
                   type="button"
-                  onClick={() => { setBuySellTag(option); setSelectedFiles([]); setSellingKnifeId(null); setSellingPickerOpen(false); }}
+                  onClick={() => { setBuySellTag(option); setSelectedFiles([]); setSellingKnifeId(null); setSellingPickerOpen(false); setFileMetadata([]); setActiveFileIndex(0); setFileKnifePickerOpen(false); }}
                   className={`py-3 rounded-xl border text-sm font-semibold transition-all duration-200 ${
                     buySellTag === option
                       ? "bg-blue-primary/10 border-blue-primary/40 text-blue-primary"
@@ -968,6 +1010,85 @@ const CreatePostPage = () => {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* Tags — generic predefined */}
+        {layout === "generic" && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
+                Tags <span className="normal-case text-white/25 font-normal">— optional</span>
+              </p>
+              <span className="text-xs text-white/30">{tags.length} / {MAX_TAGS}</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {GENERIC_TAGS.map((tag) => {
+                const selected = tags.includes(tag);
+                const disabled = !selected && tags.length >= MAX_TAGS;
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTrickTag(tag)}
+                    disabled={disabled}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
+                      selected
+                        ? "bg-blue-primary/15 border-blue-primary/40 text-blue-primary"
+                        : "bg-transparent border-white/10 text-white/40 hover:text-white/70 hover:border-white/25"
+                    } disabled:opacity-30 disabled:cursor-not-allowed`}
+                  >
+                    {selected && <span className="mr-1 text-blue-primary/60">#</span>}{tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tags — tutorial / combo predefined */}
+        {(layout === "tutorial" || layout === "combo") && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
+                Tags <span className="normal-case text-white/25 font-normal">— optional</span>
+              </p>
+              </div>
+
+            {TRICK_TAGS.map(({ group, tags: options }) => {
+              const activeLimits = layout === "tutorial" ? TUTORIAL_GROUP_LIMITS : COMBO_GROUP_LIMITS;
+              const groupLimit = activeLimits[group] ?? 1;
+              const groupCount = tags.filter((t) => getTrickTagGroup(t) === group).length;
+              return (
+                <div key={group} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-white/30 font-semibold uppercase tracking-wider">{group}</p>
+                    <span className="text-[11px] text-white/25">{groupCount} / {groupLimit}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {options.map((tag) => {
+                      const selected = tags.includes(tag);
+                      const disabled = !selected && groupCount >= groupLimit;
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => toggleTrickTag(tag)}
+                          disabled={disabled}
+                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
+                            selected
+                              ? "bg-blue-primary/15 border-blue-primary/40 text-blue-primary"
+                              : "bg-transparent border-white/10 text-white/40 hover:text-white/70 hover:border-white/25"
+                          } disabled:opacity-30 disabled:cursor-not-allowed`}
+                        >
+                          {selected && <span className="mr-1 text-blue-primary/60">#</span>}{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1164,11 +1285,9 @@ const CreatePostPage = () => {
               <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
                 {isVideoOnly ? "Video" : "Media"}
               </p>
-              {!isSingleFile && buySellTag && (
-                <span className="text-xs text-white/30">
-                  {selectedFiles.length} / {mediaMax}
-                </span>
-              )}
+              <span className="text-xs text-white/30">
+                {selectedFiles.length} / {mediaMax}
+              </span>
             </div>
 
             {/* Buy/Sell locked state — no tag selected yet */}
@@ -1207,8 +1326,24 @@ const CreatePostPage = () => {
                 {selectedFiles.map((file, i) => {
                   const url = URL.createObjectURL(file);
                   const isVideo = file.type.startsWith("video/");
+                  const isActive = isPerFileMetadata && i === activeFileIndex;
+                  const meta = fileMetadata[i];
+                  const hasContent = isPerFileMetadata && meta && (meta.description.trim() || meta.knifeId);
                   return (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#13161d] border border-white/10">
+                    <motion.div
+                      key={i}
+                      animate={{ scale: isActive ? 1.06 : 1 }}
+                      transition={{ type: "spring", stiffness: 480, damping: 16 }}
+                      style={{ zIndex: isActive ? 1 : 0, position: "relative" }}
+                      onClick={isPerFileMetadata ? () => { setActiveFileIndex(i); setFileKnifePickerOpen(false); } : undefined}
+                      className={`aspect-square rounded-xl overflow-hidden bg-[#13161d] border-2 transition-colors duration-150 ${
+                        isPerFileMetadata
+                          ? isActive
+                            ? "border-blue-primary cursor-pointer"
+                            : "border-white/10 hover:border-white/25 cursor-pointer"
+                          : "border-white/10"
+                      }`}
+                    >
                       {isVideo ? (
                         <video src={url} muted playsInline className="w-full h-full object-cover" />
                       ) : (
@@ -1216,12 +1351,15 @@ const CreatePostPage = () => {
                       )}
                       <button
                         type="button"
-                        onClick={() => removeFile(i)}
+                        onClick={(e) => { e.stopPropagation(); removeFile(i); }}
                         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white/80 hover:text-white transition-colors"
                       >
                         <FontAwesomeIcon icon={faXmark} className="text-[10px]" />
                       </button>
-                    </div>
+                      {hasContent && (
+                        <span className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-blue-primary border border-black" />
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>
@@ -1263,96 +1401,120 @@ const CreatePostPage = () => {
           </div>
         )}
 
-        {/* Tags — generic predefined */}
-        {layout === "generic" && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
-                Tags <span className="normal-case text-white/25 font-normal">— optional</span>
-              </p>
-              <span className="text-xs text-white/30">{tags.length} / {MAX_TAGS}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {GENERIC_TAGS.map((tag) => {
-                const selected = tags.includes(tag);
-                const disabled = !selected && tags.length >= MAX_TAGS;
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTrickTag(tag)}
-                    disabled={disabled}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
-                      selected
-                        ? "bg-blue-primary/15 border-blue-primary/40 text-blue-primary"
-                        : "bg-transparent border-white/10 text-white/40 hover:text-white/70 hover:border-white/25"
-                    } disabled:opacity-30 disabled:cursor-not-allowed`}
-                  >
-                    {selected && <span className="mr-1 text-blue-primary/60">#</span>}{tag}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Per-file metadata editor — generic and buysell-selling */}
+        {isPerFileMetadata && selectedFiles.length > 0 && (
+          <>
+            <div className="flex flex-col gap-3 bg-[#0e1016] rounded-2xl p-4 border border-white/[0.06]">
+              {selectedFiles.length > 1 && (
+                <p className="text-[11px] text-white/30 font-semibold uppercase tracking-widest">
+                  File {activeFileIndex + 1} of {selectedFiles.length}
+                </p>
+              )}
 
-        {/* Tags — tutorial / combo predefined */}
-        {(layout === "tutorial" || layout === "combo") && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
-                Tags <span className="normal-case text-white/25 font-normal">— optional</span>
-              </p>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[11px] text-white/35 font-semibold uppercase tracking-wider">
+                  Description <span className="normal-case font-normal text-white/20">— optional</span>
+                </p>
+                <textarea
+                  value={activeMeta.description}
+                  onChange={(e) => updateActiveMeta({ description: e.target.value })}
+                  placeholder={selectedFiles.length > 1 ? `Add a description for file ${activeFileIndex + 1}...` : "Add a description..."}
+                  rows={3}
+                  className="w-full bg-[#13161d] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 resize-none placeholder:text-white/25"
+                />
               </div>
 
-            {TRICK_TAGS.map(({ group, tags: options }) => {
-              const activeLimits = layout === "tutorial" ? TUTORIAL_GROUP_LIMITS : COMBO_GROUP_LIMITS;
-              const groupLimit = activeLimits[group] ?? 1;
-              const groupCount = tags.filter((t) => getTrickTagGroup(t) === group).length;
-              return (
-                <div key={group} className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-white/30 font-semibold uppercase tracking-wider">{group}</p>
-                    <span className="text-[11px] text-white/25">{groupCount} / {groupLimit}</span>
+              {layout === "generic" && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[11px] text-white/35 font-semibold uppercase tracking-wider">
+                  Reference a Knife <span className="normal-case font-normal text-white/20">— optional</span>
+                </p>
+                {activeFileKnife ? (
+                  <div
+                    style={activeFileKnifeIsFeatured ? { boxShadow: "0 0 14px 2px rgba(230,184,0,0.15)" } : undefined}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${activeFileKnifeIsFeatured ? "bg-gold/8 border border-gold/30" : "bg-[#13161d] border border-blue-primary/30"}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border ${activeFileKnifeIsFeatured ? "border-gold/40" : "border-white/10"}`}>
+                        {activeFileKnife.coverPhoto && activeFileKnife.coverPhoto !== ""
+                          ? <img src={activeFileKnife.coverPhoto} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                        }
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {activeFileKnifeIsFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[10px]" />}
+                          <p className="text-white text-sm font-medium truncate">{activeFileKnife.displayName}</p>
+                        </div>
+                        <p className="text-white/40 text-xs truncate">{activeFileKnife.knifeMaker}{activeFileKnife.baseKnifeModel ? ` · ${activeFileKnife.baseKnifeModel}` : ""}</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => updateActiveMeta({ knifeId: null })} className="text-white/30 hover:text-white/70 transition-colors duration-200 flex-shrink-0 ml-3">
+                      <FontAwesomeIcon icon={faXmark} />
+                    </button>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {options.map((tag) => {
-                      const selected = tags.includes(tag);
-                      const disabled = !selected && groupCount >= groupLimit;
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => toggleTrickTag(tag)}
-                          disabled={disabled}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
-                            selected
-                              ? "bg-blue-primary/15 border-blue-primary/40 text-blue-primary"
-                              : "bg-transparent border-white/10 text-white/40 hover:text-white/70 hover:border-white/25"
-                          } disabled:opacity-30 disabled:cursor-not-allowed`}
-                        >
-                          {selected && <span className="mr-1 text-blue-primary/60">#</span>}{tag}
-                        </button>
-                      );
-                    })}
+                ) : (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setFileKnifePickerOpen(p => !p)}
+                      disabled={collectionKnives.length === 0}
+                      className="w-full flex items-center justify-between bg-[#13161d] border border-white/10 rounded-xl px-4 py-3 text-sm text-white/40 hover:text-white/70 hover:border-white/20 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <span>{collectionKnives.length === 0 ? "No knives in collection" : "Select a knife from your collection"}</span>
+                      <FontAwesomeIcon icon={faChevronDown} className={`text-xs transition-transform duration-200 ${fileKnifePickerOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {fileKnifePickerOpen && collectionKnives.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#13161d] border border-white/10 rounded-xl overflow-hidden z-20 shadow-xl max-h-56 overflow-y-auto">
+                        {collectionKnives.map((knife) => {
+                          const isFeatured = !!collectionData?.featuredKnifeId && String(knife.id) === String(collectionData.featuredKnifeId);
+                          return (
+                            <button
+                              key={knife.id}
+                              type="button"
+                              onClick={() => { updateActiveMeta({ knifeId: knife.id }); setFileKnifePickerOpen(false); }}
+                              style={isFeatured ? { boxShadow: "inset 0 0 12px 0px rgba(230,184,0,0.08)" } : undefined}
+                              className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 text-left border-b border-white/[0.04] last:border-0 ${isFeatured ? "hover:bg-gold/10" : "hover:bg-white/5"}`}
+                            >
+                              <div className={`w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border ${isFeatured ? "border-gold/40" : "border-white/10"}`}>
+                                {knife.coverPhoto && knife.coverPhoto !== ""
+                                  ? <img src={knife.coverPhoto} className="w-full h-full object-cover" />
+                                  : <div className="w-full h-full bg-gradient-to-br from-[#1c1f27] to-[#0d0f14]" />
+                                }
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  {isFeatured && <FontAwesomeIcon icon={faCrown} className="text-gold text-[9px] flex-shrink-0" />}
+                                  <span className={`text-sm font-medium truncate ${isFeatured ? "text-gold" : "text-white"}`}>{knife.displayName}</span>
+                                </div>
+                                <span className="text-white/40 text-xs truncate">{knife.knifeMaker}{knife.baseKnifeModel ? ` · ${knife.baseKnifeModel}` : ""}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                )}
+              </div>
+              )}
+            </div>
+          </>
         )}
 
-        {/* Description */}
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">Description <span className="normal-case text-white/25 font-normal">— optional</span></p>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add more detail to your post..."
-            rows={4}
-            className="w-full bg-[#13161d] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 resize-none placeholder:text-white/25"
-          />
-        </div>
+        {/* Description — single-file layouts (tutorial, combo, buysell-buying) */}
+        {!isPerFileMetadata && layout !== "trade" && (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">Description <span className="normal-case text-white/25 font-normal">— optional</span></p>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add more detail to your post..."
+              rows={4}
+              className="w-full bg-[#13161d] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 resize-none placeholder:text-white/25"
+            />
+          </div>
+        )}
 
         {/* Buy/Sell — price (Selling only) */}
         {layout === "buysell" && buySellTag === "Selling" && (
@@ -1379,8 +1541,8 @@ const CreatePostPage = () => {
           </div>
         )}
 
-        {/* Knife reference — hidden for trade and buysell */}
-        {layout !== "trade" && layout !== "buysell" && <div className="flex flex-col gap-1.5">
+        {/* Knife reference — tutorial and combo only */}
+        {(layout === "tutorial" || layout === "combo") && <div className="flex flex-col gap-1.5">
           <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">
             Reference Your Knife <span className="normal-case text-white/25 font-normal">— optional</span>
           </p>
@@ -1507,6 +1669,8 @@ const CreatePostPage = () => {
           currency={currency}
           taggedKnife={taggedKnife}
           sellingKnife={collectionKnives.find((k) => k.id === sellingKnifeId) ?? null}
+          fileMetadata={fileMetadata}
+          collectionKnives={collectionKnives}
           user={user}
           isLoading={isLoading}
           error={error}

@@ -119,6 +119,16 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   const touchStartY       = useRef<number | null>(null);
   const mediaContainerRef = useRef<HTMLDivElement>(null);
 
+  // Compute early so useEffects can depend on them
+  const mediaFiles        = post.mediaFiles;
+  const currentMedia      = mediaFiles[mediaIndex];
+  const currentUrl        = currentMedia?.url ?? "";
+  const isVid             = currentMedia?.isVideo ?? false;
+  const layout            = POST_TYPE_TO_LAYOUT[post.postType] ?? "generic";
+  const isPerFile         = layout === "generic" || (layout === "buysell" && post.mode === "SELLING");
+  const activeDescription  = isPerFile ? (currentMedia?.description ?? post.description ?? null) : post.description;
+  const activeReferenceKnife = isPerFile ? (currentMedia?.referenceKnife ?? null) : post.referenceKnife;
+
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handler);
@@ -129,7 +139,14 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     if (descRef.current) {
       setDescOverflows(descRef.current.scrollHeight > descRef.current.clientHeight);
     }
-  }, [post.description]);
+  }, [activeDescription]);
+
+  useEffect(() => {
+    if (isPerFile) {
+      setDescExpanded(false);
+      setDescOverflows(false);
+    }
+  }, [mediaIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const card = cardRef.current;
@@ -156,7 +173,6 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     return () => clearTimeout(timer);
   }, [mediaIndex]);
 
-  const layout      = POST_TYPE_TO_LAYOUT[post.postType] ?? "generic";
   const badge       = LAYOUT_BADGE[layout];
   const sectionIcon = SECTION_ICON[layout];
   const avatar      = post.creatorProfileImg;
@@ -181,9 +197,6 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     navigate(`/post/${post.id}`, { state: { backgroundLocation: location, post } });
   };
 
-  const mediaFiles = post.mediaFiles;
-  const currentUrl = mediaFiles[mediaIndex] ?? "";
-  const isVid      = !!currentUrl && isVideoUrl(currentUrl);
 
   const goPrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -260,7 +273,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Media ── */}
       {layout === "trade" ? (() => {
-        const lookingForImg = post.lookingForImageUrl ?? post.mediaFiles[0] ?? null;
+        const lookingForImg = post.lookingForImageUrl ?? post.mediaFiles[0]?.url ?? null;
         return (
           <div className="px-4 pb-3">
             <div className="grid grid-cols-[1fr_32px_1fr] gap-y-1.5">
@@ -435,7 +448,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       {/* ── Thumbnail strip — page variant, multi-file ── */}
       {variant === "page" && mediaFiles.length > 1 && layout !== "trade" && (
         <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/[0.06]" style={{ scrollbarWidth: "none" }}>
-          {mediaFiles.map((url, i) => (
+          {mediaFiles.map((m, i) => (
             <button
               key={i}
               type="button"
@@ -444,9 +457,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
                 i === mediaIndex ? "border-blue-primary opacity-100" : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
               }`}
             >
-              {isVideoUrl(url)
-                ? <video src={url} muted playsInline className="w-full h-full object-cover" />
-                : <img src={url} alt="" className="w-full h-full object-cover" />
+              {m.isVideo
+                ? <video src={m.url} muted playsInline className="w-full h-full object-cover" />
+                : <img src={m.url} alt="" className="w-full h-full object-cover" />
               }
             </button>
           ))}
@@ -549,13 +562,13 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       )}
 
       {/* ── Description ── */}
-      {post.description?.trim() && (
+      {activeDescription?.trim() && (
         <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
           <p
             ref={descRef}
             className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
           >
-            {post.description}
+            {activeDescription}
           </p>
           {descOverflows && (
             <button type="button" onClick={() => setDescExpanded((p) => !p)} className="text-blue-primary/70 text-xs font-medium hover:text-blue-primary transition-colors duration-150 text-left">
@@ -566,19 +579,19 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       )}
 
       {/* ── Reference knife card ── */}
-      {post.referenceKnife && layout !== "buysell" && layout !== "trade" && (
+      {activeReferenceKnife && layout !== "buysell" && layout !== "trade" && (
         <div className="px-4 pb-4">
           <div
             className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
             onClick={(e) => {
               e.stopPropagation();
-              if (post.referenceKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
-                navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${post.referenceKnife.displayName}`);
+              if (activeReferenceKnife && post.creatorDisplayName && post.creatorIdentifierCode) {
+                navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}/collection/${activeReferenceKnife.displayName}`);
               }
             }}
           >
-            {post.referenceKnife.coverPhoto ? (
-              <img src={post.referenceKnife.coverPhoto} alt={post.referenceKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
+            {activeReferenceKnife.coverPhoto ? (
+              <img src={activeReferenceKnife.coverPhoto} alt={activeReferenceKnife.displayName} className="w-16 h-16 object-cover flex-shrink-0" />
             ) : (
               <div className="w-16 h-16 bg-[#0d0f14] flex items-center justify-center flex-shrink-0">
                 <FontAwesomeIcon icon={faImage} className="text-white/15 text-lg" />
@@ -586,10 +599,10 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
             )}
             <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
               <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
-              <p className="text-white font-semibold text-sm truncate">{post.referenceKnife.displayName}</p>
+              <p className="text-white font-semibold text-sm truncate">{activeReferenceKnife.displayName}</p>
               <p className="text-white/50 text-xs truncate">
-                {post.referenceKnife.knifeMaker}
-                {post.referenceKnife.baseKnifeModel ? ` · ${post.referenceKnife.baseKnifeModel}` : ""}
+                {activeReferenceKnife.knifeMaker}
+                {activeReferenceKnife.baseKnifeModel ? ` · ${activeReferenceKnife.baseKnifeModel}` : ""}
               </p>
             </div>
           </div>
