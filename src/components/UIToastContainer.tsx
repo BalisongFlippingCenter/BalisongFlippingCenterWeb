@@ -64,7 +64,7 @@ const UIToastContainer = () => {
   const toasts = useAppSelector((state) => state.uiToast.toasts);
 
   return (
-    <div className="hidden md:flex fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] flex-col gap-2.5 items-center pointer-events-none">
+    <div className="hidden md:flex fixed bottom-8 right-8 z-[300] flex-col gap-2.5 items-end pointer-events-none">
       <AnimatePresence mode="sync">
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">

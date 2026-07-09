@@ -50,6 +50,7 @@ import CollectionKnifePage from "./pages/CollectionKnifePage";
 import TestPage from "./pages/TestPage";
 import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
+import EditPostPage from "./pages/EditPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import KnifeDetailPage from "./pages/KnifeDetailPage";
@@ -168,6 +169,7 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/post/:postId" element={<PostPage />} />
+          <Route path="/post/:postId/edit" element={<EditPostPage />} />
 
           <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/tutorial-center/getting-started" element={<TutorialCenterGettingStartedPage />} />

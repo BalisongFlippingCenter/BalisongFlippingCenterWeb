@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { addUIToast } from "../redux/uiToast/uiToastSlice";
+import { setNewUser } from "../redux/auth/authSlice";
 import { axiosApiInstanceAuth } from "../api/axios";
 import { CollectionKnife } from "../modals/CollectionKnife";
 import { Profile } from "../modals/User";
@@ -801,6 +802,7 @@ const CreatePostPage = () => {
       .request({ url: "/posts/create", method: "post", data: fd })
       .then(() => {
         dispatch(addUIToast({ type: "success", message: "Post published!" }));
+        if (user) dispatch(setNewUser({ ...user, postCount: (user.postCount ?? 0) + 1 }));
         navigate(-1);
       })
       .catch((err) => {

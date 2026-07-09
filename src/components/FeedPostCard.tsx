@@ -9,10 +9,13 @@ import {
   faImage, faArrowRightArrowLeft,
   faBullhorn, faLock, faChevronLeft, faChevronRight,
   faVolumeMute, faVolumeUp, faPlay, faExpand, faCompress,
-  faFlag,
+  faFlag, faEllipsisVertical, faPenToSquare, faEyeSlash, faEye, faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { PostDetail } from "../modals/Post";
-import { useAppSelector } from "../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { setNewUser } from "../redux/auth/authSlice";
+import { addUIToast } from "../redux/uiToast/uiToastSlice";
+import { axiosApiInstanceAuth } from "../api/axios";
 import LikeButton from "./LikeButton";
 import { formatCurrency } from "../utils/unitConversions";
 import ReportModal from "./ReportModal";
@@ -98,18 +101,26 @@ export const difficultyStyle = (tag: string): { pill: string; dot: string } => {
 const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: { post: PostDetail; index: number; variant?: "feed" | "page"; commentCountOverride?: number }) => {
   const navigate       = useNavigate();
   const location       = useLocation();
+  const dispatch       = useAppDispatch();
+  const user           = useAppSelector((state) => state.auth.user);
   const viewerCurrency = useAppSelector((state) => state.auth.user?.currency);
   const viewerId       = useAppSelector((state) => state.auth.user?.id);
   const isOwnPost      = !!viewerId && String(viewerId) === String(post.accountId);
 
-  const [descExpanded,  setDescExpanded]  = useState(false);
-  const [descOverflows, setDescOverflows] = useState(false);
-  const [mediaIndex,    setMediaIndex]    = useState(0);
-  const [slideDir,      setSlideDir]      = useState(1);
-  const [muted,         setMuted]         = useState(true);
-  const [videoPaused,   setVideoPaused]   = useState(false);
-  const [isFullscreen,  setIsFullscreen]  = useState(false);
-  const [reportOpen,    setReportOpen]    = useState(false);
+  const [descExpanded,     setDescExpanded]     = useState(false);
+  const [descOverflows,    setDescOverflows]    = useState(false);
+  const [mediaIndex,       setMediaIndex]       = useState(0);
+  const [slideDir,         setSlideDir]         = useState(1);
+  const [muted,            setMuted]            = useState(true);
+  const [videoPaused,      setVideoPaused]      = useState(false);
+  const [isFullscreen,     setIsFullscreen]     = useState(false);
+  const [reportOpen,       setReportOpen]       = useState(false);
+  const [menuOpen,         setMenuOpen]         = useState(false);
+  const [localPrivate,     setLocalPrivate]     = useState(post.isPrivate ?? false);
+  const [isLocalDeleted,   setIsLocalDeleted]   = useState(false);
+  const [deleteConfirmOpen,setDeleteConfirmOpen]= useState(false);
+  const [isDeleting,       setIsDeleting]       = useState(false);
+  const [isHiding,         setIsHiding]         = useState(false);
 
   const descRef           = useRef<HTMLParagraphElement>(null);
   const cardRef           = useRef<HTMLDivElement>(null);
@@ -185,6 +196,35 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       ? [...(post.difficultyTag ? [post.difficultyTag] : []), ...post.techniqueTags]
       : post.tags;
 
+  const handleHideToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    setIsHiding(true);
+    try {
+      await axiosApiInstanceAuth.patch(`/posts/${post.id}`, { isPrivate: !localPrivate });
+      setLocalPrivate((p) => !p);
+      dispatch(addUIToast({ type: "success", message: !localPrivate ? "Post hidden from feeds." : "Post is now visible in feeds." }));
+    } catch {
+      dispatch(addUIToast({ type: "error", message: "Failed to update post visibility." }));
+    } finally {
+      setIsHiding(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await axiosApiInstanceAuth.delete(`/posts/${post.id}`);
+      if (user) dispatch(setNewUser({ ...user, postCount: Math.max(0, (user.postCount ?? 1) - 1) }));
+      dispatch(addUIToast({ type: "success", message: "Post deleted." }));
+      setIsLocalDeleted(true);
+    } catch {
+      dispatch(addUIToast({ type: "error", message: "Failed to delete post. Please try again." }));
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
   const goToProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (post.creatorDisplayName && post.creatorIdentifierCode) {
@@ -218,6 +258,8 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     setSlideDir(idx > mediaIndex ? 1 : -1);
     setMediaIndex(idx);
   };
+
+  if (isLocalDeleted) return null;
 
   return (
     <div ref={cardRef} onClick={goToPost} className={`w-full border-y border-x-0 lg:border border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${variant === "page" ? "lg:rounded-t-2xl" : "lg:rounded-2xl cursor-pointer"} ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
@@ -261,6 +303,55 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
           <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
             {badge.label}
           </span>
+
+          {isOwnPost && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+                className="w-7 h-7 flex items-center justify-center text-white/30 hover:text-white rounded-full hover:bg-white/5 transition-colors duration-150"
+              >
+                <FontAwesomeIcon icon={faEllipsisVertical} className="text-sm" />
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+                  />
+                  <div className="absolute right-0 top-full mt-1 bg-[#13161d] border border-white/10 rounded-xl shadow-xl z-50 w-44 overflow-hidden py-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); navigate(`/post/${post.id}/edit`); }}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-left text-sm text-white hover:bg-white/5 transition-colors duration-150"
+                    >
+                      <FontAwesomeIcon icon={faPenToSquare} className="text-white/40 w-4 text-xs" />
+                      Edit post
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleHideToggle}
+                      disabled={isHiding}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-left text-sm text-white hover:bg-white/5 transition-colors duration-150 disabled:opacity-50"
+                    >
+                      <FontAwesomeIcon icon={localPrivate ? faEye : faEyeSlash} className="text-white/40 w-4 text-xs" />
+                      {localPrivate ? "Unhide post" : "Hide post"}
+                    </button>
+                    <div className="h-px bg-white/[0.06] my-1" />
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setDeleteConfirmOpen(true); }}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-left text-sm text-red hover:bg-red/10 transition-colors duration-150"
+                    >
+                      <FontAwesomeIcon icon={faTrash} className="w-4 text-xs" />
+                      Delete post
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -447,7 +538,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Thumbnail strip — page variant, multi-file ── */}
       {variant === "page" && mediaFiles.length > 1 && layout !== "trade" && (
-        <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/[0.06]" style={{ scrollbarWidth: "none" }}>
+        <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto border-t border-white/[0.06]" style={{ scrollbarWidth: "none", touchAction: "pan-x" }}>
           {mediaFiles.map((m, i) => (
             <button
               key={i}
@@ -651,6 +742,45 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
         targetType="POST"
         targetId={post.id}
       />
+
+      {deleteConfirmOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center px-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => { if (!isDeleting) setDeleteConfirmOpen(false); }}
+          />
+          <div className="relative z-10 bg-[#13161d] border border-white/10 rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-white font-bold text-lg">Delete Post?</h3>
+              <p className="text-white/45 text-sm leading-relaxed">This will permanently remove your post and all its content. This cannot be undone.</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-semibold hover:bg-white/5 transition-colors duration-200 disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl bg-red text-white text-sm font-semibold hover:opacity-80 transition-opacity duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting
+                  ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  : "Delete"
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
