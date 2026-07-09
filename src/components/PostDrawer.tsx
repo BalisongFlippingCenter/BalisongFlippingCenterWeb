@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
-import { useAppSelector } from "../redux/hooks";
 import FeedPostCard from "./FeedPostCard";
 import CommentsSection from "./CommentsSection";
 
@@ -16,8 +15,7 @@ interface PostDrawerProps {
 }
 
 const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProps) => {
-  const navigate   = useNavigate();
-  const user       = useAppSelector((state) => state.auth.user);
+  const navigate = useNavigate();
 
   const [post,             setPost]             = useState<PostDetail | null>(initialPost ?? null);
   const [loading,          setLoading]          = useState(!initialPost);
@@ -42,8 +40,7 @@ const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProp
       .finally(() => setLoading(false));
   }, [postId, initialPost]);
 
-  const isOwner = !!user && !!post && String(user.id) === String(post.accountId);
-  const close   = () => navigate(-1);
+  const close = () => navigate(-1);
 
   return (
     <motion.div
@@ -68,15 +65,6 @@ const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProp
             {post && <p className="text-white/35 text-xs truncate">by {post.creatorDisplayName}</p>}
           </div>
         </div>
-        {isOwner && (
-          <button
-            type="button"
-            title="Edit post"
-            className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white/20 transition-colors duration-200 flex-shrink-0"
-          >
-            <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
-          </button>
-        )}
       </div>
 
       {/* Scrollable content */}

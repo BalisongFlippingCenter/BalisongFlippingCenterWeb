@@ -5,9 +5,10 @@ import { Profile } from "../../modals/User";
 // Maps backend field names → frontend Profile field names
 const mapAccount = (account: any): Profile => ({
   ...account,
-  profileCaption: account.profileCaption ?? account.bio ?? null,
-  measurementUnit: account.measurementUnit?.toLowerCase() ?? null,
-  likedPostIds: account.likedPostIds ?? [],
+  id:             account.id             ?? account.accountId     ?? null,
+  profileCaption: account.profileCaption ?? account.bio           ?? null,
+  measurementUnit: account.measurementUnit?.toLowerCase()         ?? null,
+  likedPostIds:   account.likedPostIds   ?? [],
   likedCommentIds: account.likedCommentIds ?? [],
   postCount:      account.postCount      ?? 0,
   followerCount:  account.followerCount  ?? 0,

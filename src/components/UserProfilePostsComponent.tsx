@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PostCover, mapPostCover } from "../modals/Post";
-import { axiosApiInstance } from "../api/axios";
+import { axiosApiInstanceAuth } from "../api/axios";
 import ProfilePostCover from "./ProfilePostCover";
 import { useAppSelector } from "../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -53,7 +53,7 @@ const UserProfilePostsComponent = () => {
     if (!user?.id) return;
     setIsLoading(true);
     setFetchError(false);
-    axiosApiInstance
+    axiosApiInstanceAuth
       .get(`/posts/any`, { params: { accountId: user.id, page: pageIndex, size: PAGE_SIZE } })
       .then((res) => {
         const mapped: PostCover[] = (res.data?.content ?? []).map(mapPostCover);

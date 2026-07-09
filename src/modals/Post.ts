@@ -111,7 +111,7 @@ export const mapPostCover = (data: any): PostCover => {
     identifier:     p.identifier     ?? p.postType   ?? null,
     mediaCount:     (p.mediaFiles    ?? p.files      ?? []).length,
     creationDate:   p.creationDate   ?? null,
-    isPrivate:      p.isPrivate      ?? false,
+    isPrivate:      p.private        ?? p.isPrivate      ?? false,
     isAnnouncement: p.isAnnouncement ?? false,
   };
 };
@@ -221,7 +221,7 @@ export const mapPostDetail = (data: any): PostDetail => {
                              p.referenceKnife      ?? p.taggedKnife         ?? p.collectionKnife    ??
                              p.referencedKnife     ?? p.linkedKnife         ?? p.knife              ?? null
                            ),
-    isPrivate:             p.isPrivate            ?? false,
+    isPrivate:             p.private              ?? p.isPrivate            ?? false,
     isAnnouncement:        p.isAnnouncement       ?? false,
   };
 };
