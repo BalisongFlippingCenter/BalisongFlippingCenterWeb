@@ -8,6 +8,20 @@ import FeedPostCard from "../components/FeedPostCard";
 import CommentsSection from "../components/CommentsSection";
 import FeedPostCardSkeleton from "../components/skeletons/FeedPostCardSkeleton";
 
+const PAGE_BG = {
+  tutorialCenter: "radial-gradient(ellipse at 50% 40%, #0d6b65 0%, #074440 50%, #021a18 100%)",
+  productWorld:   "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)",
+  community:      "radial-gradient(ellipse at 50% 40%, #0c2d35 0%, #061a1f 50%, #030d11 100%)",
+  default:        "#080a0e",
+};
+
+const getPostBg = (postType?: string) => {
+  if (!postType) return PAGE_BG.default;
+  if (postType === "COMBO" || postType === "TRICK_TUTORIAL") return PAGE_BG.tutorialCenter;
+  if (postType === "BUY_SELL" || postType === "TRADE") return PAGE_BG.productWorld;
+  return PAGE_BG.community;
+};
+
 const PostPage = () => {
   const { postId }     = useParams<{ postId: string }>();
   const navigate       = useNavigate();
@@ -31,7 +45,7 @@ const PostPage = () => {
   }, [postId]);
 
   const topBar = (
-    <div className="flex items-center gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0">
+    <div className="hidden md:flex items-center gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0">
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -67,7 +81,7 @@ const PostPage = () => {
   );
 
   if (isLoading) return (
-    <div className="w-full min-h-screen flex flex-col bg-[#080a0e]">
+    <div className="w-full min-h-screen flex flex-col" style={{ background: PAGE_BG.default }}>
       {topBar}
       <div className="flex-1 xsm:px-0 lg:px-4 py-6 pb-24">
         <div className="w-full max-w-[600px] mx-auto flex flex-col">
@@ -95,7 +109,7 @@ const PostPage = () => {
   );
 
   if (fetchError || !post) return (
-    <div className="w-full min-h-screen flex flex-col bg-[#080a0e]">
+    <div className="w-full min-h-screen flex flex-col" style={{ background: PAGE_BG.default }}>
       {topBar}
       <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3">
         <p className="text-white/40 text-sm">Failed to load post.</p>
@@ -107,7 +121,7 @@ const PostPage = () => {
   );
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-[#080a0e]">
+    <div className="w-full min-h-screen flex flex-col" style={{ background: getPostBg(post.postType) }}>
       {topBar}
 
       <div className="flex-1 xsm:px-0 lg:px-4 py-6 pb-24">
