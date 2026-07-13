@@ -3,6 +3,7 @@ import authReducer from "./auth/authSlice";
 import collectionReducer from "./collection/collectionSlice";
 import notificationReducer from "./notifications/notificationSlice";
 import uiToastReducer from "./uiToast/uiToastSlice";
+import messagesReducer from "./messages/messagesSlice";
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     collection: collectionReducer,
     notifications: notificationReducer,
     uiToast: uiToastReducer,
+    messages: messagesReducer,
   },
 });
 

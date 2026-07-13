@@ -12,6 +12,7 @@ import {
   faArrowUpRightFromSquare,
   faUserPlus,
   faFlag,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookSquare,
@@ -257,7 +258,7 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
               </span>
             </div>
 
-            {/* Follow + Report — grouped so they never wrap independently */}
+            {/* Follow + Message + Report — grouped so they never wrap independently */}
             {loggedIn && loggedInUser?.id !== profile.id && (
               <div className="flex items-center gap-2">
                 <button
@@ -272,6 +273,24 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
                 >
                   <FontAwesomeIcon icon={faUserPlus} className="text-xs" />
                   {isFollowing ? "Following" : "Follow"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/messages", {
+                    state: {
+                      recipient: {
+                        id: profile.id,
+                        displayName: profile.displayName,
+                        identifierCode: profile.identifierCode,
+                        profileImg: profile.profileImg,
+                      },
+                    },
+                  })}
+                  title="Send message"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-all duration-200"
+                >
+                  <FontAwesomeIcon icon={faEnvelope} className="text-xs" />
+                  Message
                 </button>
                 <button
                   type="button"

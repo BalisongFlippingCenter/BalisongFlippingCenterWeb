@@ -41,6 +41,7 @@ import { loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
 import { mapCollection } from "./redux/collection/collectionActions";
 import { setUnreadCount } from "./redux/notifications/notificationSlice";
+import { setConversations } from "./redux/messages/messagesSlice";
 import { axiosApiInstanceAuth } from "./api/axios";
 import NotificationToastContainer from "./components/NotificationToastContainer";
 import UIToastContainer from "./components/UIToastContainer";
@@ -53,6 +54,7 @@ import PostPage from "./pages/PostPage";
 import EditPostPage from "./pages/EditPostPage";
 import LikedPostsPage from "./pages/LikedPostsPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import MessagesPage from "./pages/MessagesPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import KnifeDetailPage from "./pages/KnifeDetailPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
@@ -73,12 +75,16 @@ const App = () => {
 
   const dispatch = useAppDispatch();
 
-  // Fetch unread count whenever a session becomes active (fast badge, no full list)
+  // Fetch unread counts whenever a session becomes active
   useEffect(() => {
     if (!user || !accessToken) return;
     axiosApiInstanceAuth
       .get("/notifications/unread-count")
       .then((res) => dispatch(setUnreadCount(res.data ?? 0)))
+      .catch(() => {});
+    axiosApiInstanceAuth
+      .get("/conversations/me")
+      .then((res) => dispatch(setConversations(res.data ?? [])))
       .catch(() => {});
   }, [user?.id, accessToken]);
 
@@ -213,6 +219,8 @@ const App = () => {
 
           {/*Auth Protected Routes for only users*/}
           <Route element={<AuthProtectedRoutes allowedRoles={["USER"]} />}>
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:conversationId" element={<MessagesPage />} />
             <Route path="/liked-posts" element={<LikedPostsPage />} />
 
             {/*Configuration routes*/}
