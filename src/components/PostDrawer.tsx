@@ -13,10 +13,26 @@ interface PostDrawerProps {
   postId: string;
   post?: PostDetail;
   focusComments?: boolean;
+  sourcePath?: string;
 }
 
-const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProps) => {
+const BG = {
+  productWorld:    "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)",
+  tutorialCenter:  "radial-gradient(ellipse at 50% 40%, #0d6b65 0%, #074440 50%, #021a18 100%)",
+  community:       "radial-gradient(ellipse at 50% 40%, #0c2d35 0%, #061a1f 50%, #030d11 100%)",
+  default:         "#080a0e",
+};
+
+const PostDrawer = ({ postId, post: initialPost, focusComments, sourcePath }: PostDrawerProps) => {
   const navigate = useNavigate();
+
+  const pageBg = sourcePath?.startsWith("/product-world")
+    ? BG.productWorld
+    : sourcePath?.startsWith("/tutorial-center")
+    ? BG.tutorialCenter
+    : sourcePath?.startsWith("/community")
+    ? BG.community
+    : BG.default;
 
   const [post,             setPost]             = useState<PostDetail | null>(initialPost ?? null);
   const [loading,          setLoading]          = useState(!initialPost);
@@ -49,10 +65,11 @@ const PostDrawer = ({ postId, post: initialPost, focusComments }: PostDrawerProp
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 32, stiffness: 280 }}
-      className="fixed inset-0 z-[60] bg-[#080a0e] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[60] flex flex-col overflow-hidden"
+      style={{ background: pageBg }}
     >
       {/* Top bar — desktop only, mobile uses native back gesture */}
-      <div className="xsm:hidden md:flex items-center gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0 bg-[#080a0e]">
+      <div className="hidden md:flex items-center gap-3 px-4 pt-4 pb-4 border-b border-white/[0.06] flex-shrink-0">
         <button
           type="button"
           onClick={close}

@@ -317,6 +317,7 @@ const App = () => {
             postId={drawerPostId}
             post={drawerPost}
             focusComments={focusComments}
+            sourcePath={bgLocation.pathname}
           />
         )}
       </AnimatePresence>
