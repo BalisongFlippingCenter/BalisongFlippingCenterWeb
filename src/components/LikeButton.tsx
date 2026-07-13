@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { motion, useAnimation } from "motion/react";
 import { useAppSelector, useAppDispatch } from "../redux/hooks";
 import { toggleLikedPost } from "../redux/auth/authSlice";
 import { axiosApiInstanceAuth } from "../api/axios";
@@ -20,7 +21,8 @@ const LikeButton = ({ postId, initialCount, isOwner = false, className = "" }: L
 
   const [liked,     setLiked]     = useState(() => likedPostIds.includes(postIdNum));
   const [likeCount, setLikeCount] = useState(initialCount);
-  const inFlight = useRef(false);
+  const inFlight     = useRef(false);
+  const heartControls = useAnimation();
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -30,6 +32,12 @@ const LikeButton = ({ postId, initialCount, isOwner = false, className = "" }: L
     setLiked(nowLiked);
     setLikeCount((c) => c + (nowLiked ? 1 : -1));
     dispatch(toggleLikedPost(postIdNum));
+    if (nowLiked) {
+      heartControls.start({
+        scale: [1, 1.5, 0.8, 1.2, 1],
+        transition: { duration: 0.4, times: [0, 0.2, 0.5, 0.75, 1] },
+      });
+    }
     try {
       if (nowLiked) {
         await axiosApiInstanceAuth.post(`/posts/${postId}/like`);
@@ -53,10 +61,9 @@ const LikeButton = ({ postId, initialCount, isOwner = false, className = "" }: L
         isOwner ? "text-white/15 cursor-not-allowed" : liked ? "text-red" : "text-white/55 hover:text-white/80"
       } ${!isLoggedIn || isOwner ? "cursor-default" : "cursor-pointer"} ${className}`}
     >
-      <FontAwesomeIcon
-        icon={faHeart}
-        className={`text-[11px] transition-transform duration-150 ${liked ? "scale-110" : "scale-100"}`}
-      />
+      <motion.span animate={heartControls} className="inline-flex items-center justify-center">
+        <FontAwesomeIcon icon={faHeart} className="text-[11px]" />
+      </motion.span>
       <span className="font-medium">{likeCount.toLocaleString()}</span>
       <span className={liked ? "text-red/70" : "text-white/40"}>{likeCount === 1 ? "like" : "likes"}</span>
     </button>

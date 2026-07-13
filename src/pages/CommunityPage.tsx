@@ -7,6 +7,7 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import { useAppSelector } from "../redux/hooks";
 import FeedPostCard from "../components/FeedPostCard";
+import FeedPostCardSkeleton from "../components/skeletons/FeedPostCardSkeleton";
 
 const PAGE_SIZE = 20;
 
@@ -69,9 +70,13 @@ const CommunitySidebar = ({ filterType, onTypeChange }: SidebarProps) => {
 
           {/* Stats */}
           <div className="flex bg-[#040f14] border-t border-white/[0.06]">
-            {(["Posts", "Followers", "Following"] as const).map((label) => (
+            {([
+              { label: "Posts",     value: user?.postCount      ?? 0 },
+              { label: "Followers", value: user?.followerCount  ?? 0 },
+              { label: "Following", value: user?.followingCount ?? 0 },
+            ]).map(({ label, value }) => (
               <div key={label} className="flex-1 flex flex-col items-center py-3.5 border-r border-white/[0.06] last:border-r-0">
-                <span className="text-white font-bold text-base leading-none">0</span>
+                <span className="text-white font-bold text-base leading-none">{value.toLocaleString()}</span>
                 <span className="text-white/40 text-[9px] uppercase tracking-wider mt-1">{label}</span>
               </div>
             ))}
@@ -435,8 +440,12 @@ const CommunityPage = () => {
 
             {/* ── Initial loading ── */}
             {!initialDone && (
-              <div className="flex justify-center py-24">
-                <div className="w-6 h-6 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
+              <div className="flex flex-col">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="xsm:pb-1 lg:pb-3">
+                    <FeedPostCardSkeleton />
+                  </div>
+                ))}
               </div>
             )}
 

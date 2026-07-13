@@ -202,8 +202,10 @@ const PublicProfilePostsComponent = ({ accountId }: Props) => {
 
       {/* ── Posts grid / states ── */}
       {isLoading && posts.length === 0 ? (
-        <div className="w-full flex justify-center py-24">
-          <div className="w-6 h-6 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
+        <div className="grid xsm:grid-cols-3 lg:grid-cols-4 xsm:gap-px lg:gap-3 xsm:px-0 lg:px-6 animate-pulse">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="aspect-square bg-white/[0.06] xsm:rounded-none lg:rounded-xl" />
+          ))}
         </div>
       ) : fetchError && posts.length === 0 ? (
         <div className="w-full flex flex-col items-center justify-center py-24 gap-3">

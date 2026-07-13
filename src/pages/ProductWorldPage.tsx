@@ -250,13 +250,15 @@ const compactBadge = (post: PostDetail): { label: string; cls: string } => {
 const knifeLabel = (post: PostDetail): string | null => {
   const k = post.offeringKnife;
   if (!k) return null;
-  if (k.displayName) return k.displayName;
   if (k.knifeMaker && k.baseKnifeModel) return `${k.knifeMaker} ${k.baseKnifeModel}`;
-  return k.knifeMaker || k.baseKnifeModel || null;
+  if (k.knifeMaker) return k.knifeMaker;
+  if (k.baseKnifeModel) return k.baseKnifeModel;
+  return k.displayName || null;
 };
 
 const CompactPostCard = ({ post }: { post: PostDetail }) => {
-  const badge    = compactBadge(post);
+  const navigate  = useNavigate();
+  const badge     = compactBadge(post);
   const mediaFile = post.mediaFiles[0];
   const isVid     = mediaFile?.isVideo ?? false;
   const hasMedia  = !!mediaFile;
@@ -267,7 +269,11 @@ const CompactPostCard = ({ post }: { post: PostDetail }) => {
     : mediaFile?.url;
 
   return (
-    <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0f14] border border-white/[0.07]">
+    <button
+      type="button"
+      onClick={() => navigate(`/post/${post.id}`)}
+      className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0f14] border border-white/[0.07] w-full text-left"
+    >
       {/* Thumbnail */}
       {hasMedia ? (
         isVid
@@ -306,7 +312,7 @@ const CompactPostCard = ({ post }: { post: PostDetail }) => {
         )}
         <p className="text-white/30 text-[9px] leading-none mt-0.5">{post.creatorDisplayName}</p>
       </div>
-    </div>
+    </button>
   );
 };
 

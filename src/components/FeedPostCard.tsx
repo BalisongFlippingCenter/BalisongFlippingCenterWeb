@@ -96,6 +96,17 @@ export const difficultyStyle = (tag: string): { pill: string; dot: string } => {
   }
 };
 
+const parseCaption = (text: string): React.ReactNode[] =>
+  text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|#\w+)/g).map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+    if (/^#\w+$/.test(part))
+      return <span key={i} className="text-blue-primary font-medium">{part}</span>;
+    return <span key={i}>{part}</span>;
+  });
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: { post: PostDetail; index: number; variant?: "feed" | "page"; commentCountOverride?: number }) => {
@@ -107,6 +118,8 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   const viewerId       = useAppSelector((state) => state.auth.user?.id);
   const isOwnPost      = !!viewerId && String(viewerId) === String(post.accountId);
 
+  const [captionExpanded,  setCaptionExpanded]  = useState(false);
+  const [captionOverflows, setCaptionOverflows] = useState(false);
   const [descExpanded,     setDescExpanded]     = useState(false);
   const [descOverflows,    setDescOverflows]    = useState(false);
   const [mediaIndex,       setMediaIndex]       = useState(0);
@@ -121,7 +134,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
   const [deleteConfirmOpen,setDeleteConfirmOpen]= useState(false);
   const [isDeleting,       setIsDeleting]       = useState(false);
   const [isHiding,         setIsHiding]         = useState(false);
+  const [isBuffering,      setIsBuffering]      = useState(false);
 
+  const captionRef        = useRef<HTMLParagraphElement>(null);
   const descRef           = useRef<HTMLParagraphElement>(null);
   const cardRef           = useRef<HTMLDivElement>(null);
   const videoRef          = useRef<HTMLVideoElement>(null);
@@ -145,6 +160,12 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
+
+  useEffect(() => {
+    if (captionRef.current) {
+      setCaptionOverflows(captionRef.current.scrollHeight > captionRef.current.clientHeight);
+    }
+  }, [post.caption]);
 
   useEffect(() => {
     if (descRef.current) {
@@ -265,7 +286,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
     <div ref={cardRef} onClick={goToPost} className={`w-full border-y border-x-0 lg:border border-white/10 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5)] ${variant === "page" ? "lg:rounded-t-2xl" : "lg:rounded-2xl cursor-pointer"} ${index % 2 === 0 ? "bg-[#13161d]" : "bg-[#080a0e]"}`}>
 
       {/* ── Card header ── */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <button type="button" onClick={isDeleted ? undefined : goToProfile} className={`flex items-center gap-3 min-w-0 ${isDeleted ? "cursor-default" : "group"}`}>
           <div className={`w-9 h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center transition-colors duration-200 ${isDeleted ? "bg-white/[0.04] border border-white/10" : "bg-blue-primary/20 border border-blue-primary/30 group-hover:border-blue-primary/60"}`}>
             {avatar
@@ -277,11 +298,11 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
           </div>
           <div className="flex flex-col items-start gap-0.5 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className={`text-sm font-semibold leading-none transition-colors duration-200 ${isDeleted ? "text-white/30 italic" : "text-white group-hover:text-blue-primary"}`}>{displayName}</span>
-              {identifier && <span className="text-white/30 text-[11px] leading-none">{identifier}</span>}
+              <span className={`text-[15px] font-semibold leading-none transition-colors duration-200 ${isDeleted ? "text-white/30 italic" : "text-white group-hover:text-blue-primary"}`}>{displayName}</span>
+              {identifier && <span className="text-white/30 text-[13px] leading-none">{identifier}</span>}
             </div>
             {post.creationDate && (
-              <span className="text-white/35 text-[11px] leading-none pt-0.5">{formatDate(post.creationDate)}</span>
+              <span className="text-white/35 text-[13px] leading-none pt-0.5">{formatDate(post.creationDate)}</span>
             )}
           </div>
         </button>
@@ -300,7 +321,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
               <FontAwesomeIcon icon={faLock} className="text-[8px]" />Private
             </span>
           )}
-          <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
+          <span className={`text-[13px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
             {badge.label}
           </span>
 
@@ -356,11 +377,28 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       </div>
 
       {/* ── Caption ── */}
-      {post.caption?.trim() && (
-        <div className="px-4 pt-4 pb-3">
-          <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{post.caption}</p>
-        </div>
-      )}
+      {post.caption?.trim() && (() => {
+        const isShort = post.caption.length < 120 && !post.caption.includes("\n");
+        return (
+          <div className="px-4 pt-3 pb-2">
+            <p
+              ref={captionRef}
+              className={`text-white/90 whitespace-pre-wrap leading-relaxed ${captionExpanded ? "" : "line-clamp-3"} ${isShort ? "text-[19px] font-semibold" : "text-[17px] font-normal"}`}
+            >
+              {parseCaption(post.caption)}
+            </p>
+            {captionOverflows && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setCaptionExpanded((p) => !p); }}
+                className="text-white/35 text-[13px] font-medium hover:text-white/55 transition-colors duration-150 mt-1"
+              >
+                {captionExpanded ? "See less" : "See more"}
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Media ── */}
       {layout === "trade" ? (() => {
@@ -469,6 +507,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
                     className="w-full h-full object-cover"
                     onPlay={() => setVideoPaused(false)}
                     onPause={() => setVideoPaused(true)}
+                    onWaiting={() => setIsBuffering(true)}
+                    onPlaying={() => setIsBuffering(false)}
+                    onCanPlay={() => setIsBuffering(false)}
                   />
                   <div
                     className="absolute inset-0 z-10 flex items-center justify-center cursor-pointer"
@@ -491,11 +532,15 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
                       v.paused ? v.play().catch(() => {}) : v.pause();
                     }}
                   >
-                    {videoPaused && (
+                    {isBuffering && !videoPaused ? (
+                      <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      </div>
+                    ) : videoPaused ? (
                       <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
                         <FontAwesomeIcon icon={faPlay} className="text-white text-base pl-0.5" />
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </>
               ) : (
@@ -559,7 +604,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Buy/sell meta ── */}
       {layout === "buysell" && (
-        <div className="px-4 pt-4 pb-1 flex flex-col gap-1.5">
+        <div className="px-4 pt-3 pb-1 flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
               post.mode === "BUYING"
@@ -611,9 +656,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
               </div>
             )}
             <div className="flex flex-col gap-1.5 px-4 min-w-0">
-              <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Listed Knife</span>
-              <p className="text-white font-semibold text-base truncate">{post.offeringKnife.displayName}</p>
-              <p className="text-white/50 text-xs truncate">
+              <span className="text-[11px] text-white/30 uppercase tracking-wider font-medium">Listed Knife</span>
+              <p className="text-white font-semibold text-[15px] truncate">{post.offeringKnife.displayName}</p>
+              <p className="text-white/50 text-[13px] truncate">
                 {post.offeringKnife.knifeMaker}
                 {post.offeringKnife.baseKnifeModel ? ` · ${post.offeringKnife.baseKnifeModel}` : ""}
               </p>
@@ -624,27 +669,27 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Tags ── */}
       {displayTags.length > 0 && (
-        <div className="px-4 pt-3 pb-3 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="px-4 pt-2 pb-2 flex flex-nowrap gap-x-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {layout === "tutorial" || layout === "combo" ? (
             <>
               {post.difficultyTag && (() => {
                 const s = difficultyStyle(post.difficultyTag);
                 return (
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold ${s.pill}`}>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[13px] font-semibold ${s.pill}`}>
                     {formatTagLabel(post.difficultyTag)}
                   </span>
                 );
               })()}
               {post.techniqueTags.map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tagDotColor(tag)}`} />
+                <span key={tag} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-white/50">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${tagDotColor(tag)}`} />
                   {formatTagLabel(tag)}
                 </span>
               ))}
             </>
           ) : (
             post.tags.map((tag) => (
-              <span key={tag} className={`inline-flex items-center text-[11px] font-medium ${tagTextColor(tag)}`}>
+              <span key={tag} className={`inline-flex items-center text-[13px] font-medium ${tagTextColor(tag)}`}>
                 <span className="mr-0.5">#</span>{formatTagLabel(tag)}
               </span>
             ))
@@ -654,15 +699,15 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Description ── */}
       {activeDescription?.trim() && (
-        <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+        <div className="px-4 pt-2 pb-3 flex flex-col gap-1">
           <p
             ref={descRef}
-            className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
+            className={`text-white/60 text-[15px] leading-relaxed whitespace-pre-wrap transition-all duration-200 ${descExpanded ? "" : "line-clamp-3"}`}
           >
             {activeDescription}
           </p>
           {descOverflows && (
-            <button type="button" onClick={() => setDescExpanded((p) => !p)} className="text-blue-primary/70 text-xs font-medium hover:text-blue-primary transition-colors duration-150 text-left">
+            <button type="button" onClick={() => setDescExpanded((p) => !p)} className="text-blue-primary/70 text-[13px] font-medium hover:text-blue-primary transition-colors duration-150 text-left">
               {descExpanded ? "Show less" : "Read more"}
             </button>
           )}
@@ -671,7 +716,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
       {/* ── Reference knife card ── */}
       {activeReferenceKnife && layout !== "buysell" && layout !== "trade" && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-3">
           <div
             className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden cursor-pointer hover:border-white/20 transition-colors duration-150"
             onClick={(e) => {
@@ -689,9 +734,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
               </div>
             )}
             <div className="flex flex-col gap-1 py-2 min-w-0 pr-3">
-              <span className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
-              <p className="text-white font-semibold text-sm truncate">{activeReferenceKnife.displayName}</p>
-              <p className="text-white/50 text-xs truncate">
+              <span className="text-[11px] text-white/30 uppercase tracking-wider font-medium">Referenced Knife</span>
+              <p className="text-white font-semibold text-[15px] truncate">{activeReferenceKnife.displayName}</p>
+              <p className="text-white/50 text-[13px] truncate">
                 {activeReferenceKnife.knifeMaker}
                 {activeReferenceKnife.baseKnifeModel ? ` · ${activeReferenceKnife.baseKnifeModel}` : ""}
               </p>
@@ -701,13 +746,13 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
       )}
 
       {/* ── Engagement ── */}
-      <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-4">
+      <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-4">
         <LikeButton postId={post.id} initialCount={post.likes} isOwner={isOwnPost} />
         {(() => {
           const count = commentCountOverride ?? post.comments;
           return variant === "page" ? (
-            <span className="flex items-center gap-1.5 text-white/55 text-xs">
-              <FontAwesomeIcon icon={faComment} className="text-[11px]" />
+            <span className="flex items-center gap-1.5 text-white/55 text-[13px]">
+              <FontAwesomeIcon icon={faComment} className="text-[13px]" />
               <span className="font-medium">{count.toLocaleString()}</span>
               <span className="text-white/40">{count === 1 ? "comment" : "comments"}</span>
             </span>
@@ -715,9 +760,9 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}?focus=comments`, { state: { backgroundLocation: location, post } }); }}
-              className="flex items-center gap-1.5 text-white/55 text-xs hover:text-white/80 transition-colors duration-150"
+              className="flex items-center gap-1.5 text-white/55 text-[13px] hover:text-white/80 transition-colors duration-150"
             >
-              <FontAwesomeIcon icon={faComment} className="text-[11px]" />
+              <FontAwesomeIcon icon={faComment} className="text-[13px]" />
               <span className="font-medium">{count.toLocaleString()}</span>
               <span className="text-white/40">{count === 1 ? "comment" : "comments"}</span>
             </button>

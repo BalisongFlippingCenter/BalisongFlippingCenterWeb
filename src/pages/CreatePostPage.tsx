@@ -145,6 +145,17 @@ const LAYOUT_THEME: Record<PostLayout, { tint: string; btnBg: string; btnShadow:
   combo:    { tint: "rgba(13,148,136,0.20)",  btnBg: "linear-gradient(135deg,#0d9488,#0a7569)", btnShadow: "0 4px 28px rgba(13,148,136,0.40)"  },
 };
 
+const parseCaption = (text: string): React.ReactNode[] =>
+  text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|#\w+)/g).map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+    if (/^#\w+$/.test(part))
+      return <span key={i} className="text-blue-primary font-medium">{part}</span>;
+    return <span key={i}>{part}</span>;
+  });
+
 // ─── Post Preview Overlay ──────────────────────────────────────────────────
 interface PostPreviewOverlayProps {
   layout: PostLayout;
@@ -283,11 +294,16 @@ const PostPreviewOverlay = ({
           </div>
 
           {/* Caption */}
-          {caption.trim() && (
-            <div className="px-4 pt-3 pb-2">
-              <p className="text-white text-xl font-semibold leading-snug whitespace-pre-wrap">{caption}</p>
-            </div>
-          )}
+          {caption.trim() && (() => {
+            const isShort = caption.length < 120 && !caption.includes("\n");
+            return (
+              <div className="px-4 pt-3 pb-2">
+                <p className={`text-white/90 whitespace-pre-wrap leading-relaxed ${isShort ? "text-[19px] font-semibold" : "text-[17px] font-normal"}`}>
+                  {parseCaption(caption)}
+                </p>
+              </div>
+            );
+          })()}
 
           {/* ── Media ── */}
           {layout === "trade" ? (
@@ -905,6 +921,23 @@ const CreatePostPage = () => {
             rows={3}
             className="w-full bg-[#13161d] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-primary/50 transition-colors duration-200 resize-none placeholder:text-white/25"
           />
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 flex flex-col gap-2">
+            <p className="text-[10px] text-white/30 uppercase tracking-wider font-medium">Formatting</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              <div className="flex items-center gap-2">
+                <code className="text-xs text-white/35 bg-white/5 px-1.5 py-0.5 rounded font-mono">**text**</code>
+                <span className="text-xs font-bold text-white/60">bold</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="text-xs text-white/35 bg-white/5 px-1.5 py-0.5 rounded font-mono">*text*</code>
+                <span className="text-xs italic text-white/60">italic</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="text-xs text-white/35 bg-white/5 px-1.5 py-0.5 rounded font-mono">#word</code>
+                <span className="text-xs text-blue-primary font-medium">#hashtag</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Buy/Sell — type toggle (before media so user picks first) */}

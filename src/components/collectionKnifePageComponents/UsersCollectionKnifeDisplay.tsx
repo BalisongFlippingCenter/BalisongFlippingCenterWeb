@@ -15,6 +15,9 @@ import {
   faCheck,
   faTrash,
   faTriangleExclamation,
+  faGear,
+  faScissors,
+  faLayerGroup,
 } from "@fortawesome/free-solid-svg-icons";
 import Image from "../Image";
 import { axiosApiInstanceAuth } from "../../api/axios";
@@ -65,30 +68,45 @@ const DetailRow = ({
       ? String(value).replace(/_/g, " ")
       : null;
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 py-2.5">
       <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
         {label}
       </span>
-      <span className="text-white/80 text-sm font-medium">
-        {display ?? <span className="text-white/25 italic text-xs">—</span>}
+      <span className="text-white/85 text-[14px] font-medium">
+        {display ?? <span className="text-white/20 italic text-xs">—</span>}
       </span>
     </div>
   );
 };
 
+const scoreBarStyle = (v: number): React.CSSProperties => {
+  if (v >= 8) return {
+    background: "linear-gradient(to right, #86efac, #22c55e)",
+    boxShadow: "0 0 6px 1px rgba(34,197,94,0.3)",
+  };
+  if (v >= 5) return {
+    background: "linear-gradient(to right, #fde68a, #e6b800)",
+    boxShadow: "0 0 6px 1px rgba(230,184,0,0.3)",
+  };
+  return {
+    background: "linear-gradient(to right, #fca5a5, #b91c1c)",
+    boxShadow: "0 0 6px 1px rgba(185,28,28,0.3)",
+  };
+};
+
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex-1 bg-[#13161d] border border-white/8 rounded-xl px-3 py-3 flex flex-col items-center gap-2 min-w-0">
-    <span className="text-[10px] text-white/35 uppercase tracking-widest font-medium text-center">
+    <span className="text-[11px] text-white/35 uppercase tracking-widest font-medium text-center">
       {label}
     </span>
     <span className="leading-none">
-      <span className="text-white font-bold text-2xl">{value}</span>
+      <span className="font-bold text-2xl text-white">{value}</span>
       <span className="text-white/30 text-sm font-normal">/10</span>
     </span>
-    <div className="w-full h-1 bg-white/8 rounded-full overflow-hidden">
+    <div className="w-full h-1.5 bg-white/8 rounded-full">
       <div
-        className="h-full bg-blue-primary rounded-full transition-all duration-500"
-        style={{ width: `${(value / 10) * 100}%` }}
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${(value / 10) * 100}%`, ...scoreBarStyle(value) }}
       />
     </div>
   </div>
@@ -615,7 +633,7 @@ const UsersCollectionKnifeDisplay = () => {
 
           {/* ── Score breakdown ── */}
           <div>
-            <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
+            <h2 className="text-white font-semibold text-sm mb-3">
               Score Breakdown
             </h2>
             <div className="flex gap-3">
@@ -629,40 +647,55 @@ const UsersCollectionKnifeDisplay = () => {
           <div className="grid xsm:grid-cols-1 sm:grid-cols-3 gap-4">
 
             {/* Hardware */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">
-                Hardware
-              </h3>
-              <DetailRow label="Pivot System" value={k.pivotSystem} />
-              <DetailRow label="Pin System"   value={k.pinSystem}   />
-              <DetailRow label="Latch Type"   value={k.latchType}   />
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(16,129,152,0.15)" }}>
+                  <FontAwesomeIcon icon={faGear} className="text-blue-primary text-[10px]" />
+                </div>
+                <h3 className="text-white font-semibold text-sm">Hardware</h3>
+              </div>
+              <div className="divide-y divide-white/[0.05]">
+                <DetailRow label="Pivot System" value={k.pivotSystem} />
+                <DetailRow label="Pin System"   value={k.pinSystem}   />
+                <DetailRow label="Latch Type"   value={k.latchType}   />
+              </div>
             </div>
 
             {/* Blade */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">
-                Blade
-              </h3>
-              <DetailRow label="Blade Style"    value={k.bladeStyle}    />
-              <DetailRow label="Blade Finish"   value={k.bladeFinish}   />
-              <DetailRow label="Blade Material" value={k.bladeMaterial} />
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(230,184,0,0.12)" }}>
+                  <FontAwesomeIcon icon={faScissors} className="text-gold text-[10px]" />
+                </div>
+                <h3 className="text-white font-semibold text-sm">Blade</h3>
+              </div>
+              <div className="divide-y divide-white/[0.05]">
+                <DetailRow label="Style"    value={k.bladeStyle}    />
+                <DetailRow label="Finish"   value={k.bladeFinish}   />
+                <DetailRow label="Material" value={k.bladeMaterial} />
+              </div>
             </div>
 
             {/* Handle */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="text-white font-semibold text-sm border-b border-white/8 pb-2">
-                Handle
-              </h3>
-              <DetailRow label="Construction" value={k.handleConstruction} />
-              <DetailRow label="Material"     value={k.handleMaterial}     />
-              <DetailRow label="Finish"       value={k.handleFinish}       />
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(34,197,94,0.1)" }}>
+                  <FontAwesomeIcon icon={faLayerGroup} className="text-green text-[10px]" />
+                </div>
+                <h3 className="text-white font-semibold text-sm">Handle</h3>
+              </div>
+              <div className="divide-y divide-white/[0.05]">
+                <DetailRow label="Construction" value={k.handleConstruction} />
+                <DetailRow label="Material"     value={k.handleMaterial}     />
+                <DetailRow label="Finish"       value={k.handleFinish}       />
+              </div>
             </div>
 
           </div>
 
           {/* ── Gallery ── */}
           <div>
-            <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
+            <h2 className="text-white font-semibold text-sm mb-3">
               Gallery
             </h2>
             {k.galleryFiles && k.galleryFiles.length > 0 ? (

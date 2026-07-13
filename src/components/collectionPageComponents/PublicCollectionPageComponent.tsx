@@ -106,7 +106,7 @@ const PublicCollectionPageComponent = ({ displayName, identifierCode }: Props) =
       : null;
 
   const statsItems = [
-    { value: knives.length.toString(),                              label: "Knives"    },
+    { value: knives.length.toString(),                              label: "Num. Knives" },
     { value: totalValue > 0 ? `$${totalValue.toFixed(0)}` : "—",  label: "Est. Value" },
     { value: avgScore !== null ? avgScore.toFixed(1) : "—",        label: "Avg Score" },
   ];

@@ -6,6 +6,7 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import CommentsSection from "../components/CommentsSection";
+import FeedPostCardSkeleton from "../components/skeletons/FeedPostCardSkeleton";
 
 const PostPage = () => {
   const { postId }     = useParams<{ postId: string }>();
@@ -38,18 +39,57 @@ const PostPage = () => {
       >
         <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
       </button>
-      <div className="min-w-0">
+      {post ? (
+        <button
+          type="button"
+          onClick={() => navigate(`/${post.creatorDisplayName}/${post.creatorIdentifierCode}`)}
+          className="flex items-center gap-2.5 min-w-0 group"
+        >
+          <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center bg-blue-primary/20 border border-blue-primary/30 group-hover:border-blue-primary/60 transition-colors duration-200">
+            {post.creatorProfileImg
+              ? <img src={post.creatorProfileImg} alt="" className="w-full h-full object-cover" />
+              : <span className="text-blue-primary text-sm font-bold leading-none">{post.creatorDisplayName.charAt(0).toUpperCase()}</span>
+            }
+          </div>
+          <div className="flex flex-col items-start min-w-0">
+            <span className="text-white text-[15px] font-semibold leading-tight group-hover:text-blue-primary transition-colors duration-200 truncate">
+              {post.creatorDisplayName}
+            </span>
+            {post.creatorIdentifierCode && (
+              <span className="text-white/30 text-xs leading-none">#{post.creatorIdentifierCode}</span>
+            )}
+          </div>
+        </button>
+      ) : (
         <h1 className="text-white font-bold text-xl leading-tight">Post</h1>
-        {post && <p className="text-white/35 text-xs truncate">by {post.creatorDisplayName}</p>}
-      </div>
+      )}
     </div>
   );
 
   if (isLoading) return (
     <div className="w-full min-h-screen flex flex-col bg-[#080a0e]">
       {topBar}
-      <div className="flex-1 flex items-center justify-center py-24">
-        <div className="w-6 h-6 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
+      <div className="flex-1 xsm:px-0 lg:px-4 py-6 pb-24">
+        <div className="w-full max-w-[600px] mx-auto flex flex-col">
+          <FeedPostCardSkeleton variant="page" />
+          {/* Comment input + comment placeholders */}
+          <div className="animate-pulse">
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.05]">
+              <div className="w-8 h-8 rounded-full bg-white/[0.07] flex-shrink-0" />
+              <div className="flex-1 h-10 rounded-2xl bg-white/[0.06]" />
+            </div>
+            {[0, 1].map((i) => (
+              <div key={i} className="flex gap-3 px-4 py-4 border-b border-white/[0.04]">
+                <div className="w-8 h-8 rounded-full bg-white/[0.07] flex-shrink-0" />
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="h-3 w-24 rounded-full bg-white/[0.08]" />
+                  <div className="h-3 w-full rounded-full bg-white/[0.06]" />
+                  <div className="h-3 w-3/4 rounded-full bg-white/[0.06]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

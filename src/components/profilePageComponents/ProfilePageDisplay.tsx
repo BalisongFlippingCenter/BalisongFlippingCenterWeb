@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { motion, AnimatePresence } from "motion/react";
 import ReportModal from "../ReportModal";
+import ProfilePageSkeleton from "../skeletons/ProfilePageSkeleton";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,13 +179,7 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
   const hasAnyLink = [...socialLinks, ...personalLinks].some((l) => l.isSet);
 
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <section className="w-full min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-blue-primary border-t-transparent animate-spin" />
-      </section>
-    );
-  }
+  if (loading) return <ProfilePageSkeleton />;
 
   // ── Error / not found ──────────────────────────────────────────────────────
   if (error || !profile) {
