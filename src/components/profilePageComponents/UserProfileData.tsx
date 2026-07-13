@@ -22,6 +22,17 @@ const StatBlock = ({ value, label }: { value: number; label: string }) => (
   </div>
 );
 
+const parseBio = (text: string): React.ReactNode[] =>
+  text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|#\w+)/g).map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+    if (/^#\w+$/.test(part))
+      return <span key={i} className="text-blue-primary font-medium">{part}</span>;
+    return <span key={i}>{part}</span>;
+  });
+
 const UserProfileData = () => {
   const user = useAppSelector((state) => state.auth.user);
   const collectionData = useAppSelector((state) => state.collection.collection);
@@ -79,14 +90,14 @@ const UserProfileData = () => {
           <button
             type="button"
             onClick={() => navigate('/configure/profile_caption')}
-            className="text-sm text-white/55 leading-relaxed text-left group flex items-start gap-2 w-full"
+            className="text-sm text-white/75 leading-relaxed text-left group flex items-start gap-2 w-full"
           >
             <span
               ref={bioRef}
               className={`flex-1 whitespace-pre-wrap ${bioExpanded ? "" : "line-clamp-3"}`}
             >
               {user?.profileCaption && user.profileCaption !== ""
-                ? user.profileCaption
+                ? parseBio(user.profileCaption)
                 : <span className="text-white/20 italic">Add a bio...</span>
               }
             </span>
@@ -186,6 +197,7 @@ const UserProfileData = () => {
           <div className="w-px h-8 bg-white/10 self-center" />
           <StatBlock value={user?.followingCount ?? 0} label="Following" />
         </div>
+
 
       </div>
 

@@ -28,7 +28,7 @@ const UsersCollectionPageComponent = () => {
       : null;
 
   const statsItems = [
-    { value: knifeCount.toString(),                                                                        label: "Knives"    },
+    { value: knifeCount.toString(),                                                                        label: "Num. Knives" },
     { value: totalValue > 0 ? (formatCurrency(totalValue, user?.currency) || "—") : "—", label: "Est. Value" },
     { value: avgScore !== null ? avgScore.toFixed(1) : "—",                                                label: "Avg Score" },
   ];

@@ -95,20 +95,20 @@ const ProfilePostCover = ({ post, onOpen }: params) => {
       <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
       {/* ── Bottom bar: type badge · route icon · like + comment ── */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-3 px-3 flex items-end justify-between gap-1.5">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 xsm:pb-1.5 xsm:px-1.5 md:pb-3 md:px-3 flex items-end justify-between gap-1">
 
         {/* Post type badge */}
         {typeBadge ? (
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border bg-black/50 backdrop-blur-sm flex-shrink-0 ${typeBadge.cls}`}>
+          <span className={`xsm:text-[9px] md:text-[10px] font-semibold xsm:px-1 xsm:py-px md:px-1.5 md:py-0.5 rounded-full border bg-black/50 backdrop-blur-sm flex-shrink-0 ${typeBadge.cls}`}>
             {typeBadge.label}
           </span>
         ) : <span />}
 
-        {/* Right side: route icon + like + comment */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        {/* Right side: like + comment */}
+        <div className="flex items-center xsm:gap-1.5 md:gap-2.5 flex-shrink-0">
 
-          <span className="flex items-center gap-1 text-[10px] font-semibold">
-            <FontAwesomeIcon icon={faHeart} className={`text-[9px] ${isLiked ? "text-red" : "text-white/75"}`} />
+          <span className="flex items-center gap-0.5 xsm:text-[9px] md:text-[10px] font-semibold">
+            <FontAwesomeIcon icon={faHeart} className={`xsm:text-[8px] md:text-[9px] ${isLiked ? "text-red" : "text-white/75"}`} />
             <span className={isLiked ? "text-white/90" : "text-white/75"}>{post.likes.toLocaleString()}</span>
           </span>
           <span className="xsm:hidden md:flex items-center gap-1 text-white/75 text-[10px] font-semibold">

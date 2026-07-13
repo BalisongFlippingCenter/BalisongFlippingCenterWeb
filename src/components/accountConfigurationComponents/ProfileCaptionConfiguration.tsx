@@ -87,6 +87,25 @@ const ProfileCaptionConfiguration = () => {
         <p className="text-xs text-white/25">
           Shown on your public profile · Max {MAX_LENGTH} characters · Max {MAX_LINES} lines
         </p>
+
+        {/* Formatting hints */}
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 flex flex-col gap-2">
+          <p className="text-[11px] text-white/35 uppercase tracking-wider font-medium">Formatting</p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">**text**</code>
+              <span className="text-xs font-bold text-white/70">bold</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">*text*</code>
+              <span className="text-xs italic text-white/70">italic</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">#word</code>
+              <span className="text-xs text-blue-primary font-medium">#hashtag</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Error */}

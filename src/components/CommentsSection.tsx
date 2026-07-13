@@ -4,6 +4,7 @@ import { axiosApiInstance, axiosApiInstanceAuth } from "../api/axios";
 import { Comment, mapComment } from "../modals/Comment";
 import CommentItem from "./CommentItem";
 import CommentInput from "./CommentInput";
+import CommentSkeleton from "./skeletons/CommentSkeleton";
 
 const PAGE_SIZE = 20;
 
@@ -120,8 +121,10 @@ const CommentsSection = ({ postId, commentCount: initialCount, focusInput, onTot
       {/* List */}
       <div className="px-4 pb-4 flex flex-col gap-5">
         {loading ? (
-          <div className="flex justify-center py-6">
-            <div className="w-5 h-5 rounded-full border-2 border-blue-primary/50 border-t-transparent animate-spin" />
+          <div className="flex flex-col gap-5">
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
           </div>
         ) : comments.length === 0 ? (
           <p className="text-white/20 text-xs text-center py-4">No comments yet. Be the first.</p>

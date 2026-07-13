@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBell, faHeart, faComment, faUserPlus, faReply, faCheck, faArrowLeft, faArrowRight,
+  faBell, faHeart, faComment, faUserPlus, faReply, faArrowLeft, faArrowRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
@@ -56,16 +56,24 @@ const NotificationPanel = ({ isOpen, onClose }: Props) => {
   const navigate   = useNavigate();
   const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
   const [loading,    setLoading]    = useState(false);
-  const [markingAll, setMarkingAll] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    // Optimistically clear unread indicators the moment the panel opens
+    dispatch(markAllRead());
     setLoading(true);
     axiosApiInstanceAuth
       .get("/notifications", { params: { unreadOnly: false, page: 0, size: 20 } })
-      .then((res) => dispatch(setNotifications(res.data?.content ?? res.data ?? [])))
+      .then((res) => {
+        const items = (res.data?.content ?? res.data ?? []).map(
+          (n: AppNotification) => ({ ...n, isRead: true })
+        );
+        dispatch(setNotifications(items));
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
+    // Persist to backend (fire-and-forget)
+    axiosApiInstanceAuth.patch("/notifications/read-all").catch(() => {});
   }, [isOpen]);
 
   // Lock body scroll on mobile when overlay is open
@@ -78,19 +86,6 @@ const NotificationPanel = ({ isOpen, onClose }: Props) => {
     }
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
-
-  const handleMarkAllRead = async () => {
-    if (markingAll || unreadCount === 0) return;
-    setMarkingAll(true);
-    try {
-      await axiosApiInstanceAuth.patch("/notifications/read-all");
-      dispatch(markAllRead());
-    } catch {
-      // silent
-    } finally {
-      setMarkingAll(false);
-    }
-  };
 
   const handleClick = async (n: AppNotification) => {
     if (!n.isRead) {
@@ -130,17 +125,6 @@ const NotificationPanel = ({ isOpen, onClose }: Props) => {
           </span>
         )}
       </div>
-      {unreadCount > 0 && (
-        <button
-          type="button"
-          onClick={handleMarkAllRead}
-          disabled={markingAll}
-          className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors duration-150 disabled:opacity-40"
-        >
-          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
-          Mark all read
-        </button>
-      )}
     </div>
   );
 

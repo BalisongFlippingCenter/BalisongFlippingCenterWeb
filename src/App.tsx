@@ -51,11 +51,13 @@ import TestPage from "./pages/TestPage";
 import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
 import EditPostPage from "./pages/EditPostPage";
+import LikedPostsPage from "./pages/LikedPostsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import KnifeDetailPage from "./pages/KnifeDetailPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import GlobalSearchPage from "./pages/GlobalSearchPage";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -184,6 +186,7 @@ const App = () => {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:topic" element={<LearnTopicPage />} />
+          <Route path="/search" element={<GlobalSearchPage />} />
           <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />
           <Route path="/google/setup" element={<GoogleSetupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -210,6 +213,8 @@ const App = () => {
 
           {/*Auth Protected Routes for only users*/}
           <Route element={<AuthProtectedRoutes allowedRoles={["USER"]} />}>
+            <Route path="/liked-posts" element={<LikedPostsPage />} />
+
             {/*Configuration routes*/}
             <Route path="/configure" element={<ProfileConfigurePage />} />
 

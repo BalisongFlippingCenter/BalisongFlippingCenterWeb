@@ -90,8 +90,8 @@ const Navbar = () => {
       >
         {/* Mobile search overlay */}
         {isSmall && searchBarToggle && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black z-40 px-4">
-            <SearchBar toggleSearchBar={toggleSearchBar} />
+          <div className="absolute inset-0 flex flex-col items-stretch justify-start bg-black/95 z-40 px-4 pt-4">
+            <SearchBar toggleSearchBar={toggleSearchBar} mobile />
           </div>
         )}
 
