@@ -172,7 +172,8 @@ const ReportButton = () => {
 };
 
 const MainLayout = () => {
-  const showFooter = true;
+  const location    = useLocation();
+  const showFooter  = !location.pathname.startsWith("/messages");
   const user        = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 

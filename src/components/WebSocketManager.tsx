@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { addNotification, AppNotification } from "../redux/notifications/notificationSlice";
+import { addMessage, upsertConversation } from "../redux/messages/messagesSlice";
+import { ConversationDto, MessageDto } from "../modals/Message";
 
 const WS_URL = "ws://ec2-3-217-173-234.compute-1.amazonaws.com:8080/ws";
 
@@ -32,6 +34,24 @@ const WebSocketManager = () => {
             dispatch(addNotification(notification));
           } catch {
             console.warn("[WS] Failed to parse notification:", message.body);
+          }
+        });
+
+        client.subscribe("/user/me/queue/messages", (frame) => {
+          try {
+            const msg: MessageDto = JSON.parse(frame.body);
+            dispatch(addMessage(msg));
+          } catch {
+            console.warn("[WS] Failed to parse message:", frame.body);
+          }
+        });
+
+        client.subscribe("/user/me/queue/conversations", (frame) => {
+          try {
+            const conv: ConversationDto = JSON.parse(frame.body);
+            dispatch(upsertConversation(conv));
+          } catch {
+            console.warn("[WS] Failed to parse conversation update:", frame.body);
           }
         });
       },

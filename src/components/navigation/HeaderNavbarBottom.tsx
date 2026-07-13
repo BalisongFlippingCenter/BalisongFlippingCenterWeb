@@ -1,4 +1,4 @@
-import { faCircleUser, faCubes, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faCircleUser, faCubes, faPlus, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
@@ -91,8 +91,9 @@ const NavItem = ({ isActive, label, springConfig, floatY, activeScale, hoverScal
 
 // ─── Main component ──────────────────────────────────────────────────────────
 const HeaderNavbarBottom = () => {
-  const user = useAppSelector((state) => state.auth.user);
-  const location = useLocation();
+  const user         = useAppSelector((state) => state.auth.user);
+  const totalUnread  = useAppSelector((state) => state.messages.totalUnread);
+  const location     = useLocation();
   const windowSize = useWindowSize();
 
   const isMobile = (windowSize.at(1) ?? 0) < 950;
@@ -105,6 +106,7 @@ const HeaderNavbarBottom = () => {
   const containerRef  = useRef<HTMLDivElement>(null);
   const profileRef    = useRef<HTMLDivElement>(null);
   const collectionRef = useRef<HTMLDivElement>(null);
+  const messagesRef   = useRef<HTMLDivElement>(null);
   const createRef     = useRef<HTMLDivElement>(null);
 
   const [notchX, setNotchX]         = useState(0);
@@ -117,10 +119,12 @@ const HeaderNavbarBottom = () => {
 
   const profilePath    = `/${user?.displayName}/${user?.identifierCode}`;
   const collectionPath = `/${user?.displayName}/${user?.identifierCode}/collection`;
+  const messagesPath   = '/messages';
   const createPath     = '/create-post';
 
   const isProfile    = location.pathname === profilePath;
   const isCollection = location.pathname === collectionPath;
+  const isMessages   = location.pathname.startsWith(messagesPath);
   const isCreate     = location.pathname === createPath;
 
   const measure = useCallback(() => {
@@ -128,9 +132,10 @@ const HeaderNavbarBottom = () => {
     const containerRect = containerRef.current.getBoundingClientRect();
     setDims({ w: containerRect.width, h: containerRect.height });
 
-    const activeRef = isProfile ? profileRef
+    const activeRef = isProfile    ? profileRef
       : isCollection ? collectionRef
-      : isCreate ? createRef
+      : isMessages   ? messagesRef
+      : isCreate     ? createRef
       : null;
 
     if (activeRef?.current) {
@@ -229,6 +234,28 @@ const HeaderNavbarBottom = () => {
                     : "text-white/65 hover:text-white"
                 }`}>
                   <FontAwesomeIcon icon={faCubes} className="xsm:text-base md:text-xl short:md:text-base" />
+                </div>
+              </NavItem>
+            )}
+          </NavLink>
+        </div>
+
+        {/* Messages */}
+        <div ref={messagesRef}>
+          <NavLink to={messagesPath}>
+            {({ isActive }) => (
+              <NavItem isActive={isActive} label="Messages" {...navItemProps}>
+                <div className={`relative rounded-full flex items-center justify-center xsm:w-7 xsm:h-7 md:w-10 md:h-10 short:md:w-7 short:md:h-7 transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#111318] text-blue-primary border border-white/15"
+                    : "text-white/65 hover:text-white"
+                }`}>
+                  <FontAwesomeIcon icon={faEnvelope} className="xsm:text-base md:text-xl short:md:text-base" />
+                  {totalUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-blue-primary text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                  )}
                 </div>
               </NavItem>
             )}
