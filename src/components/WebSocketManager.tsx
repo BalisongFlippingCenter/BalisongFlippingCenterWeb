@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
+import { useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { addNotification, AppNotification } from "../redux/notifications/notificationSlice";
-import { addMessage, upsertConversation } from "../redux/messages/messagesSlice";
+import { addMessage, receiveIncomingMessage, upsertConversation } from "../redux/messages/messagesSlice";
 import { ConversationDto, MessageDto } from "../modals/Message";
 
 const WS_URL = "ws://ec2-3-217-173-234.compute-1.amazonaws.com:8080/ws";
@@ -12,6 +13,9 @@ const WebSocketManager = () => {
   const user        = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const clientRef   = useRef<Client | null>(null);
+  const location    = useLocation();
+  const locationRef = useRef(location);
+  useEffect(() => { locationRef.current = location; }, [location]);
 
   useEffect(() => {
     if (!user || !accessToken) {
@@ -40,7 +44,14 @@ const WebSocketManager = () => {
         client.subscribe("/user/me/queue/messages", (frame) => {
           try {
             const msg: MessageDto = JSON.parse(frame.body);
-            dispatch(addMessage(msg));
+            const isViewingConv = locationRef.current.pathname.includes(msg.conversationId);
+            if (msg.senderId === user?.id || isViewingConv) {
+              // Sent by me (HTTP response already added it) or actively viewing — just add silently
+              dispatch(addMessage(msg));
+            } else {
+              // Incoming from someone else while away — bump unread + show toast
+              dispatch(receiveIncomingMessage(msg));
+            }
           } catch {
             console.warn("[WS] Failed to parse message:", frame.body);
           }

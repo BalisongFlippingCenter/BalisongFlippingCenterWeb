@@ -188,7 +188,7 @@ const MainLayout = () => {
       <ReportButton />
       {user && accessToken && (
         <aside
-          className="fixed bottom-0 z-30 overflow-visible xsm:left-0 xsm:right-0 xsm:w-full md:left-1/2 md:right-auto md:w-auto md:-translate-x-1/2"
+          className="fixed bottom-0 z-30 overflow-visible left-0 right-0 w-full"
           style={{ willChange: 'transform', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <HeaderNavbarBottom />

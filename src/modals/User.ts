@@ -29,6 +29,7 @@ export interface Profile {
 
   likedPostIds?: number[];
   likedCommentIds?: number[];
+  followingIds?: number[];
 
   postCount?: number;
   followerCount?: number;

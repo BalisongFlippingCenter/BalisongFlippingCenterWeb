@@ -11,19 +11,22 @@ const NOTCH_D  = 20;   // notch depth
 const NOTCH_S  = 10;   // shoulder smoothing
 const CORNER_R = 28;   // pill corner radius
 
+// ── Notch section (shared between both path builders) ────────────────────────
+const notchSegment = (cx: number, depth: number): string => depth > 0
+  ? [
+      `L ${cx - NOTCH_HW - NOTCH_S} 0`,
+      `C ${cx - NOTCH_HW} 0 ${cx - NOTCH_HW / 3} ${depth} ${cx} ${depth}`,
+      `C ${cx + NOTCH_HW / 3} ${depth} ${cx + NOTCH_HW} 0 ${cx + NOTCH_HW + NOTCH_S} 0`,
+    ].join(' ')
+  : '';
+
+// ── Mobile: floating pill ────────────────────────────────────────────────────
 const buildPillPath = (W: number, H: number, cx: number, depth: number, cornerR = CORNER_R): string => {
   if (!W || !H) return '';
   const r = cornerR;
-
-  const notchSection = [
-    `L ${cx - NOTCH_HW - NOTCH_S} 0`,
-    `C ${cx - NOTCH_HW} 0 ${cx - NOTCH_HW / 3} ${depth} ${cx} ${depth}`,
-    `C ${cx + NOTCH_HW / 3} ${depth} ${cx + NOTCH_HW} 0 ${cx + NOTCH_HW + NOTCH_S} 0`,
-  ].join(' ');
-
   return [
     `M ${r} 0`,
-    notchSection,
+    notchSegment(cx, depth),
     `L ${W - r} 0`,
     `Q ${W} 0 ${W} ${r}`,
     `L ${W} ${H - r}`,
@@ -34,6 +37,34 @@ const buildPillPath = (W: number, H: number, cx: number, depth: number, cornerR 
     `Q 0 0 ${r} 0`,
     `Z`,
   ].join(' ');
+};
+
+// ── Desktop: full-width arch — thin rail on sides, raised center ─────────────
+const SIDE_H   = 42;  // height of the thin side rails
+const EDGE_R   = 16;  // corner radius at the left/right screen edges
+const BASE_ARC = 120; // horizontal width of the arch-base rounding curve
+
+// leftX / rightX: x-position of the left and right inner edges of the raised arch
+const buildFullWidthPath = (W: number, H: number, cx: number, depth: number, leftX: number, rightX: number): string => {
+  if (!W || !H || !rightX) return '';
+  const sH  = SIDE_H;
+  const r   = EDGE_R;
+  const arc = BASE_ARC;
+
+  return [
+    `M 0 ${H}`,
+    `L 0 ${H - sH + r}`,
+    `Q 0 ${H - sH} ${r} ${H - sH}`,
+    `L ${leftX - arc} ${H - sH}`,
+    `C ${leftX - arc * 0.55} ${H - sH} ${leftX - 4} 0 ${leftX} 0`,
+    notchSegment(cx, depth),
+    `L ${rightX} 0`,
+    `C ${rightX + 4} 0 ${rightX + arc * 0.55} ${H - sH} ${rightX + arc} ${H - sH}`,
+    `L ${W - r} ${H - sH}`,
+    `Q ${W} ${H - sH} ${W} ${H - sH + r}`,
+    `L ${W} ${H}`,
+    `Z`,
+  ].filter(Boolean).join(' ');
 };
 
 const MIN_STIFF = 70;
@@ -112,6 +143,7 @@ const HeaderNavbarBottom = () => {
   const [notchX, setNotchX]         = useState(0);
   const [notchDepth, setNotchDepth] = useState(0);
   const [dims, setDims]             = useState({ w: 0, h: 0 });
+  const [archBounds, setArchBounds] = useState({ left: 0, right: 0 });
 
   const prevNotchXRef = useRef(0);
   const notchDistance = Math.abs(notchX - prevNotchXRef.current);
@@ -132,6 +164,16 @@ const HeaderNavbarBottom = () => {
     const containerRect = containerRef.current.getBoundingClientRect();
     setDims({ w: containerRect.width, h: containerRect.height });
 
+    if (profileRef.current && createRef.current) {
+      const profileRect = profileRef.current.getBoundingClientRect();
+      const createRect  = createRef.current.getBoundingClientRect();
+      const pad = 20;
+      setArchBounds({
+        left:  Math.max(0, profileRect.left - containerRect.left - pad),
+        right: Math.min(containerRect.width, createRect.right   - containerRect.left + pad),
+      });
+    }
+
     const activeRef = isProfile    ? profileRef
       : isCollection ? collectionRef
       : isMessages   ? messagesRef
@@ -145,7 +187,7 @@ const HeaderNavbarBottom = () => {
     } else {
       setNotchDepth(0);
     }
-  }, [isProfile, isCollection, isCreate]);
+  }, [isProfile, isCollection, isMessages, isCreate]);
 
   useEffect(() => {
     measure();
@@ -158,12 +200,14 @@ const HeaderNavbarBottom = () => {
   }, [notchX]);
 
   const effectiveCx = notchX > 0 ? notchX : dims.w / 2;
-  const svgPath = buildPillPath(dims.w, dims.h, effectiveCx, notchDepth, isMobile ? 0 : CORNER_R);
+  const svgPath = isMobile
+    ? buildPillPath(dims.w, dims.h, effectiveCx, notchDepth, 0)
+    : buildFullWidthPath(dims.w, dims.h, effectiveCx, notchDepth, archBounds.left, archBounds.right);
 
   const navItemProps = { springConfig, floatY, activeScale, hoverScale };
 
   return (
-    <div ref={containerRef} className="relative xsm:w-full md:w-auto">
+    <div ref={containerRef} className="relative w-full">
 
       {/* SVG pill */}
       {svgPath && (
@@ -174,28 +218,36 @@ const HeaderNavbarBottom = () => {
         >
           <defs>
             <linearGradient id="pillGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#1c1f27" />
-              <stop offset="100%" stopColor="#111318" />
+              <stop offset="0%"   stopColor="#20242e" />
+              <stop offset="60%"  stopColor="#14171f" />
+              <stop offset="100%" stopColor="#0e1016" />
             </linearGradient>
-            <filter id="pillGlow" x="-20%" y="-100%" width="140%" height="300%">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+            <filter id="edgeBloom" x="-10%" y="-200%" width="120%" height="600%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
             </filter>
           </defs>
+          {/* Fill */}
           <motion.path
             fill="url(#pillGrad)"
             initial={{ d: svgPath }}
             animate={{ d: svgPath }}
             transition={springConfig}
           />
+          {/* Soft glow bloom */}
           <motion.path
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
+            stroke="rgba(255,255,255,0.28)"
+            strokeWidth="1.5"
+            filter="url(#edgeBloom)"
+            initial={{ d: svgPath }}
+            animate={{ d: svgPath }}
+            transition={springConfig}
+          />
+          {/* Crisp top border */}
+          <motion.path
+            fill="none"
+            stroke="rgba(255,255,255,0.13)"
             strokeWidth="1"
-            filter="url(#pillGlow)"
             initial={{ d: svgPath }}
             animate={{ d: svgPath }}
             transition={springConfig}
@@ -204,7 +256,7 @@ const HeaderNavbarBottom = () => {
       )}
 
       {/* Icons */}
-      <div className="relative z-10 flex items-center xsm:justify-evenly xsm:w-full xsm:px-4 md:justify-center md:w-auto md:gap-12 md:px-24 text-white">
+      <div className="relative z-10 flex items-center xsm:justify-evenly xsm:w-full xsm:px-4 md:justify-center md:w-full md:gap-12 md:px-24 text-white">
 
         {/* Profile */}
         <div ref={profileRef}>

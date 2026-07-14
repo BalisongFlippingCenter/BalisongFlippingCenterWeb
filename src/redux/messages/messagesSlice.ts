@@ -1,16 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ConversationDto, MessageDto } from "../../modals/Message";
+import { ConversationDto, MessageDto, MessageToast } from "../../modals/Message";
 
 interface MessagesState {
   conversations:  ConversationDto[];
   messages:       Record<string, MessageDto[]>; // keyed by conversationId
   totalUnread:    number;
+  messageToasts:  MessageToast[];
 }
 
 const initialState: MessagesState = {
   conversations: [],
   messages:      {},
   totalUnread:   0,
+  messageToasts: [],
 };
 
 const messagesSlice = createSlice({
@@ -26,24 +28,44 @@ const messagesSlice = createSlice({
     upsertConversation(state, action: PayloadAction<ConversationDto>) {
       const idx = state.conversations.findIndex((c) => c.id === action.payload.id);
       if (idx >= 0) {
-        const prev = state.conversations[idx];
-        state.totalUnread += action.payload.unreadCount - prev.unreadCount;
         state.conversations[idx] = action.payload;
       } else {
         state.conversations.unshift(action.payload);
-        state.totalUnread += action.payload.unreadCount;
       }
       // Keep sorted by most recent
       state.conversations.sort(
         (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
       );
+      // Recompute from source of truth to stay in sync with backend
+      state.totalUnread = state.conversations.reduce((sum, c) => sum + c.unreadCount, 0);
     },
 
-    // Called by WS /user/me/queue/messages — append new message to thread
+    // Called by WS when a message arrives from another user and the user is NOT viewing that conversation
+    receiveIncomingMessage(state, action: PayloadAction<MessageDto>) {
+      const msg = action.payload;
+      if (!state.messages[msg.conversationId]) state.messages[msg.conversationId] = [];
+      state.messages[msg.conversationId].push(msg);
+      state.totalUnread += 1;
+      const conv = state.conversations.find((c) => c.id === msg.conversationId);
+      state.messageToasts.push({
+        toastId:        `msg-${msg.id}-${Date.now()}`,
+        conversationId: msg.conversationId,
+        senderName:     conv?.otherDisplayName    ?? "New message",
+        senderCode:     conv?.otherIdentifierCode ?? "",
+        senderImg:      conv?.otherProfileImg     ?? null,
+        preview:        msg.body.length > 80 ? msg.body.slice(0, 77) + "…" : msg.body,
+      });
+    },
+
+    // Called by WS for messages sent by current user (no unread bump, no toast)
     addMessage(state, action: PayloadAction<MessageDto>) {
       const { conversationId } = action.payload;
       if (!state.messages[conversationId]) state.messages[conversationId] = [];
       state.messages[conversationId].push(action.payload);
+    },
+
+    removeMessageToast(state, action: PayloadAction<string>) {
+      state.messageToasts = state.messageToasts.filter((t) => t.toastId !== action.payload);
     },
 
     setMessages(state, action: PayloadAction<{ conversationId: string; messages: MessageDto[] }>) {
@@ -73,6 +95,8 @@ export const {
   setConversations,
   upsertConversation,
   addMessage,
+  receiveIncomingMessage,
+  removeMessageToast,
   setMessages,
   prependMessages,
   markConversationRead,

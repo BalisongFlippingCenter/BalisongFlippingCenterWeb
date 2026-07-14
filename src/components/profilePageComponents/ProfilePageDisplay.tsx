@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../redux/hooks";
 import { axiosApiInstance, axiosApiInstanceAuth } from "../../api/axios";
-import { setNewUser } from "../../redux/auth/authSlice";
-import { Profile } from "../../modals/User";
+import { toggleFollowing } from "../../redux/auth/authSlice";
 import PublicProfilePostsComponent from "../PublicProfilePostsComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -48,7 +47,7 @@ interface PublicProfile {
   followingCount: number;
 }
 
-const mapPublicProfile = (data: any): PublicProfile => ({
+const mapPublicProfile = (data: any): PublicProfile & { isFollowing: boolean } => ({
   id:                  data.id                  ?? data.accountId        ?? "",
   displayName:         data.displayName         ?? "",
   identifierCode:      data.identifierCode      ?? "",
@@ -67,6 +66,7 @@ const mapPublicProfile = (data: any): PublicProfile => ({
   postCount:           data.postCount            ?? 0,
   followerCount:       data.followerCount        ?? 0,
   followingCount:      data.followingCount       ?? 0,
+  isFollowing:         data.isFollowing          ?? false,
 });
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -101,13 +101,18 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
   const [linksOpen, setLinksOpen]       = useState(false);
   const [bioExpanded, setBioExpanded]   = useState(false);
   const [bioOverflows, setBioOverflows] = useState(false);
-  const [isFollowing, setIsFollowing]   = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [reportOpen, setReportOpen]     = useState(false);
   // local followerCount so we can update it optimistically after follow/unfollow
   const [localFollowerCount, setLocalFollowerCount] = useState<number | null>(null);
 
   const bioRef = useRef<HTMLSpanElement>(null);
+
+  // Derive follow state from Redux — no extra network call needed
+  const isFollowing = !!(
+    profile?.id &&
+    loggedInUser?.followingIds?.includes(Number(profile.id))
+  );
 
   // ── Fetch public profile ───────────────────────────────────────────────────
   useEffect(() => {
@@ -136,14 +141,11 @@ const ProfilePageDisplay = ({ displayName, identifierCode }: Params) => {
     if (!profile || followLoading) return;
     setFollowLoading(true);
     try {
-      const res = isFollowing
+      isFollowing
         ? await axiosApiInstanceAuth.delete(`/accounts/any/${profile.id}/follow`)
         : await axiosApiInstanceAuth.post(`/accounts/any/${profile.id}/follow`);
-      // Update logged-in user's Redux state with returned UserDto
-      if (res.data && loggedInUser) {
-        dispatch(setNewUser({ ...loggedInUser, ...res.data } as Profile));
-      }
-      setIsFollowing((p) => !p);
+      // Keep Redux followingIds in sync so isFollowing re-derives correctly
+      dispatch(toggleFollowing(Number(profile.id)));
       setLocalFollowerCount((c) => (c ?? 0) + (isFollowing ? -1 : 1));
     } catch {
       // silent — button returns to previous state naturally

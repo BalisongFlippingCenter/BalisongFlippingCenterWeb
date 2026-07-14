@@ -10,6 +10,7 @@ import {
   faBullhorn, faLock, faChevronLeft, faChevronRight,
   faVolumeMute, faVolumeUp, faPlay, faExpand, faCompress,
   faFlag, faEllipsisVertical, faPenToSquare, faEyeSlash, faEye, faTrash,
+  faTag, faBookOpen, faBolt,
 } from "@fortawesome/free-solid-svg-icons";
 import { PostDetail } from "../modals/Post";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
@@ -32,12 +33,12 @@ export const POST_TYPE_TO_LAYOUT: Record<string, PostLayout> = {
   COMBO:          "combo",
 };
 
-export const LAYOUT_BADGE: Record<PostLayout, { label: string; cls: string }> = {
-  generic:  { label: "Generic",    cls: "text-white/50 border-white/20 bg-white/5" },
-  buysell:  { label: "Buy / Sell", cls: "text-gold border-gold/30 bg-gold/10" },
-  trade:    { label: "Trade",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10" },
-  tutorial: { label: "Tutorial",   cls: "text-green border-green/30 bg-green/10" },
-  combo:    { label: "Combo",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10" },
+export const LAYOUT_BADGE: Record<PostLayout, { label: string; cls: string; icon: typeof faGlobe }> = {
+  generic:  { label: "Generic",    cls: "text-white/50 border-white/20 bg-white/5",                    icon: faGlobe              },
+  buysell:  { label: "Buy / Sell", cls: "text-gold border-gold/30 bg-gold/10",                         icon: faTag                },
+  trade:    { label: "Trade",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10", icon: faArrowRightArrowLeft },
+  tutorial: { label: "Tutorial",   cls: "text-green border-green/30 bg-green/10",                      icon: faBookOpen           },
+  combo:    { label: "Combo",      cls: "text-blue-primary border-blue-primary/30 bg-blue-primary/10", icon: faBolt               },
 };
 
 const SECTION_ICON: Record<PostLayout, { icon: typeof faGlobe; title: string } | null> = {
@@ -309,7 +310,7 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {sectionIcon && (
-            <FontAwesomeIcon icon={sectionIcon.icon} title={sectionIcon.title} className="text-white/25 text-xs" />
+            <FontAwesomeIcon icon={sectionIcon.icon} title={sectionIcon.title} className="hidden md:block text-white/25 text-xs" />
           )}
           {post.isAnnouncement && (
             <span className="flex items-center gap-1 text-[10px] bg-gold/20 text-gold border border-gold/30 px-1.5 py-0.5 rounded-full font-medium">
@@ -321,7 +322,12 @@ const FeedPostCard = ({ post, index, variant = "feed", commentCountOverride }: {
               <FontAwesomeIcon icon={faLock} className="text-[8px]" />Private
             </span>
           )}
-          <span className={`text-[13px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
+          {/* Mobile: icon-only pill */}
+          <span className={`md:hidden flex items-center justify-center w-[26px] h-[26px] rounded-full border ${badge.cls}`}>
+            <FontAwesomeIcon icon={badge.icon} className="text-[10px]" />
+          </span>
+          {/* Desktop: full text pill */}
+          <span className={`hidden md:inline-flex text-[13px] font-semibold px-2.5 py-1 rounded-full border ${badge.cls}`}>
             {badge.label}
           </span>
 

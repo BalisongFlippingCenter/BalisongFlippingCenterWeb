@@ -17,3 +17,12 @@ export interface MessageDto {
   sentAt: string;
   readAt: string | null;
 }
+
+export interface MessageToast {
+  toastId:        string;
+  conversationId: string;
+  senderName:     string;
+  senderCode:     string;
+  senderImg:      string | null;
+  preview:        string;
+}
