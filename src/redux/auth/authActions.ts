@@ -10,6 +10,7 @@ const mapAccount = (account: any): Profile => ({
   measurementUnit: account.measurementUnit?.toLowerCase()         ?? null,
   likedPostIds:   account.likedPostIds   ?? [],
   likedCommentIds: account.likedCommentIds ?? [],
+  followingIds:   account.followingIds   ?? [],
   postCount:      account.postCount      ?? 0,
   followerCount:  account.followerCount  ?? 0,
   followingCount: account.followingCount ?? 0,

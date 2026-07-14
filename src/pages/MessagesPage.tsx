@@ -380,6 +380,12 @@ const MessagesPage = () => {
 
   // Fetch inbox on mount
   useEffect(() => {
+    // Try to open from already-loaded Redux state immediately (avoids waiting for API)
+    if (conversationId && conversations.length > 0) {
+      const found = conversations.find((c) => String(c.id) === String(conversationId));
+      if (found) { setActiveConv(found); setShowChat(true); }
+    }
+
     setLoading(true);
     axiosApiInstanceAuth
       .get("/conversations/me")
@@ -387,9 +393,9 @@ const MessagesPage = () => {
         const convs: ConversationDto[] = res.data ?? [];
         dispatch(setConversations(convs));
 
-        // If opened via URL param, find and open that conversation
+        // If opened via URL param and not yet resolved, find in fresh data
         if (conversationId) {
-          const found = convs.find((c) => c.id === conversationId);
+          const found = convs.find((c) => String(c.id) === String(conversationId));
           if (found) { setActiveConv(found); setShowChat(true); }
         }
       })

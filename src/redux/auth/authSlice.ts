@@ -72,6 +72,12 @@ const authSlice = createSlice({
       const idx = ids.indexOf(action.payload);
       state.user.likedCommentIds = idx === -1 ? [...ids, action.payload] : ids.filter((id) => id !== action.payload);
     },
+    toggleFollowing: (state, action: PayloadAction<number>) => {
+      if (!state.user) return;
+      const ids = state.user.followingIds ?? [];
+      const idx = ids.indexOf(action.payload);
+      state.user.followingIds = idx === -1 ? [...ids, action.payload] : ids.filter((id) => id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -190,6 +196,7 @@ export const {
   setCredentials,
   toggleLikedPost,
   toggleLikedComment,
+  toggleFollowing,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBell, faHeart, faComment, faUserPlus, faReply, faArrowLeft, faArrowRight,
+  faBell, faHeart, faComment, faUserPlus, faReply, faArrowLeft, faArrowRight, faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
@@ -20,6 +20,7 @@ const typeConfig = (type: string) => {
     case "COMMENT_LIKED":  return { icon: faHeart,    bg: "bg-red",           border: "border-[#7f1212]" };
     case "POST_COMMENTED": return { icon: faComment,  bg: "bg-green",         border: "border-[#15803d]" };
     case "COMMENT_REPLIED":return { icon: faReply,    bg: "bg-gold",          border: "border-[#a38000]" };
+    case "MESSAGE_RECEIVED": return { icon: faEnvelope, bg: "bg-blue-primary", border: "border-[#0d6478]" };
     default:               return { icon: faBell,     bg: "bg-white/20",      border: "border-white/10"  };
   }
 };
@@ -31,6 +32,7 @@ const actionText = (type: string): string => {
     case "POST_COMMENTED":  return "commented on your post";
     case "COMMENT_REPLIED": return "replied to your comment";
     case "COMMENT_LIKED":   return "liked your comment";
+    case "MESSAGE_RECEIVED": return "sent you a message";
     default:                return "";
   }
 };
@@ -42,6 +44,7 @@ const getPath = (n: AppNotification): string => {
     case "POST_COMMENTED":  return `/post/${n.targetId}`;
     case "COMMENT_REPLIED":
     case "COMMENT_LIKED":   return `/post/${n.targetId}?focus=comments`;
+    case "MESSAGE_RECEIVED": return `/messages/${n.targetId}`;
     default:                return "/";
   }
 };

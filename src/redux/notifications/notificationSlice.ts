@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface AppNotification {
   id: number;
-  type: "NEW_FOLLOWER" | "POST_LIKED" | "POST_COMMENTED" | "COMMENT_REPLIED" | "COMMENT_LIKED";
+  type: "NEW_FOLLOWER" | "POST_LIKED" | "POST_COMMENTED" | "COMMENT_REPLIED" | "COMMENT_LIKED" | "MESSAGE_RECEIVED";
   message: string;
   targetType: string;
   targetId: number;
@@ -40,11 +40,14 @@ const notificationSlice = createSlice({
     },
     addNotification(state, action: PayloadAction<AppNotification>) {
       state.notifications.unshift(action.payload);
-      if (!action.payload.isRead) state.unreadCount += 1;
-      state.toasts.push({
-        toastId: `${action.payload.id}-${Date.now()}`,
-        notification: action.payload,
-      });
+      // Message notifications are tracked separately in messagesSlice — exclude here
+      if (action.payload.type !== "MESSAGE_RECEIVED") {
+        if (!action.payload.isRead) state.unreadCount += 1;
+        state.toasts.push({
+          toastId: `${action.payload.id}-${Date.now()}`,
+          notification: action.payload,
+        });
+      }
     },
     setUnreadCount(state, action: PayloadAction<number>) {
       state.unreadCount = action.payload;
