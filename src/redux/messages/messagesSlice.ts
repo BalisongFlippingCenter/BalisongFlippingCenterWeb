@@ -66,6 +66,15 @@ const messagesSlice = createSlice({
       state.messages[conversationId].push(action.payload);
     },
 
+    // Called after edit or delete — replaces the message in-place
+    updateMessage(state, action: PayloadAction<MessageDto>) {
+      const msg = action.payload;
+      const convMsgs = state.messages[msg.conversationId];
+      if (!convMsgs) return;
+      const idx = convMsgs.findIndex((m) => m.id === msg.id);
+      if (idx >= 0) convMsgs[idx] = msg;
+    },
+
     removeMessageToast(state, action: PayloadAction<string>) {
       state.messageToasts = state.messageToasts.filter((t) => t.toastId !== action.payload);
     },
@@ -97,6 +106,7 @@ export const {
   setConversations,
   upsertConversation,
   addMessage,
+  updateMessage,
   receiveIncomingMessage,
   removeMessageToast,
   setMessages,

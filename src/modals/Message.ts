@@ -16,6 +16,11 @@ export interface MessageDto {
   body: string;
   mediaUrl: string | null;
   isVideo: boolean;
+  replyToId: string | null;
+  replyPreviewBody: string | null;
+  replyPreviewSenderName: string | null;
+  editedAt: string | null;
+  isDeleted: boolean;
   sentAt: string;
   readAt: string | null;
 }
