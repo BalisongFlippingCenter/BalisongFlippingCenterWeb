@@ -53,7 +53,9 @@ const messagesSlice = createSlice({
         senderName:     conv?.otherDisplayName    ?? "New message",
         senderCode:     conv?.otherIdentifierCode ?? "",
         senderImg:      conv?.otherProfileImg     ?? null,
-        preview:        msg.body.length > 80 ? msg.body.slice(0, 77) + "…" : msg.body,
+        preview:        msg.body
+          ? (msg.body.length > 80 ? msg.body.slice(0, 77) + "…" : msg.body)
+          : (msg.isVideo ? "[Video]" : "[Photo]"),
       });
     },
 

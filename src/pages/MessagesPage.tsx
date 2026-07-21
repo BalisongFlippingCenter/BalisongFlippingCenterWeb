@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft, faEnvelope, faPaperPlane, faCircleUser, faEllipsisV, faTrash,
+  faPaperclip, faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "motion/react";
 import { axiosApiInstanceAuth } from "../api/axios";
@@ -73,23 +74,36 @@ const ConvRow = ({ conv, isActive, onClick }: { conv: ConversationDto; isActive:
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-const Bubble = ({ msg, isMine }: { msg: MessageDto; isMine: boolean }) => (
-  <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5`}>
-    <div
-      className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-[15px] leading-relaxed ${
-        isMine
-          ? "bg-blue-primary text-white rounded-br-sm"
-          : "bg-white/[0.07] text-white/85 rounded-bl-sm"
-      }`}
-    >
-      {msg.body}
-      <div className={`text-[11px] mt-1 ${isMine ? "text-white/50 text-right" : "text-white/30"}`}>
-        {new Date(msg.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        {isMine && msg.readAt && <span className="ml-1">· Read</span>}
+const Bubble = ({ msg, isMine }: { msg: MessageDto; isMine: boolean }) => {
+  const hasMedia = !!msg.mediaUrl;
+  const hasBody  = !!msg.body;
+
+  return (
+    <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5`}>
+      <div
+        className={`max-w-[75%] rounded-2xl text-[15px] leading-relaxed overflow-hidden ${
+          isMine
+            ? "bg-blue-primary text-white rounded-br-sm"
+            : "bg-white/[0.07] text-white/85 rounded-bl-sm"
+        } ${!hasMedia ? "px-3.5 py-2" : ""}`}
+      >
+        {hasMedia && !msg.isVideo && (
+          <img src={msg.mediaUrl!} alt="" className="block w-full max-w-[260px] object-cover" />
+        )}
+        {hasMedia && msg.isVideo && (
+          <video src={msg.mediaUrl!} controls className="block w-full max-w-[260px]" />
+        )}
+        {hasBody && (
+          <p className={hasMedia ? "px-3.5 pt-2" : ""}>{msg.body}</p>
+        )}
+        <div className={`text-[11px] mt-1 ${isMine ? "text-white/50 text-right" : "text-white/30"} ${hasMedia ? "px-3.5 pb-2" : ""}`}>
+          {new Date(msg.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {isMine && msg.readAt && <span className="ml-1">· Read</span>}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Inbox panel ───────────────────────────────────────────────────────────────
 
@@ -152,22 +166,28 @@ interface NewRecipient {
   profileImg: string | null;
 }
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
+
 const PAGE_SIZE = 30;
 
 const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMessageSent }: ChatProps) => {
-  const [body,         setBody]         = useState("");
-  const [sending,      setSending]      = useState(false);
-  const [loadingMore,  setLoadingMore]  = useState(false);
-  const [hasMore,      setHasMore]      = useState(false);
-  const [page,         setPage]         = useState(0);
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const dispatch  = useAppDispatch();
+  const [body,          setBody]          = useState("");
+  const [sending,       setSending]       = useState(false);
+  const [loadingMore,   setLoadingMore]   = useState(false);
+  const [hasMore,       setHasMore]       = useState(false);
+  const [page,          setPage]          = useState(0);
+  const [menuOpen,      setMenuOpen]      = useState(false);
+  const [attachedFile,  setAttachedFile]  = useState<File | null>(null);
+  const [attachPreview, setAttachPreview] = useState<string | null>(null);
+  const bottomRef   = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dispatch    = useAppDispatch();
 
-  const recipientId   = conv?.otherParticipantId ?? newRecipient?.id ?? "";
-  const displayName   = conv?.otherDisplayName   ?? newRecipient?.displayName ?? "";
-  const identCode     = conv?.otherIdentifierCode ?? newRecipient?.identifierCode ?? "";
-  const profileImg    = conv?.otherProfileImg    ?? newRecipient?.profileImg    ?? null;
+  const recipientId = conv?.otherParticipantId ?? newRecipient?.id ?? "";
+  const displayName = conv?.otherDisplayName   ?? newRecipient?.displayName ?? "";
+  const identCode   = conv?.otherIdentifierCode ?? newRecipient?.identifierCode ?? "";
+  const profileImg  = conv?.otherProfileImg    ?? newRecipient?.profileImg    ?? null;
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -189,7 +209,6 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
       })
       .catch(() => {});
 
-    // Mark as read
     dispatch(markConversationRead(conv.id));
     axiosApiInstanceAuth.patch(`/conversations/${conv.id}/read`).catch(() => {});
   }, [conv?.id]);
@@ -211,24 +230,47 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
       .finally(() => setLoadingMore(false));
   };
 
+  const removeAttachment = () => {
+    if (attachPreview) URL.revokeObjectURL(attachPreview);
+    setAttachedFile(null);
+    setAttachPreview(null);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isVid = file.type.startsWith("video/");
+    const maxBytes = isVid ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+    if (file.size > maxBytes) {
+      alert(isVid ? "Videos must be under 150 MB." : "Images must be under 10 MB.");
+      e.target.value = "";
+      return;
+    }
+    if (attachPreview) URL.revokeObjectURL(attachPreview);
+    setAttachedFile(file);
+    setAttachPreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
   const handleSend = async () => {
     const trimmed = body.trim();
-    if (!trimmed || !recipientId || sending) return;
+    if ((!trimmed && !attachedFile) || !recipientId || sending) return;
     setSending(true);
     try {
+      const formData = new FormData();
+      if (trimmed) formData.append("body", trimmed);
+      if (attachedFile) formData.append("mediaFile", attachedFile);
+
       const res = await axiosApiInstanceAuth.post(
         `/conversations/${recipientId}/messages`,
-        { body: trimmed }
+        formData
       );
-      const sentMsg: MessageDto         = res.data?.message      ?? res.data;
+      const sentMsg: MessageDto = res.data?.message ?? res.data;
       const updatedConv: ConversationDto | null = res.data?.conversation ?? null;
       setBody("");
-      if (sentMsg) {
-        dispatch(addMessage(sentMsg));
-      }
-      if (sentMsg && updatedConv) {
-        onMessageSent(sentMsg, updatedConv);
-      }
+      removeAttachment();
+      if (sentMsg) dispatch(addMessage(sentMsg));
+      if (sentMsg && updatedConv) onMessageSent(sentMsg, updatedConv);
     } catch {
       // silent
     } finally {
@@ -329,7 +371,41 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
 
       {/* Input */}
       <div className="flex-shrink-0 px-4 pt-2 border-t border-white/[0.06]" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+        {/* Attachment preview */}
+        {attachPreview && attachedFile && (
+          <div className="mb-2 relative inline-block">
+            {attachedFile.type.startsWith("video/") ? (
+              <video src={attachPreview} className="h-20 rounded-xl object-cover" />
+            ) : (
+              <img src={attachPreview} alt="" className="h-20 rounded-xl object-cover" />
+            )}
+            <button
+              type="button"
+              onClick={removeAttachment}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            >
+              <FontAwesomeIcon icon={faTimes} className="text-[9px]" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
+          {/* Attachment button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.05] transition-all duration-150 flex-shrink-0"
+          >
+            <FontAwesomeIcon icon={faPaperclip} className="text-sm" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -347,7 +423,7 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
           <button
             type="button"
             onClick={handleSend}
-            disabled={!body.trim() || sending}
+            disabled={(!body.trim() && !attachedFile) || sending}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-primary hover:bg-blue-primary/80 disabled:opacity-35 disabled:cursor-not-allowed transition-all duration-150 flex-shrink-0"
           >
             <FontAwesomeIcon icon={faPaperPlane} className="text-white text-sm" />
@@ -366,21 +442,19 @@ const MessagesPage = () => {
   const location    = useLocation();
   const { conversationId } = useParams<{ conversationId?: string }>();
 
-  const myId         = useAppSelector((state) => state.auth.user?.id ?? "");
+  const myId          = useAppSelector((state) => state.auth.user?.id ?? "");
   const conversations = useAppSelector((state) => state.messages.conversations);
-  const allMessages  = useAppSelector((state) => state.messages.messages);
+  const allMessages   = useAppSelector((state) => state.messages.messages);
 
-  const [loading,     setLoading]     = useState(false);
-  const [activeConv,  setActiveConv]  = useState<ConversationDto | null>(null);
+  const [loading,      setLoading]      = useState(false);
+  const [activeConv,   setActiveConv]   = useState<ConversationDto | null>(null);
   const [newRecipient, setNewRecipient] = useState<NewRecipient | null>(null);
-  const [showChat,    setShowChat]    = useState(false);
+  const [showChat,     setShowChat]     = useState(false);
 
-  // Parse recipient from navigation state (coming from profile "Message" button)
   const locationState = location.state as { recipient?: NewRecipient } | null;
 
   // Fetch inbox on mount
   useEffect(() => {
-    // Try to open from already-loaded Redux state immediately (avoids waiting for API)
     if (conversationId && conversations.length > 0) {
       const found = conversations.find((c) => String(c.id) === String(conversationId));
       if (found) { setActiveConv(found); setShowChat(true); }
@@ -393,7 +467,6 @@ const MessagesPage = () => {
         const convs: ConversationDto[] = res.data ?? [];
         dispatch(setConversations(convs));
 
-        // If opened via URL param and not yet resolved, find in fresh data
         if (conversationId) {
           const found = convs.find((c) => String(c.id) === String(conversationId));
           if (found) { setActiveConv(found); setShowChat(true); }
@@ -407,7 +480,6 @@ const MessagesPage = () => {
   useEffect(() => {
     if (!locationState?.recipient) return;
     const r = locationState.recipient;
-    // Check if a conversation with this person already exists
     const existing = conversations.find((c) => c.otherParticipantId === r.id);
     if (existing) {
       setActiveConv(existing);
@@ -417,11 +489,9 @@ const MessagesPage = () => {
       setNewRecipient(r);
     }
     setShowChat(true);
-    // Clear the state so refreshing doesn't re-trigger
     navigate("/messages", { replace: true, state: null });
   }, [locationState?.recipient?.id]);
 
-  // When WS pushes a new message to the active conversation, mark it read
   const activeMessages = activeConv ? (allMessages[activeConv.id] ?? []) : [];
 
   const handleSelectConv = (conv: ConversationDto) => {
@@ -449,7 +519,6 @@ const MessagesPage = () => {
   };
 
   const handleMessageSent = (_msg: MessageDto, updatedConv: ConversationDto) => {
-    // If this was a new conversation, update state with real conv data
     if (!activeConv) {
       setActiveConv(updatedConv);
       setNewRecipient(null);
@@ -461,7 +530,7 @@ const MessagesPage = () => {
   };
 
   const chatMessages = activeConv ? (allMessages[activeConv.id] ?? []) : [];
-  void activeMessages; // suppress unused warning — used via chatMessages
+  void activeMessages;
 
   return (
     <div className="w-full" style={{ background: "#080a0e" }}>

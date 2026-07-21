@@ -14,6 +14,8 @@ export interface MessageDto {
   conversationId: string;
   senderId: string;
   body: string;
+  mediaUrl: string | null;
+  isVideo: boolean;
   sentAt: string;
   readAt: string | null;
 }
