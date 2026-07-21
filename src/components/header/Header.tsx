@@ -73,8 +73,7 @@ const Navbar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isMobile = windowSize.at(1)! < 1150;
-  const isLarge  = windowSize.at(1)! >= 1310;
+  const isMobile = (windowSize[1] ?? 0) < 1150;
 
   return (
     <>
@@ -90,7 +89,7 @@ const Navbar = () => {
       >
         {/* Search overlay — all screen sizes */}
         {searchBarToggle && (
-          <div className="absolute inset-0 flex items-center bg-black/95 z-40 px-4">
+          <div className="absolute inset-0 flex items-center bg-black z-40 px-4">
             <SearchBar toggleSearchBar={toggleSearchBar} mobile />
           </div>
         )}
@@ -136,25 +135,14 @@ const Navbar = () => {
 
           {/* Right — search + user icon */}
           <div className="flex items-center gap-3 justify-end pl-[35px]">
-            {isLarge ? (
-              <button
-                type="button"
-                onClick={toggleSearchBar}
-                className="flex items-center py-2 pl-4 pr-3 gap-3 bg-white/5 border border-white/15 rounded-full hover:border-white/30 transition-colors duration-200 cursor-text"
-              >
-                <FontAwesomeIcon icon={faMagnifyingGlass} className="text-white/50 flex-shrink-0 text-sm" />
-                <span className="text-white/35 text-sm lg:w-48 md:w-36">Search...</span>
-              </button>
-            ) : (
-              <FontAwesomeIcon
-                icon={faMagnifyingGlass}
-                size="lg"
-                onClick={toggleSearchBar}
-                className="cursor-pointer"
-              />
-            )}
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              size="lg"
+              onClick={toggleSearchBar}
+              className="cursor-pointer"
+            />
 
-            <span className="hidden lg:block w-px h-4 bg-white/20 flex-shrink-0" />
+            <span className="w-px h-4 bg-white/20 flex-shrink-0" />
 
             {user && accessToken ? (
               <HeaderProfileDisplay />

@@ -18,7 +18,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-const SiteFooter = () => (
+const SiteFooter = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
   <footer className="w-full bg-[#0a0c10] border-t border-white/[0.06]">
     {/* Mobile layout */}
     <div className="md:hidden flex flex-col items-center gap-5 px-6 pt-8 pb-28">
@@ -49,7 +49,7 @@ const SiteFooter = () => (
     </div>
 
     {/* Desktop layout */}
-    <div className="hidden md:flex max-w-[1775px] mx-auto px-6 py-14 flex-row items-center justify-between gap-6">
+    <div className={`hidden md:flex max-w-[1775px] mx-auto px-6 pt-14 flex-row items-center justify-between gap-6 ${isLoggedIn ? "pb-[132px]" : "pb-14"}`}>
       <div className="flex flex-col items-start gap-1">
         <span className="text-white font-bold text-sm">Balisong Flipping Center</span>
         <span className="text-white/30 text-xs">© {new Date().getFullYear()} All rights reserved.</span>
@@ -88,7 +88,7 @@ const ReportButton = () => {
   }, []);
 
   return (
-    <div ref={ref} className="fixed bottom-24 right-0 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-2">
+    <div ref={ref} className="fixed bottom-24 right-0 md:bottom-[57px] md:right-8 z-50 flex flex-col items-end gap-2">
 
       {/* Popover */}
       {open && (
@@ -184,7 +184,7 @@ const MainLayout = () => {
       <main>
         <Outlet />
       </main>
-      {showFooter && <SiteFooter />}
+      {showFooter && <SiteFooter isLoggedIn={!!(user && accessToken)} />}
       <ReportButton />
       {user && accessToken && (
         <aside
