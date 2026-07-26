@@ -35,7 +35,7 @@ jobs:
 
       - name: Build, tag, and push Docker image to ECR
         run: |
-          docker build --no-cache -t balisongflippingcenter/web/main .
+          docker build --no-cache --build-arg BUILD_MODE=test -t balisongflippingcenter/web/main .
           docker tag balisongflippingcenter/web/main:latest 343218221384.dkr.ecr.us-east-1.amazonaws.com/balisongflippingcenter/web/main:${{ github.sha }}
           docker tag balisongflippingcenter/web/main:latest 343218221384.dkr.ecr.us-east-1.amazonaws.com/balisongflippingcenter/web/main:latest
           docker push 343218221384.dkr.ecr.us-east-1.amazonaws.com/balisongflippingcenter/web/main:${{ github.sha }}
