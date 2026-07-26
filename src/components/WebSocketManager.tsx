@@ -6,7 +6,7 @@ import { addNotification, AppNotification } from "../redux/notifications/notific
 import { addMessage, receiveIncomingMessage, upsertConversation } from "../redux/messages/messagesSlice";
 import { ConversationDto, MessageDto } from "../modals/Message";
 
-const WS_URL = "ws://ec2-3-217-173-234.compute-1.amazonaws.com:8080/ws";
+const WS_URL = import.meta.env.VITE_WS_URL;
 
 const WebSocketManager = () => {
   const dispatch    = useAppDispatch();

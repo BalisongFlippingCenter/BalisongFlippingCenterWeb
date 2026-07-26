@@ -9,7 +9,8 @@ RUN npm ci
 
 COPY ./ ./
 
-RUN npm run build
+ARG BUILD_MODE=production
+RUN npx tsc && npx vite build --mode ${BUILD_MODE}
 
 ## Production Envo
 

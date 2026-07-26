@@ -3,13 +3,14 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft, faEnvelope, faPaperPlane, faCircleUser, faEllipsisV, faTrash,
+  faPaperclip, faTimes, faReply, faPen, faFlag,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "motion/react";
 import { axiosApiInstanceAuth } from "../api/axios";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
   setConversations, setMessages, prependMessages,
-  markConversationRead, addMessage,
+  markConversationRead, addMessage, updateMessage,
 } from "../redux/messages/messagesSlice";
 import { ConversationDto, MessageDto } from "../modals/Message";
 
@@ -73,23 +74,150 @@ const ConvRow = ({ conv, isActive, onClick }: { conv: ConversationDto; isActive:
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-const Bubble = ({ msg, isMine }: { msg: MessageDto; isMine: boolean }) => (
-  <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5`}>
-    <div
-      className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-[15px] leading-relaxed ${
-        isMine
-          ? "bg-blue-primary text-white rounded-br-sm"
-          : "bg-white/[0.07] text-white/85 rounded-bl-sm"
-      }`}
-    >
-      {msg.body}
-      <div className={`text-[11px] mt-1 ${isMine ? "text-white/50 text-right" : "text-white/30"}`}>
-        {new Date(msg.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        {isMine && msg.readAt && <span className="ml-1">· Read</span>}
+interface BubbleProps {
+  msg: MessageDto;
+  isMine: boolean;
+  onReply: (msg: MessageDto) => void;
+  onEdit:  (msg: MessageDto) => void;
+  onDelete:(msg: MessageDto) => void;
+  onFlag:  (msg: MessageDto) => void;
+}
+
+const Bubble = ({ msg, isMine, onReply, onEdit, onDelete, onFlag }: BubbleProps) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  if (msg.isDeleted) {
+    return (
+      <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5`}>
+        <p className="text-white/25 text-[13px] italic px-1">This message was deleted</p>
+      </div>
+    );
+  }
+
+  const hasMedia = !!msg.mediaUrl;
+  const hasBody  = !!msg.body;
+
+  const MenuBtn = (
+    <div className="relative flex-shrink-0 self-center">
+      <button
+        type="button"
+        onClick={() => setMenuOpen((p) => !p)}
+        className="w-6 h-6 flex items-center justify-center text-white/20 hover:text-white/60 transition-colors duration-150"
+      >
+        <FontAwesomeIcon icon={faEllipsisV} className="text-[11px]" />
+      </button>
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* backdrop to close */}
+            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 4 }}
+              animate={{ opacity: 1, scale: 1,    y: 0 }}
+              exit={{    opacity: 0, scale: 0.92, y: 4 }}
+              transition={{ duration: 0.1 }}
+              className={`absolute bottom-full mb-1.5 z-20 w-36 rounded-xl overflow-hidden ${isMine ? "right-0" : "left-0"}`}
+              style={{ background: "#1a1d25", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}
+            >
+              {isMine ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onEdit(msg); }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-white/70 hover:bg-white/[0.06] text-[13px] transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faPen} className="text-[11px] text-white/40 w-3" />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onDelete(msg); }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-red/70 hover:bg-red/10 text-[13px] transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="text-[11px] w-3" />
+                    Delete
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onReply(msg); }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-white/70 hover:bg-white/[0.06] text-[13px] transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faReply} className="text-[11px] text-white/40 w-3" />
+                    Reply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onFlag(msg); }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-white/70 hover:bg-white/[0.06] text-[13px] transition-colors duration-150"
+                  >
+                    <FontAwesomeIcon icon={faFlag} className="text-[11px] text-white/40 w-3" />
+                    Flag
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  return (
+    <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5 group`}>
+      <div className={`flex items-end gap-1 max-w-[80%] ${isMine ? "flex-row-reverse" : ""}`}>
+        {/* Bubble column */}
+        <div className={`flex flex-col ${isMine ? "items-end" : "items-start"} flex-1 min-w-0`}>
+          {/* Reply preview */}
+          {msg.replyToId && (
+            <div
+              className={`mb-1 border-l-2 border-blue-primary/50 pl-2 pr-3 py-1 rounded-r-lg max-w-full ${
+                isMine ? "bg-white/[0.04]" : "bg-white/[0.04]"
+              }`}
+              style={{ maxWidth: "240px" }}
+            >
+              <p className="text-blue-primary text-[10px] font-semibold truncate leading-tight">
+                {msg.replyPreviewSenderName ?? "Unknown"}
+              </p>
+              <p className="text-white/40 text-[11px] truncate leading-tight">
+                {msg.replyPreviewBody === "" ? "Deleted message" : (msg.replyPreviewBody ?? "[Media]")}
+              </p>
+            </div>
+          )}
+
+          {/* Main bubble */}
+          <div
+            className={`rounded-2xl text-[15px] leading-relaxed overflow-hidden ${
+              isMine
+                ? "bg-blue-primary text-white rounded-br-sm"
+                : "bg-white/[0.07] text-white/85 rounded-bl-sm"
+            } ${!hasMedia ? "px-3.5 py-2" : ""}`}
+          >
+            {hasMedia && !msg.isVideo && (
+              <img src={msg.mediaUrl!} alt="" className="block w-full max-w-[240px] object-cover" />
+            )}
+            {hasMedia && msg.isVideo && (
+              <video src={msg.mediaUrl!} controls className="block w-full max-w-[240px]" />
+            )}
+            {hasBody && (
+              <p className={hasMedia ? "px-3.5 pt-2" : ""}>{msg.body}</p>
+            )}
+            <div className={`text-[11px] mt-1 ${isMine ? "text-white/50 text-right" : "text-white/30"} ${hasMedia ? "px-3.5 pb-2" : ""}`}>
+              {new Date(msg.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {msg.editedAt && <span className="ml-1 opacity-70">· Edited</span>}
+              {isMine && msg.readAt && <span className="ml-1">· Read</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Context menu button */}
+        {MenuBtn}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Inbox panel ───────────────────────────────────────────────────────────────
 
@@ -152,29 +280,38 @@ interface NewRecipient {
   profileImg: string | null;
 }
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 const PAGE_SIZE = 30;
 
 const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMessageSent }: ChatProps) => {
-  const [body,         setBody]         = useState("");
-  const [sending,      setSending]      = useState(false);
-  const [loadingMore,  setLoadingMore]  = useState(false);
-  const [hasMore,      setHasMore]      = useState(false);
-  const [page,         setPage]         = useState(0);
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const dispatch  = useAppDispatch();
+  const [body,          setBody]          = useState("");
+  const [sending,       setSending]       = useState(false);
+  const [loadingMore,   setLoadingMore]   = useState(false);
+  const [hasMore,       setHasMore]       = useState(false);
+  const [page,          setPage]          = useState(0);
+  const [menuOpen,      setMenuOpen]      = useState(false);
+  const [attachedFile,  setAttachedFile]  = useState<File | null>(null);
+  const [attachPreview, setAttachPreview] = useState<string | null>(null);
+  const [replyTo,       setReplyTo]       = useState<MessageDto | null>(null);
+  const [editingMsg,    setEditingMsg]    = useState<MessageDto | null>(null);
+  const [editBody,      setEditBody]      = useState("");
+  const [editSaving,    setEditSaving]    = useState(false);
 
-  const recipientId   = conv?.otherParticipantId ?? newRecipient?.id ?? "";
-  const displayName   = conv?.otherDisplayName   ?? newRecipient?.displayName ?? "";
-  const identCode     = conv?.otherIdentifierCode ?? newRecipient?.identifierCode ?? "";
-  const profileImg    = conv?.otherProfileImg    ?? newRecipient?.profileImg    ?? null;
+  const bottomRef    = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef  = useRef<HTMLTextAreaElement>(null);
+  const dispatch     = useAppDispatch();
 
-  // Scroll to bottom on new messages
+  const recipientId = conv?.otherParticipantId ?? newRecipient?.id ?? "";
+  const displayName = conv?.otherDisplayName   ?? newRecipient?.displayName ?? "";
+  const identCode   = conv?.otherIdentifierCode ?? newRecipient?.identifierCode ?? "";
+  const profileImg  = conv?.otherProfileImg    ?? newRecipient?.profileImg ?? null;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // Fetch messages for existing conversation
   useEffect(() => {
     if (!conv) return;
     setPage(0);
@@ -189,7 +326,6 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
       })
       .catch(() => {});
 
-    // Mark as read
     dispatch(markConversationRead(conv.id));
     axiosApiInstanceAuth.patch(`/conversations/${conv.id}/read`).catch(() => {});
   }, [conv?.id]);
@@ -211,24 +347,101 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
       .finally(() => setLoadingMore(false));
   };
 
+  const removeAttachment = () => {
+    if (attachPreview) URL.revokeObjectURL(attachPreview);
+    setAttachedFile(null);
+    setAttachPreview(null);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isVid = file.type.startsWith("video/");
+    const maxBytes = isVid ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+    if (file.size > maxBytes) {
+      alert(isVid ? "Videos must be under 150 MB." : "Images must be under 10 MB.");
+      e.target.value = "";
+      return;
+    }
+    if (attachPreview) URL.revokeObjectURL(attachPreview);
+    setAttachedFile(file);
+    setAttachPreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const enterEditMode = (msg: MessageDto) => {
+    setEditingMsg(msg);
+    setEditBody(msg.body);
+    setReplyTo(null);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  const cancelEdit = () => {
+    setEditingMsg(null);
+    setEditBody("");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingMsg || !editBody.trim() || editSaving) return;
+    setEditSaving(true);
+    try {
+      const res = await axiosApiInstanceAuth.patch(
+        `/conversations/messages/${editingMsg.id}`,
+        { body: editBody.trim() }
+      );
+      dispatch(updateMessage(res.data));
+      setEditingMsg(null);
+      setEditBody("");
+    } catch {
+      // silent
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteMsg = async (msg: MessageDto) => {
+    try {
+      const res = await axiosApiInstanceAuth.delete(`/conversations/messages/${msg.id}`);
+      dispatch(updateMessage(res.data));
+    } catch {
+      // silent
+    }
+  };
+
+  const handleFlagMsg = async (msg: MessageDto) => {
+    try {
+      await axiosApiInstanceAuth.post("/reports", {
+        targetType: "MESSAGE",
+        targetId: Number(msg.id),
+        reason: "INAPPROPRIATE",
+        additionalNote: null,
+      });
+    } catch {
+      // silent
+    }
+  };
+
   const handleSend = async () => {
     const trimmed = body.trim();
-    if (!trimmed || !recipientId || sending) return;
+    if ((!trimmed && !attachedFile) || !recipientId || sending) return;
     setSending(true);
     try {
+      const formData = new FormData();
+      if (trimmed) formData.append("body", trimmed);
+      if (attachedFile) formData.append("mediaFile", attachedFile);
+      if (replyTo) formData.append("replyToId", replyTo.id);
+
       const res = await axiosApiInstanceAuth.post(
         `/conversations/${recipientId}/messages`,
-        { body: trimmed }
+        formData
       );
-      const sentMsg: MessageDto         = res.data?.message      ?? res.data;
+      const sentMsg: MessageDto = res.data?.message ?? res.data;
       const updatedConv: ConversationDto | null = res.data?.conversation ?? null;
       setBody("");
-      if (sentMsg) {
-        dispatch(addMessage(sentMsg));
-      }
-      if (sentMsg && updatedConv) {
-        onMessageSent(sentMsg, updatedConv);
-      }
+      removeAttachment();
+      setReplyTo(null);
+      if (sentMsg) dispatch(addMessage(sentMsg));
+      if (sentMsg && updatedConv) onMessageSent(sentMsg, updatedConv);
     } catch {
       // silent
     } finally {
@@ -237,10 +450,16 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (editingMsg) handleEditSave(); else handleSend();
+    }
+    if (e.key === "Escape" && editingMsg) cancelEdit();
   };
 
   if (!conv && !newRecipient) return null;
+
+  const isEditing = editingMsg !== null;
 
   return (
     <div className="flex flex-col h-full">
@@ -321,20 +540,98 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
         )}
 
         {messages.map((msg) => (
-          <Bubble key={msg.id} msg={msg} isMine={msg.senderId === myId} />
+          <Bubble
+            key={msg.id}
+            msg={msg}
+            isMine={msg.senderId === myId}
+            onReply={setReplyTo}
+            onEdit={enterEditMode}
+            onDelete={handleDeleteMsg}
+            onFlag={handleFlagMsg}
+          />
         ))}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input area */}
       <div className="flex-shrink-0 px-4 pt-2 border-t border-white/[0.06]" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+
+        {/* Edit mode bar */}
+        {isEditing && (
+          <div className="mb-2 flex items-center gap-2 border-l-2 border-gold/60 pl-3 pr-2 py-1.5 bg-white/[0.03] rounded-r-lg">
+            <div className="flex-1 min-w-0">
+              <p className="text-gold text-[11px] font-semibold">Editing message</p>
+              <p className="text-white/35 text-[11px] truncate">{editingMsg?.body}</p>
+            </div>
+            <button type="button" onClick={cancelEdit} className="text-white/30 hover:text-white/60 transition-colors flex-shrink-0 w-5 h-5 flex items-center justify-center">
+              <FontAwesomeIcon icon={faTimes} className="text-xs" />
+            </button>
+          </div>
+        )}
+
+        {/* Reply bar */}
+        {!isEditing && replyTo && (
+          <div className="mb-2 flex items-center gap-2 border-l-2 border-blue-primary/60 pl-3 pr-2 py-1.5 bg-white/[0.03] rounded-r-lg">
+            <div className="flex-1 min-w-0">
+              <p className="text-blue-primary text-[11px] font-semibold">
+                Replying to {replyTo.replyPreviewSenderName ?? displayName}
+              </p>
+              <p className="text-white/35 text-[11px] truncate">
+                {replyTo.body || (replyTo.isVideo ? "[Video]" : "[Photo]")}
+              </p>
+            </div>
+            <button type="button" onClick={() => setReplyTo(null)} className="text-white/30 hover:text-white/60 transition-colors flex-shrink-0 w-5 h-5 flex items-center justify-center">
+              <FontAwesomeIcon icon={faTimes} className="text-xs" />
+            </button>
+          </div>
+        )}
+
+        {/* Attachment preview */}
+        {!isEditing && attachPreview && attachedFile && (
+          <div className="mb-2 relative inline-block">
+            {attachedFile.type.startsWith("video/") ? (
+              <video src={attachPreview} className="h-20 rounded-xl object-cover" />
+            ) : (
+              <img src={attachPreview} alt="" className="h-20 rounded-xl object-cover" />
+            )}
+            <button
+              type="button"
+              onClick={removeAttachment}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            >
+              <FontAwesomeIcon icon={faTimes} className="text-[9px]" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
+          {/* Attachment button (hidden in edit mode) */}
+          {!isEditing && (
+            <>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.05] transition-all duration-150 flex-shrink-0"
+              >
+                <FontAwesomeIcon icon={faPaperclip} className="text-sm" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </>
+          )}
+
           <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
+            ref={textareaRef}
+            value={isEditing ? editBody : body}
+            onChange={(e) => isEditing ? setEditBody(e.target.value) : setBody(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message..."
+            placeholder={isEditing ? "Edit message..." : "Message..."}
             rows={1}
             className="flex-1 bg-white/[0.05] border border-white/[0.09] rounded-2xl px-4 py-3 text-[15px] text-white placeholder-white/25 focus:outline-none focus:border-blue-primary/40 resize-none transition-colors duration-150 leading-relaxed"
             style={{ maxHeight: "120px", overflowY: "auto", scrollbarWidth: "none" }}
@@ -344,10 +641,11 @@ const ChatPanel = ({ conv, newRecipient, messages, myId, onBack, onDelete, onMes
               el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
             }}
           />
+
           <button
             type="button"
-            onClick={handleSend}
-            disabled={!body.trim() || sending}
+            onClick={isEditing ? handleEditSave : handleSend}
+            disabled={isEditing ? (!editBody.trim() || editSaving) : ((!body.trim() && !attachedFile) || sending)}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-primary hover:bg-blue-primary/80 disabled:opacity-35 disabled:cursor-not-allowed transition-all duration-150 flex-shrink-0"
           >
             <FontAwesomeIcon icon={faPaperPlane} className="text-white text-sm" />
@@ -366,21 +664,18 @@ const MessagesPage = () => {
   const location    = useLocation();
   const { conversationId } = useParams<{ conversationId?: string }>();
 
-  const myId         = useAppSelector((state) => state.auth.user?.id ?? "");
+  const myId          = useAppSelector((state) => state.auth.user?.id ?? "");
   const conversations = useAppSelector((state) => state.messages.conversations);
-  const allMessages  = useAppSelector((state) => state.messages.messages);
+  const allMessages   = useAppSelector((state) => state.messages.messages);
 
-  const [loading,     setLoading]     = useState(false);
-  const [activeConv,  setActiveConv]  = useState<ConversationDto | null>(null);
+  const [loading,      setLoading]      = useState(false);
+  const [activeConv,   setActiveConv]   = useState<ConversationDto | null>(null);
   const [newRecipient, setNewRecipient] = useState<NewRecipient | null>(null);
-  const [showChat,    setShowChat]    = useState(false);
+  const [showChat,     setShowChat]     = useState(false);
 
-  // Parse recipient from navigation state (coming from profile "Message" button)
   const locationState = location.state as { recipient?: NewRecipient } | null;
 
-  // Fetch inbox on mount
   useEffect(() => {
-    // Try to open from already-loaded Redux state immediately (avoids waiting for API)
     if (conversationId && conversations.length > 0) {
       const found = conversations.find((c) => String(c.id) === String(conversationId));
       if (found) { setActiveConv(found); setShowChat(true); }
@@ -393,7 +688,6 @@ const MessagesPage = () => {
         const convs: ConversationDto[] = res.data ?? [];
         dispatch(setConversations(convs));
 
-        // If opened via URL param and not yet resolved, find in fresh data
         if (conversationId) {
           const found = convs.find((c) => String(c.id) === String(conversationId));
           if (found) { setActiveConv(found); setShowChat(true); }
@@ -403,11 +697,9 @@ const MessagesPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Handle "Message" button from profile page
   useEffect(() => {
     if (!locationState?.recipient) return;
     const r = locationState.recipient;
-    // Check if a conversation with this person already exists
     const existing = conversations.find((c) => c.otherParticipantId === r.id);
     if (existing) {
       setActiveConv(existing);
@@ -417,11 +709,9 @@ const MessagesPage = () => {
       setNewRecipient(r);
     }
     setShowChat(true);
-    // Clear the state so refreshing doesn't re-trigger
     navigate("/messages", { replace: true, state: null });
   }, [locationState?.recipient?.id]);
 
-  // When WS pushes a new message to the active conversation, mark it read
   const activeMessages = activeConv ? (allMessages[activeConv.id] ?? []) : [];
 
   const handleSelectConv = (conv: ConversationDto) => {
@@ -438,7 +728,7 @@ const MessagesPage = () => {
     navigate("/messages", { replace: true });
   };
 
-  const handleDelete = async (convId: string) => {
+  const handleDeleteConv = async (convId: string) => {
     try {
       await axiosApiInstanceAuth.delete(`/conversations/${convId}`);
       dispatch(setConversations(conversations.filter((c) => c.id !== convId)));
@@ -449,7 +739,6 @@ const MessagesPage = () => {
   };
 
   const handleMessageSent = (_msg: MessageDto, updatedConv: ConversationDto) => {
-    // If this was a new conversation, update state with real conv data
     if (!activeConv) {
       setActiveConv(updatedConv);
       setNewRecipient(null);
@@ -461,11 +750,11 @@ const MessagesPage = () => {
   };
 
   const chatMessages = activeConv ? (allMessages[activeConv.id] ?? []) : [];
-  void activeMessages; // suppress unused warning — used via chatMessages
+  void activeMessages;
 
   return (
     <div className="w-full" style={{ background: "#080a0e" }}>
-      {/* Mobile: stack inbox / chat */}
+      {/* Mobile */}
       <div className="md:hidden w-full flex flex-col" style={{ minHeight: "100dvh" }}>
         <AnimatePresence mode="wait">
           {!showChat ? (
@@ -500,7 +789,7 @@ const MessagesPage = () => {
                 messages={chatMessages}
                 myId={myId}
                 onBack={handleBack}
-                onDelete={handleDelete}
+                onDelete={handleDeleteConv}
                 onMessageSent={handleMessageSent}
               />
             </motion.div>
@@ -508,9 +797,8 @@ const MessagesPage = () => {
         </AnimatePresence>
       </div>
 
-      {/* Desktop: side-by-side. 80px header + 76px bottom nav + 20px gap */}
+      {/* Desktop: side-by-side */}
       <div className="hidden md:flex w-full overflow-hidden" style={{ height: "calc(100vh - 176px)" }}>
-        {/* Inbox sidebar */}
         <div className="w-80 flex-shrink-0 border-r border-white/[0.06] flex flex-col h-full">
           <Inbox
             conversations={conversations}
@@ -520,7 +808,6 @@ const MessagesPage = () => {
           />
         </div>
 
-        {/* Chat area */}
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {activeConv || newRecipient ? (
             <ChatPanel
@@ -529,7 +816,7 @@ const MessagesPage = () => {
               messages={chatMessages}
               myId={myId}
               onBack={handleBack}
-              onDelete={handleDelete}
+              onDelete={handleDeleteConv}
               onMessageSent={handleMessageSent}
             />
           ) : (

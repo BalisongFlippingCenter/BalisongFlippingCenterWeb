@@ -68,11 +68,11 @@ const DetailRow = ({
       ? String(value).replace(/_/g, " ")
       : null;
   return (
-    <div className="flex flex-col gap-0.5 py-2.5">
+    <div className="flex flex-col gap-0.5 py-3 min-w-0">
       <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
         {label}
       </span>
-      <span className="text-white/85 text-[14px] font-medium">
+      <span className="text-white/85 text-[14px] font-medium break-words">
         {display ?? <span className="text-white/20 italic text-xs">—</span>}
       </span>
     </div>
@@ -404,7 +404,7 @@ const UsersCollectionKnifeDisplay = () => {
       <section className="lg:pl-[192px] w-full min-h-screen bg-[#080a0e] pb-36">
 
         {/* ── Back + Edit button ── */}
-        <div className="px-6 pt-6 pb-2 flex items-center justify-between">
+        <div className="px-6 pt-6 pb-2 flex items-center justify-between max-w-5xl mx-auto">
           <button
             type="button"
             onClick={() =>
@@ -425,7 +425,7 @@ const UsersCollectionKnifeDisplay = () => {
           </button>
         </div>
 
-        <div className="px-6 flex flex-col gap-6">
+        <div className="px-6 flex flex-col gap-6 max-w-5xl mx-auto">
 
           {/* ── Hero ── */}
           <div className="flex xsm:flex-col md:flex-row gap-6 xsm:items-stretch md:items-start">
@@ -647,7 +647,7 @@ const UsersCollectionKnifeDisplay = () => {
           <div className="grid xsm:grid-cols-1 sm:grid-cols-3 gap-4">
 
             {/* Hardware */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-4 flex flex-col">
               <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
                 <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(16,129,152,0.15)" }}>
                   <FontAwesomeIcon icon={faGear} className="text-blue-primary text-[10px]" />
@@ -662,7 +662,7 @@ const UsersCollectionKnifeDisplay = () => {
             </div>
 
             {/* Blade */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-4 flex flex-col">
               <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
                 <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(230,184,0,0.12)" }}>
                   <FontAwesomeIcon icon={faScissors} className="text-gold text-[10px]" />
@@ -677,7 +677,7 @@ const UsersCollectionKnifeDisplay = () => {
             </div>
 
             {/* Handle */}
-            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-2 flex flex-col">
+            <div className="bg-[#13161d] border border-white/8 rounded-2xl px-5 pt-4 pb-4 flex flex-col">
               <div className="flex items-center gap-2.5 pb-3 border-b border-white/8">
                 <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: "rgba(34,197,94,0.1)" }}>
                   <FontAwesomeIcon icon={faLayerGroup} className="text-green text-[10px]" />
@@ -757,7 +757,7 @@ const UsersCollectionKnifeDisplay = () => {
     <section className="lg:pl-[192px] w-full min-h-screen bg-[#080a0e] pb-36">
 
       {/* ── Edit controls bar ── */}
-      <div className="px-6 pt-6 pb-2 flex items-center justify-between gap-3">
+      <div className="px-6 pt-6 pb-2 flex items-center justify-between gap-3 max-w-5xl mx-auto">
         <button
           type="button"
           onClick={handleCancelEdit}
@@ -789,13 +789,13 @@ const UsersCollectionKnifeDisplay = () => {
       </div>
 
       {/* ── Editing label ── */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 max-w-5xl mx-auto">
         <span className="text-xs text-blue-primary font-medium uppercase tracking-widest">
           Editing — {k.displayName}
         </span>
       </div>
 
-      <div className="px-6 flex flex-col gap-5">
+      <div className="px-6 flex flex-col gap-5 max-w-5xl mx-auto">
 
         {/* ── Cover photo — click to navigate to cover config ── */}
         <div className="flex xsm:flex-col md:flex-row gap-4 items-start">

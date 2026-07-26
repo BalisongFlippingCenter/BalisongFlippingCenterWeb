@@ -40,7 +40,7 @@ Two Axios instances are defined in `src/api/axios.ts`:
 
 On app mount (`App.tsx`), the app attempts to restore a session by calling `/auth/refresh-token-login`. The refresh token is stored in an HTTP-only cookie; the access token lives only in Redux state (never persisted to localStorage).
 
-Google OAuth is wired up at the root via `<GoogleOAuthProvider>` in `src/main.tsx` (client ID is public/non-secret). The login page uses `@react-oauth/google` components to handle the OAuth flow.
+Google OAuth is fully implemented — wired at the root via `<GoogleOAuthProvider>` in `src/main.tsx` (client ID is public/non-secret). The login page uses `@react-oauth/google` to handle the OAuth flow, and the backend registers/logs in Google users and prompts for a display name on first sign-in.
 
 "Remember me" stores only a flag and email in `localStorage` — not the token itself.
 
@@ -109,7 +109,7 @@ Breakpoints are also custom: `xsm` (100px), `sm` (550px), `md` (950px), `lg` (13
 
 ### Project Description
 This is the front end repo for the project. The project directly communicates with the backend to complete the overall application. This is meant to be a website for balisong flipping enthusiest. The project is meant to consits with 3 main parts: 
-1- A social media platform where users create accounts, have their own unique display names, accounts, knife collections and more where they can create posts and interact with others posts. Down the road users will be able to follow specific users to primarily see their posts. Most all other social media features will apply on posts such as likes, flags, saves, bookmarking, and commenting. This application is not inteded to feature a direct messaging platform to other users outside of posting comments on posts. 
+1- A social media platform where users create accounts, have their own unique display names, accounts, knife collections and more where they can create posts and interact with others posts. Users can follow specific users, and the follow system is fully implemented (follow/unfollow, follower/following counts, `followingIds` on `UserDto`). Real-time 1-on-1 messaging via WebSocket is also fully implemented. Most all other social media features will apply on posts such as likes, flags, saves, bookmarking, and commenting. 
 2- An informational area to display info on specific knives and companies/makers. This is important for new enthusiest to be able to see active balisong makers, their knives and all the info associated.
 3- There will be a third section of the application known as the Tutorial Center where users will be able to view peoples posts on cool combos or tricks, or directly search tutorials on specific tricks.
 
@@ -138,12 +138,11 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 ## Future Implementation
 
 - **Registration verify redirect** — `UserRegistrationForm.tsx` line 94 hardcodes `navigate("/register/verify/tzenisekj@gmail.com")` after successful registration. This needs to be updated to use the `email` state variable: `navigate(\`/register/verify/${email.trim()}\`)` once the email verification flow is built out.
-- **Google sign-up flow** — `GoogleLoginComponent.tsx` currently only logs the OAuth token response. Needs to be wired up to the backend to register/login the user and then prompt for a display name on first Google sign-in.
 
 ### Settings Page TODOs
 
 - **Notifications settings** — Add a Notifications section to `ProfileConfigurePage.tsx` with toggles for email/push preferences (e.g. likes, comments, new followers). Depends on the notifications system being built on the backend first.
-- **Privacy settings** — Add a Privacy section with controls for profile visibility (Public / Followers Only) and who can comment on posts. Ties into the follow system and should be implemented once following is built out.
+- **Privacy settings** — Add a Privacy section with controls for profile visibility (Public / Followers Only) and who can comment on posts. Ties into the follow system (which is fully implemented).
 - **Connected Accounts** — Add a Connected Accounts section showing whether Google OAuth is linked, with the ability to link/unlink. Relevant since Google login already exists via `GoogleLoginComponent.tsx`.
 - **Terms of Service page** — `/terms` route currently leads to 404. A static `TermsOfServicePage.tsx` needs to be created and added to the router in `App.tsx`.
 - **Privacy Policy page** — `/privacy` route currently leads to 404. A static `PrivacyPolicyPage.tsx` needs to be created and added to the router in `App.tsx`.

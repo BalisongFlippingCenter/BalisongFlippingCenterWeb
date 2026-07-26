@@ -53,7 +53,9 @@ const messagesSlice = createSlice({
         senderName:     conv?.otherDisplayName    ?? "New message",
         senderCode:     conv?.otherIdentifierCode ?? "",
         senderImg:      conv?.otherProfileImg     ?? null,
-        preview:        msg.body.length > 80 ? msg.body.slice(0, 77) + "…" : msg.body,
+        preview:        msg.body
+          ? (msg.body.length > 80 ? msg.body.slice(0, 77) + "…" : msg.body)
+          : (msg.isVideo ? "[Video]" : "[Photo]"),
       });
     },
 
@@ -62,6 +64,15 @@ const messagesSlice = createSlice({
       const { conversationId } = action.payload;
       if (!state.messages[conversationId]) state.messages[conversationId] = [];
       state.messages[conversationId].push(action.payload);
+    },
+
+    // Called after edit or delete — replaces the message in-place
+    updateMessage(state, action: PayloadAction<MessageDto>) {
+      const msg = action.payload;
+      const convMsgs = state.messages[msg.conversationId];
+      if (!convMsgs) return;
+      const idx = convMsgs.findIndex((m) => m.id === msg.id);
+      if (idx >= 0) convMsgs[idx] = msg;
     },
 
     removeMessageToast(state, action: PayloadAction<string>) {
@@ -95,6 +106,7 @@ export const {
   setConversations,
   upsertConversation,
   addMessage,
+  updateMessage,
   receiveIncomingMessage,
   removeMessageToast,
   setMessages,
