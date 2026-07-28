@@ -5,9 +5,6 @@ on:
   push:
     branches:
       - test
-  pull_request:
-    branches:
-      - test
 
 # necessary for secrets to be read
 permissions:
@@ -55,3 +52,14 @@ jobs:
             docker ps -q --filter "publish=80" | xargs -r docker stop
             docker ps -aq --filter "publish=80" | xargs -r docker rm
             docker run -d --name web-server -p 80:80 --restart unless-stopped 343218221384.dkr.ecr.us-east-1.amazonaws.com/balisongflippingcenter/web/main:latest
+
+            for i in $(seq 1 10); do
+              if curl -fsS http://localhost/ > /dev/null; then
+                echo "Frontend healthy"
+                exit 0
+              fi
+              echo "Not healthy yet, retrying in 5s..."
+              sleep 5
+            done
+            echo "Frontend health check failed after deploy"
+            exit 1
