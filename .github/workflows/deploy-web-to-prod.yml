@@ -42,3 +42,16 @@ jobs:
 
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id "${{ vars.AWS_CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"
+
+      - name: Verify deployment
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS https://balisongflippingcenter.com/ > /dev/null; then
+              echo "Frontend healthy"
+              exit 0
+            fi
+            echo "Not healthy yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Frontend health check failed after deploy"
+          exit 1
