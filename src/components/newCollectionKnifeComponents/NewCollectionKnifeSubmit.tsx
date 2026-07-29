@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { axiosApiInstanceAuth } from "../../api/axios";
+import { uploadKnifeGalleryMediaDirect } from "../../api/directUpload";
 import { CollectionKnifeDTO } from "../../modals/CollectionKnife";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { Collection } from "../../modals/Collection";
@@ -30,6 +31,24 @@ const NewCollectionKnifeSubmit = ({ galleryFiles, newKnifeObj }: params) => {
   };
 
   const uploadNewKnife = async () => {
+    setIsLoading(true);
+
+    // Gallery files upload directly to S3 first; only their resulting URLs go in the form.
+    let galleryUrls: string[] = [];
+    try {
+      if (galleryFiles && galleryFiles.length > 0) {
+        const targets = await uploadKnifeGalleryMediaDirect(newKnifeObj?.displayName ?? "", galleryFiles);
+        galleryUrls = targets.map((t) => t.publicUrl);
+      }
+    } catch (err) {
+      console.log("gallery upload error", err);
+      setIsError(true);
+      setErrorMsg(String(err));
+      setIsLoading(false);
+      dispatch(addUIToast({ type: "error", message: "Failed to upload gallery files. Please try again." }));
+      return;
+    }
+
     const formData = new FormData();
 
     // Required fields
@@ -65,15 +84,12 @@ const NewCollectionKnifeSubmit = ({ galleryFiles, newKnifeObj }: params) => {
     formData.append("soundScore", JSON.stringify(newKnifeObj?.soundScore));
     formData.append("durabilityScore", JSON.stringify(newKnifeObj?.durabilityScore));
 
-    // Gallery images — only append if files are present
-    if (galleryFiles && galleryFiles.length > 0) {
-      galleryFiles.forEach((file) => formData.append("galleryFiles", file));
-    }
+    // Gallery images — only append if files uploaded successfully
+    galleryUrls.forEach((url) => formData.append("galleryUrls", url));
 
     console.log("form data: ", formData);
 
     // post to api
-    setIsLoading(true);
     await axiosApiInstanceAuth
       .request({
         url: "/collection/me/add-knife",
