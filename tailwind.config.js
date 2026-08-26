@@ -27,6 +27,9 @@ export default {
       'teal': '#0d9488',
       'shadow-teal': '#021a19',
       'shadow-teal-mid': '#042f2e',
+      'latch': '#8b5cf6',
+      'shadow-latch': '#160f2e',
+      'shadow-latch-mid': '#241a4d',
     },
     screens: {
       'xsm': '100px',
