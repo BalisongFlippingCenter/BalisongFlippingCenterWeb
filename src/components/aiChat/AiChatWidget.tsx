@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faPaperPlane, faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -13,11 +13,55 @@ interface ChatMessage {
   content: string;
 }
 
+const LINK_PATTERN = /(?<=^|\s|\()(https?:\/\/[^\s]+|\/[\w-]+(?:\/[\w-]+)*\/?)/g;
+const TRAILING_PUNCTUATION = /[.,!?;:)\]]+$/;
+
+const renderMessageContent = (content: string) => {
+  const sanitized = content.replace(/\*\*/g, "").replace(/`/g, "");
+  const segments = sanitized.split(LINK_PATTERN);
+  return segments.map((segment, i) => {
+    if (i % 2 === 0) return segment;
+
+    const trailingMatch = segment.match(TRAILING_PUNCTUATION);
+    const trailing = trailingMatch ? trailingMatch[0] : "";
+    const link = trailing ? segment.slice(0, -trailing.length) : segment;
+
+    return (
+      <Fragment key={i}>
+        {link.startsWith("http") ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-latch underline hover:text-latch/80"
+          >
+            {link}
+          </a>
+        ) : (
+          <Link to={link} className="text-latch underline hover:text-latch/80">
+            {link}
+          </Link>
+        )}
+        {trailing}
+      </Fragment>
+    );
+  });
+};
+
+const WORD_REVEAL_INTERVAL_MS = 40;
+
+const nextWordBoundary = (content: string, from: number): number => {
+  const nextSpace = content.indexOf(" ", from);
+  return nextSpace === -1 ? content.length : nextSpace + 1;
+};
+
 const AiChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [typingIndex, setTypingIndex] = useState<number | null>(null);
+  const [revealLength, setRevealLength] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(getAiChatSessionId());
   const location = useLocation();
@@ -25,13 +69,29 @@ const AiChatWidget = () => {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [messages, revealLength]);
+
+  useEffect(() => {
+    if (typingIndex === null) return;
+    const target = messages[typingIndex]?.content.length ?? 0;
+    if (revealLength >= target) {
+      if (!isStreaming) setTypingIndex(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRevealLength(nextWordBoundary(messages[typingIndex].content, revealLength));
+    }, WORD_REVEAL_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [typingIndex, revealLength, messages, isStreaming]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isStreaming) return;
 
+    const assistantIndex = messages.length + 1;
     setMessages((prev) => [...prev, { role: "user", content: trimmed }, { role: "assistant", content: "" }]);
+    setTypingIndex(assistantIndex);
+    setRevealLength(0);
     setInput("");
     setIsStreaming(true);
 
@@ -77,10 +137,12 @@ const AiChatWidget = () => {
     if (isStreaming) return;
     sessionIdRef.current = resetAiChatSessionId();
     setMessages([]);
+    setTypingIndex(null);
+    setRevealLength(0);
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-[300]">
+    <div className="fixed bottom-[75px] right-8 z-[300]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -130,7 +192,7 @@ const AiChatWidget = () => {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            <div ref={scrollRef} className="chat-scroll flex-1 overflow-y-auto overscroll-contain px-5 py-4 flex flex-col gap-4">
               {messages.length === 0 && (
                 <div className="text-sm text-white/40 leading-relaxed">
                   <p className="mb-3">Hey, I'm Latch. Here's how I can help:</p>
@@ -145,23 +207,30 @@ const AiChatWidget = () => {
                       <span className="text-latch/80">•</span> Search posts, users, and collections
                     </li>
                     <li>
-                      <span className="text-latch/80">•</span> Report or flag content (once you're logged in)
+                      <span className="text-latch/80">•</span> Report bug or flag content (once you're logged in)
                     </li>
                   </ul>
                 </div>
               )}
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`max-w-[85%] px-4 py-2.5 rounded-xl text-base leading-relaxed whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "self-end bg-white/10 text-white"
-                      : "self-start bg-latch/10 text-white/80"
-                  }`}
-                >
-                  {msg.content || (msg.role === "assistant" && isStreaming ? "…" : "")}
-                </div>
-              ))}
+              {messages.map((msg, i) => {
+                const displayContent = i === typingIndex ? msg.content.slice(0, revealLength) : msg.content;
+                return (
+                  <div
+                    key={i}
+                    className={`max-w-[85%] px-4 py-2.5 rounded-xl text-base leading-relaxed whitespace-pre-wrap ${
+                      msg.role === "user"
+                        ? "self-end bg-white/10 text-white"
+                        : "self-start bg-latch/10 text-white/80"
+                    }`}
+                  >
+                    {displayContent
+                      ? renderMessageContent(displayContent)
+                      : msg.role === "assistant" && isStreaming
+                        ? "…"
+                        : ""}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Input */}
