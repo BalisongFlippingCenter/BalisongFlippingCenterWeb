@@ -93,6 +93,12 @@ const PublicCollectionPageComponent = ({ displayName, identifierCode }: Props) =
     ? (knives.find((k) => String(k.id) === String(collection.featuredKnifeId)) ?? null)
     : null;
 
+  const sortedKnives = [...knives].sort((a, b) => {
+    if (String(a.id) === String(collection.featuredKnifeId)) return -1;
+    if (String(b.id) === String(collection.featuredKnifeId)) return 1;
+    return Number(b.id) - Number(a.id);
+  });
+
   // Stats
   const totalValue = knives.reduce((sum, k) => {
     const parsed = parseFloat(String(k.msrp ?? "").replace(/[^0-9.]/g, ""));
@@ -213,7 +219,7 @@ const PublicCollectionPageComponent = ({ displayName, identifierCode }: Props) =
           {/* Grid — no "Add Knife" card */}
           {knives.length > 0 ? (
             <div className="grid xsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {knives.map((knife, i) => (
+              {sortedKnives.map((knife, i) => (
                 <OwnedKnifeCard
                   key={i}
                   knife={knife}

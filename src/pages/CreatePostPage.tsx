@@ -25,6 +25,7 @@ import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { addUIToast } from "../redux/uiToast/uiToastSlice";
 import { setNewUser } from "../redux/auth/authSlice";
 import { axiosApiInstanceAuth } from "../api/axios";
+import { uploadPostMediaDirect } from "../api/directUpload";
 import { CollectionKnife } from "../modals/CollectionKnife";
 import { Profile } from "../modals/User";
 
@@ -766,67 +767,75 @@ const CreatePostPage = () => {
     setIsLoading(true);
     setError("");
 
-    const fd = new FormData();
+    try {
+      // Upload media directly to S3 first, then send only the resulting URLs.
+      const filesToUpload = layout === "trade"
+        ? (tradeSoughtFile ? [tradeSoughtFile] : [])
+        : selectedFiles;
+      const targets = await uploadPostMediaDirect(POST_TYPE_MAP[layout], filesToUpload);
 
-    // Common fields
-    fd.append("postType", POST_TYPE_MAP[layout]);
-    fd.append("caption", caption.trim());
-    if (!isPerFileMetadata && description.trim()) fd.append("description", description.trim());
-
-    if (layout === "generic") {
-      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
-      tags.forEach((t) => fd.append("tags", GENERIC_TAG_MAP[t] ?? t));
-      fd.append("fileMetadata", JSON.stringify(
-        fileMetadata.map(m => ({ description: m.description.trim() || null, referenceKnifeId: m.knifeId || null }))
-      ));
-    }
-
-    if (layout === "buysell") {
-      fd.append("mode", buySellTag === "Buying" ? "BUYING" : "SELLING");
-      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
-      if (buySellTag === "Selling") {
-        if (sellingKnifeId) fd.append("offeringKnifeId", sellingKnifeId);
-        if (price.trim()) {
-          const priceUsd = currency === "EUR"
-            ? (parseFloat(price) / 0.92).toFixed(2)
-            : parseFloat(price).toFixed(2);
-          fd.append("price", priceUsd);
+      const media = targets.map((t, i) => {
+        if (isPerFileMetadata) {
+          const meta = fileMetadata[i];
+          return {
+            url: t.publicUrl,
+            description: meta?.description.trim() || null,
+            referenceKnifeId: meta?.knifeId || null,
+          };
         }
-        fd.append("fileMetadata", JSON.stringify(
-          fileMetadata.map(m => ({ description: m.description.trim() || null, referenceKnifeId: m.knifeId || null }))
-        ));
+        return { url: t.publicUrl, description: null, referenceKnifeId: null };
+      });
+
+      const payload: Record<string, unknown> = {
+        postType: POST_TYPE_MAP[layout],
+        caption: caption.trim(),
+        media,
+      };
+
+      if (!isPerFileMetadata && description.trim()) payload.description = description.trim();
+
+      if (layout === "generic") {
+        payload.tags = tags.map((t) => GENERIC_TAG_MAP[t] ?? t);
       }
-    }
 
-    if (layout === "trade") {
-      if (tradeOfferingKnifeId) fd.append("offeringKnifeId", tradeOfferingKnifeId);
-      fd.append("lookingForText", lookingFor.trim());
-      if (tradeSoughtFile) fd.append("mediaFiles", tradeSoughtFile);
-    }
+      if (layout === "buysell") {
+        payload.mode = buySellTag === "Buying" ? "BUYING" : "SELLING";
+        if (buySellTag === "Selling") {
+          if (sellingKnifeId) payload.offeringKnifeId = sellingKnifeId;
+          if (price.trim()) {
+            const priceUsd = currency === "EUR"
+              ? (parseFloat(price) / 0.92).toFixed(2)
+              : parseFloat(price).toFixed(2);
+            payload.price = priceUsd;
+          }
+        }
+      }
 
-    if (layout === "tutorial" || layout === "combo") {
-      selectedFiles.forEach((f) => fd.append("mediaFiles", f));
-      const difficultyTag = tags.find((t) => getTrickTagGroup(t) === "Difficulty");
-      if (difficultyTag) fd.append("difficultyTag", DIFFICULTY_TAG_MAP[difficultyTag] ?? difficultyTag.toUpperCase());
-      tags
-        .filter((t) => getTrickTagGroup(t) === "Technique")
-        .forEach((t) => fd.append("techniqueTags", TECHNIQUE_TAG_MAP[t] ?? t.toUpperCase()));
-      if (taggedKnifeId) fd.append("referenceKnifeId", taggedKnifeId);
-    }
+      if (layout === "trade") {
+        if (tradeOfferingKnifeId) payload.offeringKnifeId = tradeOfferingKnifeId;
+        payload.lookingForText = lookingFor.trim();
+      }
 
-    await axiosApiInstanceAuth
-      .request({ url: "/posts/create", method: "post", data: fd })
-      .then(() => {
-        dispatch(addUIToast({ type: "success", message: "Post published!" }));
-        if (user) dispatch(setNewUser({ ...user, postCount: (user.postCount ?? 0) + 1 }));
-        navigate(-1);
-      })
-      .catch((err) => {
-        console.log(err);
-        setError("Something went wrong. Please try again.");
-        dispatch(addUIToast({ type: "error", message: "Failed to publish post. Please try again." }));
-      })
-      .finally(() => setIsLoading(false));
+      if (layout === "tutorial" || layout === "combo") {
+        const difficultyTag = tags.find((t) => getTrickTagGroup(t) === "Difficulty");
+        if (difficultyTag) payload.difficultyTag = DIFFICULTY_TAG_MAP[difficultyTag] ?? difficultyTag.toUpperCase();
+        payload.techniqueTags = tags
+          .filter((t) => getTrickTagGroup(t) === "Technique")
+          .map((t) => TECHNIQUE_TAG_MAP[t] ?? t.toUpperCase());
+        if (taggedKnifeId) payload.referenceKnifeId = taggedKnifeId;
+      }
+
+      await axiosApiInstanceAuth.post("/posts/create", payload);
+      dispatch(addUIToast({ type: "success", message: "Post published!" }));
+      if (user) dispatch(setNewUser({ ...user, postCount: (user.postCount ?? 0) + 1 }));
+      navigate(-1);
+    } catch (err) {
+      console.log(err);
+      setError("Something went wrong. Please try again.");
+      dispatch(addUIToast({ type: "error", message: "Failed to publish post. Please try again." }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const theme = LAYOUT_THEME[layout];

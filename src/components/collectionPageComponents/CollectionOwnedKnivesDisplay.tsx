@@ -19,6 +19,12 @@ const CollectionOwnedKnivesDisplay = () => {
     ? (ownedKnives?.find((k) => String(k.id) === String(featuredKnifeId)) ?? null)
     : null;
 
+  const sortedKnives = [...(ownedKnives ?? [])].sort((a, b) => {
+    if (String(a.id) === String(featuredKnifeId)) return -1;
+    if (String(b.id) === String(featuredKnifeId)) return 1;
+    return Number(b.id) - Number(a.id);
+  });
+
   return (
     <div className="flex-1 min-w-0 flex flex-col px-6 pt-5 xsm:pb-4 md:pb-8">
 
@@ -98,7 +104,7 @@ const CollectionOwnedKnivesDisplay = () => {
           </span>
         </button>
 
-        {ownedKnives?.map((knife, i) => (
+        {sortedKnives.map((knife, i) => (
           <OwnedKnifeCard knife={knife} isFeatured={String(knife.id) === String(featuredKnifeId)} key={i} />
         ))}
 
