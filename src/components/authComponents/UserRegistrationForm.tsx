@@ -2,9 +2,11 @@
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AppDispatch } from "../../redux/store";
-import { registerNewUser } from "../../redux/auth/authActions";
-import { clearError, setError } from "../../redux/auth/authSlice";
+import { registerNewUser, verifyAdminLoginCode } from "../../redux/auth/authActions";
+import { clearError, setError, cancelAdminVerification } from "../../redux/auth/authSlice";
 import { useAppSelector } from "../../redux/hooks";
+import { setCollection } from "../../redux/collection/collectionSlice";
+import { mapCollection } from "../../redux/collection/collectionActions";
 import GoogleLoginComponent from "./login/GoogleLoginComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUsers, faGlobe, faEarthAmericas, faTv, faEye, faEyeSlash, faCheck } from "@fortawesome/free-solid-svg-icons";
@@ -31,6 +33,10 @@ const UserRegistrationForm = () => {
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [displayNameFocused, setDisplayNameFocused] = useState(false);
 
+  const [adminCode, setAdminCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+
   const hasMinLength = password.length >= 7;
   const hasCapital = /[A-Z]/.test(password);
   const hasSpecial = /[^a-zA-Z0-9]/.test(password);
@@ -40,6 +46,7 @@ const UserRegistrationForm = () => {
   const isLoading = useAppSelector((state) => state.auth.loading);
   const isError = useAppSelector((state) => state.auth.error);
   const errMsg = useAppSelector((state) => state.auth.errorMsg);
+  const pendingAdminEmail = useAppSelector((state) => state.auth.pendingAdminVerificationEmail);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -103,10 +110,37 @@ const UserRegistrationForm = () => {
       })
     )
       .unwrap()
-      .then(() => {
+      .then((res) => {
+        // reserved admin email pauses here for a code — the form below switches to code entry
+        if (res.requiresAdminVerification) return;
         navigate("/login");
       })
       .catch(() => {});
+  };
+
+  const handleVerifyCode = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!pendingAdminEmail || adminCode.trim() === "") return;
+
+    setIsVerifyingCode(true);
+    dispatch(verifyAdminLoginCode({ email: pendingAdminEmail, code: adminCode.trim() }))
+      .unwrap()
+      .then((res) => {
+        dispatch(setCollection(mapCollection(res.collection)));
+        navigate("/community");
+      })
+      .catch((err: string) => {
+        setCodeError(err || "Invalid or expired code.");
+      })
+      .finally(() => {
+        setIsVerifyingCode(false);
+      });
+  };
+
+  const handleCancelVerification = () => {
+    dispatch(cancelAdminVerification());
+    setAdminCode("");
+    setCodeError("");
   };
 
   return (
@@ -174,8 +208,66 @@ const UserRegistrationForm = () => {
         {/* Right — form panel */}
         <form
           className="md:w-7/12 xsm:w-full flex flex-col gap-4 px-10 py-14 bg-dark-neutral-offset md:rounded-none xsm:rounded-xl"
-          onSubmit={handleSubmit}
+          onSubmit={pendingAdminEmail ? handleVerifyCode : handleSubmit}
         >
+        {pendingAdminEmail ? (
+          <>
+            <h2 className="text-white font-extrabold text-4xl mb-1">Verify it's you</h2>
+            <p className="text-white/50 text-sm -mt-2">
+              We emailed a code to <span className="text-white/80">{pendingAdminEmail}</span>. Enter it below to finish creating your account.
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-white/60 text-sm font-medium">Verification code</label>
+                <p className={`text-red text-xs transition-opacity duration-200 ${codeError ? "opacity-100" : "opacity-0"}`}>
+                  {codeError || "​"}
+                </p>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                placeholder="123456"
+                onChange={(e) => { setAdminCode(e.target.value); setCodeError(""); }}
+                value={adminCode}
+                className="w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm px-4 py-3 outline-none transition-colors duration-200 placeholder:text-white/25"
+              />
+            </div>
+
+            {isVerifyingCode ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-2.5 rounded-lg bg-blue-primary/50 text-white/50 font-semibold text-sm cursor-not-allowed mt-1"
+              >
+                Verifying...
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={adminCode.trim() === ""}
+                className={`w-full py-2.5 rounded-lg font-semibold text-sm mt-1 transition-[filter] duration-200 ${
+                  adminCode.trim() === ""
+                    ? "bg-blue-primary/40 text-white/40 cursor-not-allowed"
+                    : "bg-blue-primary text-white hover:brightness-110"
+                }`}
+              >
+                Verify
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleCancelVerification}
+              className="text-center text-sm text-white/50 hover:text-blue-primary transition-colors duration-200 mt-1"
+            >
+              Back
+            </button>
+          </>
+        ) : (
+          <>
           <h2 className="text-white font-extrabold text-4xl mb-1">Create an account</h2>
 
           {/* Google Sign Up */}
@@ -362,6 +454,8 @@ const UserRegistrationForm = () => {
               Create Account
             </button>
           )}
+          </>
+        )}
         </form>
 
       </div>
