@@ -6,6 +6,7 @@ import {
   loginWithRefreshToken,
   logout,
   registerNewUser,
+  verifyAdminLoginCode,
 } from "./authActions";
 
 interface AuthState {
@@ -15,6 +16,7 @@ interface AuthState {
   error: boolean;
   errorMsg: string;
   loading: boolean;
+  pendingAdminVerificationEmail: string | null;
 }
 
 const initialState: AuthState = {
@@ -24,6 +26,7 @@ const initialState: AuthState = {
   error: false,
   errorMsg: "",
   loading: false,
+  pendingAdminVerificationEmail: null,
 };
 
 const authSlice = createSlice({
@@ -78,6 +81,9 @@ const authSlice = createSlice({
       const idx = ids.indexOf(action.payload);
       state.user.followingIds = idx === -1 ? [...ids, action.payload] : ids.filter((id) => id !== action.payload);
     },
+    cancelAdminVerification: (state) => {
+      state.pendingAdminVerificationEmail = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -85,10 +91,15 @@ const authSlice = createSlice({
         // handle registration is loading
         state.loading = true;
       })
-      .addCase(registerNewUser.fulfilled, (state) => {
-        // handle successful registration
-        state.loading = false;
-      })
+      .addCase(
+        registerNewUser.fulfilled,
+        (state, action: PayloadAction<{ requiresAdminVerification?: boolean; email?: string }>) => {
+          state.loading = false;
+          if (action.payload?.requiresAdminVerification) {
+            state.pendingAdminVerificationEmail = action.payload.email ?? null;
+          }
+        }
+      )
       .addCase(
         registerNewUser.rejected,
         (state, action: PayloadAction<any>) => {
@@ -107,18 +118,44 @@ const authSlice = createSlice({
         (
           state,
           action: PayloadAction<{
-            accessToken: string;
-            account: Profile | null;
+            requiresAdminVerification?: boolean;
+            email?: string;
+            accessToken?: string;
+            account?: Profile | null;
           }>
         ) => {
-          // handle successful login
-          state.accessToken = action.payload.accessToken;
-          state.user = action.payload.account;
           state.loading = false;
+
+          // admin accounts pause here for a code — no session established yet
+          if (action.payload.requiresAdminVerification) {
+            state.pendingAdminVerificationEmail = action.payload.email ?? null;
+            return;
+          }
+
+          state.accessToken = action.payload.accessToken ?? null;
+          state.user = action.payload.account ?? null;
+          state.pendingAdminVerificationEmail = null;
         }
       )
       .addCase(login.rejected, (state, action: PayloadAction<any>) => {
         // handle error in logging in user
+        state.loading = false;
+        state.error = true;
+        state.errorMsg = action.payload;
+      })
+      .addCase(verifyAdminLoginCode.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        verifyAdminLoginCode.fulfilled,
+        (state, action: PayloadAction<{ accessToken: string; account: Profile | null }>) => {
+          state.accessToken = action.payload.accessToken;
+          state.user = action.payload.account;
+          state.pendingAdminVerificationEmail = null;
+          state.loading = false;
+        }
+      )
+      .addCase(verifyAdminLoginCode.rejected, (state, action: PayloadAction<any>) => {
         state.loading = false;
         state.error = true;
         state.errorMsg = action.payload;
@@ -197,6 +234,7 @@ export const {
   toggleLikedPost,
   toggleLikedComment,
   toggleFollowing,
+  cancelAdminVerification,
 } = authSlice.actions;
 
 export default authSlice.reducer;
