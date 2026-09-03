@@ -79,6 +79,17 @@ Note the directory is named `modals` (not `models`) — this is intentional in t
 
 The backend stores images in **AWS S3** and returns full URLs (e.g. `https://bucket.s3.amazonaws.com/...`). The `Image` component (`src/components/Image.tsx`) detects this — if `imageId` starts with `http://` or `https://`, it renders a plain `<img src>` directly. Otherwise it falls back to the old `/file/${imageId}` arraybuffer fetch path (legacy). `ProfileImageDisplay` (`src/components/ProfileImageDisplay.tsx`) reads `user.profileImg` from Redux and renders the S3 URL directly.
 
+### Media upload flow (direct-to-S3)
+
+Post media and new-knife gallery media upload **directly from the browser to S3** — not through the backend. `src/api/directUpload.ts` has the two helpers:
+
+- `uploadPostMediaDirect(postType, files)` — calls `POST /posts/upload-url`, then `PUT`s each file straight to S3 with a plain `axios` (not `axiosApiInstanceAuth` — no auth header, no cookies, just `Content-Type: file.type` matching what was requested). Used in `CreatePostPage.tsx`.
+- `uploadKnifeGalleryMediaDirect(displayName, files)` — same pattern via `POST /collection/me/knife-gallery-upload-url`. Used in `NewCollectionKnifeSubmit.tsx`.
+
+Both return `{key, uploadUrl, publicUrl, isVideo}[]`; only `publicUrl` is sent onward. `/posts/create` is now a plain JSON `POST` (`{postType, caption, media: [{url, description, referenceKnifeId}], ...}`), not `multipart/form-data` — raw files are never sent to the backend for posts. `/collection/me/add-knife` is still `multipart/form-data` (it carries `coverPhoto` + all the text fields), but `galleryFiles` became `galleryUrls: string[]`.
+
+Single-image uploads (profile img, banner img, collection banner, knife cover photo) are untouched — still small multipart uploads through the backend.
+
 ### Component Conventions
 
 **`EditAndDisplay` pattern** — components in `src/components/collectionKnifePageComponents/` (e.g. `BladeFinishEditAndDisplay.tsx`) each manage a single knife field. They render as read-only display by default and switch to an edit input on toggle. The owner's view gets `UsersCollectionKnifeDisplay`; others get `CollectionKnifeDisplay`.

@@ -27,18 +27,28 @@ interface LoginPayload {
   password: string;
 }
 
+interface VerifyAdminLoginPayload {
+  email: string;
+  code: string;
+}
+
 export const registerNewUser = createAsyncThunk(
   "auth/register",
   async (payload: RegistrationPayload, thunkAPI) => {
-    console.log(payload);
     try {
-      await axiosApiInstance.request({
+      const response = await axiosApiInstance.request({
         url: "/auth/register",
         method: "post",
         data: payload,
       });
+
+      // the reserved admin email must verify by code before the account is usable
+      if (response.data?.requiresAdminVerification) {
+        return { requiresAdminVerification: true, email: response.data.email };
+      }
+
+      return {};
     } catch (error: any) {
-      console.log(error.response.data);
       return thunkAPI.rejectWithValue(error.response.data);
     }
   }
@@ -55,11 +65,38 @@ export const login = createAsyncThunk(
         data: payload,
       });
 
+      // admin accounts get a challenge response instead of tokens — no account/session data yet
+      if (response.data.requiresAdminVerification) {
+        return { requiresAdminVerification: true, email: response.data.email };
+      }
+
       if (response.data.refreshToken) {
         localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
 return { ...response.data, account: mapAccount(response.data.account) };
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const verifyAdminLoginCode = createAsyncThunk(
+  "auth/verifyAdminLoginCode",
+  async (payload: VerifyAdminLoginPayload, thunkAPI) => {
+    try {
+      const response = await axiosApiInstance.request({
+        url: "/auth/verify-admin-login",
+        method: "post",
+        withCredentials: true,
+        data: payload,
+      });
+
+      if (response.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+      }
+
+      return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
     }

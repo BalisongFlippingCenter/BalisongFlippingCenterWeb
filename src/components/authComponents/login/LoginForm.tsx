@@ -2,8 +2,8 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AppDispatch, RootState } from "../../../redux/store";
-import { login } from "../../../redux/auth/authActions";
-import { setToRememberLoginInfo, toggleOffRememberLoginInfo } from "../../../redux/auth/authSlice";
+import { login, verifyAdminLoginCode } from "../../../redux/auth/authActions";
+import { setToRememberLoginInfo, toggleOffRememberLoginInfo, cancelAdminVerification } from "../../../redux/auth/authSlice";
 import { setCollection } from "../../../redux/collection/collectionSlice";
 import { mapCollection } from "../../../redux/collection/collectionActions";
 import { addUIToast } from "../../../redux/uiToast/uiToastSlice";
@@ -24,10 +24,22 @@ const LoginForm = () => {
   const [emailError, setEmailError] = useState("");
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
+  const [adminCode, setAdminCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
   const rememberInfo = useSelector((state: RootState) => state.auth.rememberLoginCredentials);
+  const pendingAdminEmail = useSelector((state: RootState) => state.auth.pendingAdminVerificationEmail);
+
+  const handleLoginSuccess = (res: any) => {
+    if (rememberInfo) localStorage.setItem("saved-user-email", email);
+    dispatch(setCollection(mapCollection(res.collection)));
+    dispatch(addUIToast({ type: "success", message: "Welcome back!" }));
+    navigate("/community");
+  };
 
   const clearErrors = () => {
     setTopError("");
@@ -55,10 +67,9 @@ const LoginForm = () => {
     dispatch(login({ email, password }))
       .unwrap()
       .then((res) => {
-        if (rememberInfo) localStorage.setItem("saved-user-email", email);
-        dispatch(setCollection(mapCollection(res.collection)));
-        dispatch(addUIToast({ type: "success", message: "Welcome back!" }));
-        navigate("/community");
+        // admin accounts pause here — a code was emailed, the form below switches to code entry
+        if (res.requiresAdminVerification) return;
+        handleLoginSuccess(res);
       })
       .catch((err: string) => {
         const msg = (err ?? "").toLowerCase();
@@ -76,6 +87,29 @@ const LoginForm = () => {
       });
   };
 
+  const handleVerifyCode = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    if (!pendingAdminEmail || adminCode.trim() === "") return;
+
+    setIsVerifyingCode(true);
+    dispatch(verifyAdminLoginCode({ email: pendingAdminEmail, code: adminCode.trim() }))
+      .unwrap()
+      .then((res) => handleLoginSuccess(res))
+      .catch((err: string) => {
+        setCodeError(err || "Invalid or expired code.");
+        dispatch(addUIToast({ type: "error", message: "Verification failed." }));
+      })
+      .finally(() => {
+        setIsVerifyingCode(false);
+      });
+  };
+
+  const handleBackToLogin = () => {
+    dispatch(cancelAdminVerification());
+    setAdminCode("");
+    setCodeError("");
+  };
+
   useEffect(() => {
     if (rememberInfo) {
       const fetchedEmail = localStorage.getItem("saved-user-email");
@@ -89,6 +123,73 @@ const LoginForm = () => {
         className="w-full max-w-md rounded-xl border border-white/10 bg-dark-neutral-offset px-10 py-14 flex flex-col gap-4"
         style={{ boxShadow: '0 0 120px rgba(255,255,255,0.18), 0 0 40px rgba(255,255,255,0.08), 0 8px 48px rgba(0,0,0,0.8)' }}
       >
+        {pendingAdminEmail ? (
+          <>
+            {/* Header */}
+            <div className="mb-1">
+              <p className="text-white/30 text-sm font-medium mb-1">
+                <span className="text-blue-primary">Balisong</span> Flipping Center
+              </p>
+              <h2 className="text-white font-extrabold text-4xl">Verify it's you</h2>
+              <p className="text-white/50 text-sm mt-2">
+                We emailed a code to <span className="text-white/80">{pendingAdminEmail}</span>. Enter it below to finish signing in.
+              </p>
+            </div>
+
+            {/* Code */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-white/60 text-sm font-medium">Verification code</label>
+                <p className={`text-red text-xs transition-opacity duration-200 ${codeError ? "opacity-100" : "opacity-0"}`}>
+                  {codeError || "​"}
+                </p>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                placeholder="123456"
+                onChange={(e) => { setAdminCode(e.target.value); setCodeError(""); }}
+                value={adminCode}
+                className="w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm px-4 py-3 outline-none transition-colors duration-200 placeholder:text-white/25"
+              />
+            </div>
+
+            {/* Verify / Back */}
+            {isVerifyingCode ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-2.5 rounded-lg bg-blue-primary/50 text-white/50 font-semibold text-sm cursor-not-allowed mt-1"
+              >
+                Verifying...
+              </button>
+            ) : (
+              <button
+                type="submit"
+                onClick={handleVerifyCode}
+                disabled={adminCode.trim() === ""}
+                className={`w-full py-2.5 rounded-lg font-semibold text-sm mt-1 transition-[filter] duration-200 ${
+                  adminCode.trim() === ""
+                    ? "bg-blue-primary/40 text-white/40 cursor-not-allowed"
+                    : "bg-blue-primary text-white hover:brightness-110"
+                }`}
+              >
+                Verify
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="text-center text-sm text-white/50 hover:text-blue-primary transition-colors duration-200 mt-1"
+            >
+              Back to login
+            </button>
+          </>
+        ) : (
+          <>
         {/* Header */}
         <div className="mb-1">
           <p className="text-white/30 text-sm font-medium mb-1">
@@ -216,6 +317,8 @@ const LoginForm = () => {
             Create one
           </button>
         </p>
+          </>
+        )}
 
       </div>
     </section>
