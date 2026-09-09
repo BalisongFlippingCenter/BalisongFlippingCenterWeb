@@ -1,0 +1,57 @@
+name: Deploy Frontend to Testing
+
+# runs when code is merged to test or directly pushed to test
+on:
+  push:
+    branches:
+      - test
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:test
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TESTING_FRONTEND_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync build output to S3
+        run: aws s3 sync dist/ "s3://${{ vars.AWS_TESTING_FRONTEND_S3_BUCKET }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "${{ vars.AWS_TESTING_CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"
+
+      - name: Verify deployment
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS https://test.balisongflippingcenter.com/ > /dev/null; then
+              echo "Frontend healthy"
+              exit 0
+            fi
+            echo "Not healthy yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Frontend health check failed after deploy"
+          exit 1
