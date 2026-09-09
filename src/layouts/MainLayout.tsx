@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, useLocation, Link } from "react-router-dom";
+import { Outlet, useLocation, Link, Navigate } from "react-router-dom";
 import Header from "../components/header/Header";
 import HeaderNavbarBottom from "../components/navigation/HeaderNavbarBottom";
 import { useAppSelector } from "../redux/hooks";
@@ -79,6 +79,12 @@ const MainLayout = () => {
   const showFooter  = !location.pathname.startsWith("/messages");
   const user        = useAppSelector((state) => state.auth.user);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  // Admin accounts are purely operational — never shown the normal site UI,
+  // no matter which of its routes (public or protected) they land on.
+  if (user && accessToken && user.role === "ADMIN") {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <>
