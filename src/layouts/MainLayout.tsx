@@ -5,6 +5,7 @@ import HeaderNavbarBottom from "../components/navigation/HeaderNavbarBottom";
 import { useAppSelector } from "../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import AiChatWidget from "../components/aiChat/AiChatWidget";
 
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 
@@ -93,6 +94,7 @@ const MainLayout = () => {
       <main>
         <Outlet />
       </main>
+      <AiChatWidget />
       {showFooter && <SiteFooter isLoggedIn={!!(user && accessToken)} />}
       {user && accessToken && (
         <aside

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGaugeHigh, faFlag, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { logout } from "../redux/auth/authActions";
@@ -31,12 +31,12 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-dark-neutral flex">
       <aside className="w-60 flex-shrink-0 border-r border-white/[0.08] bg-dark-neutral-offset flex flex-col">
-        <div className="px-5 py-5 border-b border-white/[0.08]">
-          <p className="text-white/30 text-xs font-medium">
+        <Link to="/admin" className="block px-5 py-6 border-b border-white/[0.08] hover:bg-white/[0.03] transition-colors duration-150">
+          <p className="text-white/30 text-sm font-medium">
             <span className="text-blue-primary">Balisong</span> Flipping Center
           </p>
-          <p className="text-white font-bold text-lg mt-0.5">Admin</p>
-        </div>
+          <p className="text-white font-bold text-2xl mt-0.5">Admin</p>
+        </Link>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (

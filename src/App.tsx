@@ -48,7 +48,6 @@ import { setConversations } from "./redux/messages/messagesSlice";
 import { axiosApiInstanceAuth } from "./api/axios";
 import NotificationToastContainer from "./components/NotificationToastContainer";
 import UIToastContainer from "./components/UIToastContainer";
-import AiChatWidget from "./components/aiChat/AiChatWidget";
 import ProfileConfigurationCollectionBannerImagePage from "./pages/configuration/ProfileConfigurationCollectionBannerImagePage";
 import ProfileConfigurationCollectionKnifeCoverPage from "./pages/configuration/ProfileConfigurationCollectionKnifeCoverPage";
 import CollectionKnifePage from "./pages/CollectionKnifePage";
@@ -175,7 +174,6 @@ const App = () => {
       <WebSocketManager />
       <NotificationToastContainer />
       <UIToastContainer />
-      <AiChatWidget />
       <Routes location={bgLocation ?? location}>
         {/*Admin dashboard — fully separate from the normal site UI, no MainLayout*/}
         <Route element={<AuthProtectedRoutes allowedRoles={["ADMIN"]} />}>
