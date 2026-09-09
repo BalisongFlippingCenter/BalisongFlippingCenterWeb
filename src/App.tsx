@@ -317,10 +317,7 @@ const App = () => {
             />
           </Route>
 
-          {/*Auth protected routes for both admins and users*/}
-          <Route
-            element={<AuthProtectedRoutes allowedRoles={["USER", "ADMIN"]} />}
-          >
+          <Route element={<AuthProtectedRoutes allowedRoles={["USER"]} />}>
             <Route path="/create-post" element={<CreatePostPage />} />
           </Route>
 
