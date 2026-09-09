@@ -38,7 +38,7 @@ const LoginForm = () => {
     if (rememberInfo) localStorage.setItem("saved-user-email", email);
     dispatch(setCollection(mapCollection(res.collection)));
     dispatch(addUIToast({ type: "success", message: "Welcome back!" }));
-    navigate("/community");
+    navigate(res.account?.role === "ADMIN" ? "/admin" : "/community");
   };
 
   const clearErrors = () => {
