@@ -4,6 +4,9 @@ import PostDrawer from "./components/PostDrawer";
 import WebSocketManager from "./components/WebSocketManager";
 import { PostDetail } from "./modals/Post";
 import MainLayout from "./layouts/MainLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 
 import ProfilePage from "./pages/ProfilePage";
@@ -174,6 +177,14 @@ const App = () => {
       <UIToastContainer />
       <AiChatWidget />
       <Routes location={bgLocation ?? location}>
+        {/*Admin dashboard — fully separate from the normal site UI, no MainLayout*/}
+        <Route element={<AuthProtectedRoutes allowedRoles={["ADMIN"]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+          </Route>
+        </Route>
+
         <Route path="/" element={<MainLayout />}>
           {/*Public Routes*/}
           <Route path="/" element={<HomePage />} />
