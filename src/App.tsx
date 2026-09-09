@@ -12,6 +12,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthProtectedRoutes from "./routes/AuthProtectedRoutes";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
+import BlockAdminRoutes from "./routes/BlockAdminRoutes";
 import TutorialCenterPage from "./pages/TutorialCenterPage";
 import TutorialCenterLevelPage from "./pages/TutorialCenterLevelPage";
 import TutorialCenterGettingStartedPage from "./pages/TutorialCenterGettingStartedPage";
@@ -186,18 +187,22 @@ const App = () => {
         <Route path="/" element={<MainLayout />}>
           {/*Public Routes*/}
           <Route path="/" element={<HomePage />} />
-          <Route path="/community" element={<CommunityPage />} />
           <Route path="/post/:postId" element={<PostPage />} />
           <Route path="/post/:postId/edit" element={<EditPostPage />} />
 
-          <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/tutorial-center/getting-started" element={<TutorialCenterGettingStartedPage />} />
-          <Route path="/tutorial-center/search" element={<TutorialCenterSearchPage />} />
           <Route path="/tutorial-center/:level/:trickSlug" element={<TrickTutorialPage />} />
           <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
-          <Route path="/product-world" element={<ProductWorldPage />} />
-          <Route path="/product-world/search" element={<ProductWorldSearchPage />} />
           <Route path="/product-world/knife/:knifeSlug/:version?/:variant?" element={<KnifeDetailPage />} />
+
+          {/*Public, but off-limits to an admin session — browsing/discovery hubs*/}
+          <Route element={<BlockAdminRoutes />}>
+            <Route path="/community" element={<CommunityPage />} />
+            <Route path="/tutorial-center" element={<TutorialCenterPage />} />
+            <Route path="/tutorial-center/search" element={<TutorialCenterSearchPage />} />
+            <Route path="/product-world" element={<ProductWorldPage />} />
+            <Route path="/product-world/search" element={<ProductWorldSearchPage />} />
+          </Route>
           <Route path="/about" element={<AboutPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
