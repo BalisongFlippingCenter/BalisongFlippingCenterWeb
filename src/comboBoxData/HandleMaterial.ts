@@ -8,7 +8,9 @@ export const handleMaterial = [
     "G-10/Titanium", 
     "G-10/Aluminium", 
     "Carbon Fiber",
-    "Plastic", 
-    "Other", 
+    "Plastic",
+    "Brass",
+    "Copper",
+    "Other",
     "Unknown"
 ]
