@@ -6,6 +6,7 @@ import { useAppSelector } from "../redux/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import AiChatWidget from "../components/aiChat/AiChatWidget";
+import AdminSidebar from "../components/admin/AdminSidebar";
 
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 
@@ -83,9 +84,20 @@ const MainLayout = () => {
 
   // Admins can browse the same public/read-only content anyone can (knife
   // pages, posts, profiles, terms, etc. — none of it is gated for USER
-  // accounts either) — but Latch is a community-facing assistant they have
-  // no use for, and the USER-only routes are blocked at AuthProtectedRoutes.
+  // accounts either), but never through the normal site chrome: same
+  // sidebar as the /admin dashboard, no header/footer/bottom-nav/Latch.
   const isAdmin = user?.role === "ADMIN";
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-dark-neutral flex">
+        <AdminSidebar />
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -94,7 +106,7 @@ const MainLayout = () => {
       <main>
         <Outlet />
       </main>
-      {!isAdmin && <AiChatWidget />}
+      <AiChatWidget />
       {showFooter && <SiteFooter isLoggedIn={!!(user && accessToken)} />}
       {user && accessToken && (
         <aside
