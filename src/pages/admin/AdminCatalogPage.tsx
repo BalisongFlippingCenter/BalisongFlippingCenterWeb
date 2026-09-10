@@ -1,30 +1,37 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faPen, faTrash, faIndustry } from "@fortawesome/free-solid-svg-icons";
-import { listMakers, deleteMaker, MakerSummary } from "../../api/adminCatalogApi";
+import { faPlus, faFileImport, faPen, faTrash, faIndustry, faTag } from "@fortawesome/free-solid-svg-icons";
+import {
+  listMakers, deleteMaker, MakerSummary,
+  listKnives, deleteKnife, KnifeSummary,
+} from "../../api/adminCatalogApi";
 import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useAppDispatch } from "../../redux/hooks";
 
 const AdminCatalogPage = () => {
   const dispatch = useAppDispatch();
   const [makers, setMakers] = useState<MakerSummary[]>([]);
+  const [knives, setKnives] = useState<KnifeSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
 
-  const fetchMakers = () => {
+  const fetchAll = () => {
     setIsLoading(true);
-    listMakers()
-      .then(setMakers)
-      .catch(() => dispatch(addUIToast({ type: "error", message: "Failed to load makers." })))
+    Promise.all([listMakers(), listKnives()])
+      .then(([makerResults, knifeResults]) => {
+        setMakers(makerResults);
+        setKnives(knifeResults);
+      })
+      .catch(() => dispatch(addUIToast({ type: "error", message: "Failed to load catalog." })))
       .finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
-    fetchMakers();
+    fetchAll();
   }, []);
 
-  const handleDelete = (slug: string) => {
+  const handleDeleteMaker = (slug: string) => {
     setDeletingSlug(slug);
     deleteMaker(slug)
       .then(() => {
@@ -38,6 +45,20 @@ const AdminCatalogPage = () => {
       .finally(() => setDeletingSlug(null));
   };
 
+  const handleDeleteKnife = (slug: string) => {
+    setDeletingSlug(slug);
+    deleteKnife(slug)
+      .then(() => {
+        setKnives((prev) => prev.filter((k) => k.slug !== slug));
+        dispatch(addUIToast({ type: "success", message: "Knife deleted." }));
+      })
+      .catch((err) => {
+        const msg = err?.response?.data ?? "Failed to delete knife.";
+        dispatch(addUIToast({ type: "error", message: typeof msg === "string" ? msg : "Failed to delete knife." }));
+      })
+      .finally(() => setDeletingSlug(null));
+  };
+
   return (
     <div className="px-8 py-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -45,25 +66,28 @@ const AdminCatalogPage = () => {
           <h1 className="text-white text-2xl font-bold">Catalog</h1>
           <p className="text-white/40 text-sm mt-1">Makers and knives shown in Product World.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin/catalog/import"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-white/60 text-sm font-medium hover:text-white hover:border-white/25 transition-colors duration-150"
-          >
-            <FontAwesomeIcon icon={faFileImport} />
-            Bulk Import
-          </Link>
-          <Link
-            to="/admin/catalog/makers/new"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-primary text-white text-sm font-semibold hover:brightness-110 transition-[filter] duration-150"
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            New Maker
-          </Link>
-        </div>
+        <Link
+          to="/admin/catalog/import"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 text-white/60 text-sm font-medium hover:text-white hover:border-white/25 transition-colors duration-150"
+        >
+          <FontAwesomeIcon icon={faFileImport} />
+          Bulk Import
+        </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
+      {/* Makers */}
+      <div className="mt-8 flex items-center justify-between gap-4">
+        <h2 className="text-white text-lg font-semibold">Makers</h2>
+        <Link
+          to="/admin/catalog/makers/new"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-primary text-white text-xs font-semibold hover:brightness-110 transition-[filter] duration-150"
+        >
+          <FontAwesomeIcon icon={faPlus} className="text-[10px]" />
+          New Maker
+        </Link>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-3">
         {isLoading ? (
           <p className="text-white/40 text-sm">Loading...</p>
         ) : makers.length === 0 ? (
@@ -98,7 +122,63 @@ const AdminCatalogPage = () => {
                 <button
                   type="button"
                   disabled={deletingSlug === maker.slug}
-                  onClick={() => handleDelete(maker.slug)}
+                  onClick={() => handleDeleteMaker(maker.slug)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
+                >
+                  <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Knives */}
+      <div className="mt-10 flex items-center justify-between gap-4">
+        <h2 className="text-white text-lg font-semibold">Knives</h2>
+        <Link
+          to="/admin/catalog/knives/new"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-primary text-white text-xs font-semibold hover:brightness-110 transition-[filter] duration-150"
+        >
+          <FontAwesomeIcon icon={faPlus} className="text-[10px]" />
+          New Knife
+        </Link>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-3">
+        {isLoading ? (
+          <p className="text-white/40 text-sm">Loading...</p>
+        ) : knives.length === 0 ? (
+          <p className="text-white/40 text-sm">No knives yet.</p>
+        ) : (
+          knives.map((knife) => (
+            <div
+              key={knife.slug}
+              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
+                  <FontAwesomeIcon icon={faTag} className="text-white/20" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white text-sm font-semibold truncate">{knife.name}</p>
+                  <p className="text-white/40 text-xs truncate">
+                    {knife.makerName} · {knife.slug} {!knife.hasActiveVersion && "· All discontinued"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to={`/admin/catalog/knives/${knife.slug}/edit`}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors duration-150"
+                >
+                  <FontAwesomeIcon icon={faPen} className="text-xs" />
+                </Link>
+                <button
+                  type="button"
+                  disabled={deletingSlug === knife.slug}
+                  onClick={() => handleDeleteKnife(knife.slug)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
                 >
                   <FontAwesomeIcon icon={faTrash} className="text-xs" />
