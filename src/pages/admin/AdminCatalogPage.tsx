@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faPen, faTrash, faIndustry, faTag } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faTrash, faIndustry, faTag } from "@fortawesome/free-solid-svg-icons";
 import {
   listMakers, deleteMaker, MakerSummary,
   listKnives, deleteKnife, KnifeSummary,
@@ -31,7 +31,9 @@ const AdminCatalogPage = () => {
     fetchAll();
   }, []);
 
-  const handleDeleteMaker = (slug: string) => {
+  const handleDeleteMaker = (e: React.MouseEvent, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     setDeletingSlug(slug);
     deleteMaker(slug)
       .then(() => {
@@ -45,7 +47,9 @@ const AdminCatalogPage = () => {
       .finally(() => setDeletingSlug(null));
   };
 
-  const handleDeleteKnife = (slug: string) => {
+  const handleDeleteKnife = (e: React.MouseEvent, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     setDeletingSlug(slug);
     deleteKnife(slug)
       .then(() => {
@@ -94,9 +98,10 @@ const AdminCatalogPage = () => {
           <p className="text-white/40 text-sm">No makers yet.</p>
         ) : (
           makers.map((maker) => (
-            <div
+            <Link
               key={maker.slug}
-              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4"
+              to={`/admin/catalog/makers/${maker.slug}/edit`}
+              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4 hover:border-white/20 transition-colors duration-150"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -113,22 +118,16 @@ const AdminCatalogPage = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Link
-                  to={`/admin/catalog/makers/${maker.slug}/edit`}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors duration-150"
-                >
-                  <FontAwesomeIcon icon={faPen} className="text-xs" />
-                </Link>
                 <button
                   type="button"
                   disabled={deletingSlug === maker.slug}
-                  onClick={() => handleDeleteMaker(maker.slug)}
+                  onClick={(e) => handleDeleteMaker(e, maker.slug)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
                 >
                   <FontAwesomeIcon icon={faTrash} className="text-xs" />
                 </button>
               </div>
-            </div>
+            </Link>
           ))
         )}
       </div>
@@ -152,9 +151,10 @@ const AdminCatalogPage = () => {
           <p className="text-white/40 text-sm">No knives yet.</p>
         ) : (
           knives.map((knife) => (
-            <div
+            <Link
               key={knife.slug}
-              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4"
+              to={`/admin/catalog/knives/${knife.slug}/edit`}
+              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4 hover:border-white/20 transition-colors duration-150"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
@@ -169,22 +169,16 @@ const AdminCatalogPage = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Link
-                  to={`/admin/catalog/knives/${knife.slug}/edit`}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors duration-150"
-                >
-                  <FontAwesomeIcon icon={faPen} className="text-xs" />
-                </Link>
                 <button
                   type="button"
                   disabled={deletingSlug === knife.slug}
-                  onClick={() => handleDeleteKnife(knife.slug)}
+                  onClick={(e) => handleDeleteKnife(e, knife.slug)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
                 >
                   <FontAwesomeIcon icon={faTrash} className="text-xs" />
                 </button>
               </div>
-            </div>
+            </Link>
           ))
         )}
       </div>
