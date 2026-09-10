@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGaugeHigh, faFlag, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faGaugeHigh, faFlag, faIndustry, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { logout } from "../../redux/auth/authActions";
 import { clearCollection } from "../../redux/collection/collectionSlice";
 import { clearNotifications } from "../../redux/notifications/notificationSlice";
@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: faGaugeHigh, end: true },
   { to: "/admin/reports", label: "Reports", icon: faFlag, end: false },
+  { to: "/admin/catalog", label: "Catalog", icon: faIndustry, end: false },
 ];
 
 // Shared between AdminLayout (the /admin/* dashboard) and MainLayout (the
