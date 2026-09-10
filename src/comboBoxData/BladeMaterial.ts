@@ -15,6 +15,9 @@ export const bladeMaterial = [
     "MagnaCut",
     "Damascus",
     "AUS-10",
+    "AEB-L",
+    "12C27",
+    "440C",
     "Other",
     "Unknown"
 ]

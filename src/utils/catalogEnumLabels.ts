@@ -42,6 +42,9 @@ export const BLADE_MATERIAL_LABELS: Record<string, string> = {
   MAGNACUT: "MagnaCut",
   DAMASCUS: "Damascus",
   AUS_10: "AUS-10",
+  AEB_L: "AEB-L",
+  STEEL_12C27: "12C27",
+  STEEL_440C: "440C",
   OTHER: "Other",
   UNKNOWN: "Unknown",
 };
