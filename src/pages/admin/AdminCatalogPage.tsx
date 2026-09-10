@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faTrash, faIndustry, faTag } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import {
   listMakers, deleteMaker, MakerSummary,
   listKnives, deleteKnife, KnifeSummary,
@@ -15,6 +15,17 @@ const AdminCatalogPage = () => {
   const [knives, setKnives] = useState<KnifeSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const query = search.trim().toLowerCase();
+  const filteredMakers = useMemo(
+    () => makers.filter((m) => !query || m.name.toLowerCase().includes(query) || m.slug.toLowerCase().includes(query) || m.country?.toLowerCase().includes(query)),
+    [makers, query]
+  );
+  const filteredKnives = useMemo(
+    () => knives.filter((k) => !query || k.name.toLowerCase().includes(query) || k.slug.toLowerCase().includes(query) || k.makerName.toLowerCase().includes(query)),
+    [knives, query]
+  );
 
   const fetchAll = () => {
     setIsLoading(true);
@@ -79,6 +90,17 @@ const AdminCatalogPage = () => {
         </Link>
       </div>
 
+      <div className="relative mt-6 max-w-sm">
+        <FontAwesomeIcon icon={faMagnifyingGlass} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 text-xs pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search makers or knives..."
+          className="w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm pl-9 pr-3 py-2 outline-none transition-colors duration-200 placeholder:text-white/25"
+        />
+      </div>
+
       {/* Makers */}
       <div className="mt-8 flex items-center justify-between gap-4">
         <h2 className="text-white text-lg font-semibold">Makers</h2>
@@ -94,10 +116,10 @@ const AdminCatalogPage = () => {
       <div className="mt-3 flex flex-col gap-3">
         {isLoading ? (
           <p className="text-white/40 text-sm">Loading...</p>
-        ) : makers.length === 0 ? (
-          <p className="text-white/40 text-sm">No makers yet.</p>
+        ) : filteredMakers.length === 0 ? (
+          <p className="text-white/40 text-sm">{query ? "No makers match your search." : "No makers yet."}</p>
         ) : (
-          makers.map((maker) => (
+          filteredMakers.map((maker) => (
             <Link
               key={maker.slug}
               to={`/admin/catalog/makers/${maker.slug}/edit`}
@@ -147,10 +169,10 @@ const AdminCatalogPage = () => {
       <div className="mt-3 flex flex-col gap-3">
         {isLoading ? (
           <p className="text-white/40 text-sm">Loading...</p>
-        ) : knives.length === 0 ? (
-          <p className="text-white/40 text-sm">No knives yet.</p>
+        ) : filteredKnives.length === 0 ? (
+          <p className="text-white/40 text-sm">{query ? "No knives match your search." : "No knives yet."}</p>
         ) : (
-          knives.map((knife) => (
+          filteredKnives.map((knife) => (
             <Link
               key={knife.slug}
               to={`/admin/catalog/knives/${knife.slug}/edit`}
