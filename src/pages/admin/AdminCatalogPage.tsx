@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass, faDesktop } from "@fortawesome/free-solid-svg-icons";
 import {
   listMakers, deleteMaker, MakerSummary,
   listKnives, deleteKnife, KnifeSummary,
@@ -203,7 +203,7 @@ const AdminCatalogPage = () => {
                   title="View public page"
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
                 >
-                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
+                  <FontAwesomeIcon icon={faDesktop} className="text-xs" />
                 </button>
                 <button
                   type="button"
