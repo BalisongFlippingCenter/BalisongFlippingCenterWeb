@@ -5,61 +5,17 @@ import {
   faChevronLeft, faChevronRight, faArrowUpRightFromSquare,
   faTriangleExclamation, faCircleCheck, faTag,
 } from "@fortawesome/free-solid-svg-icons";
-import knivesData from "../data/knives.json";
 import { axiosApiInstance } from "../api/axios";
+import { getKnifeCatalogDetail, KnifeDetail, KnifeVersion, KnifeVariant } from "../api/catalogApi";
 import { useAppSelector } from "../redux/hooks";
 import { formatCurrency, formatWeight, formatLength } from "../utils/unitConversions";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface KnifeVariant {
-  variantSlug: string;
-  type: "trainer" | "live";
-  label: string;
-  msrp: string;
-  bladeStyle: string;
-  bladeMaterial: string;
-  bladeFinish: string;
-}
-
-interface WhereToFind {
-  label: string;
-  url: string | null;
-  type: "official" | "retailer" | "secondary";
-  note: string;
-}
-
-interface KnifeVersion {
-  versionSlug: string;
-  version: string;
-  discontinued: boolean;
-  releaseYear: number;
-  description: string;
-  overallLength: string;
-  weight: string;
-  pivotSystem: string;
-  latchType: string;
-  pinSystem: string;
-  hasModularBalance: boolean;
-  balanceValue: string | null;
-  handleConstruction: string;
-  handleMaterial: string;
-  handleFinish: string;
-  variants: KnifeVariant[];
-  whereToFind: WhereToFind[];
-}
-
-interface KnifeEntry {
-  slug: string;
-  name: string;
-  maker: string;
-  makerSlug: string;
-  bladeStyle: string;
-  priceRange: string;
-  versions: KnifeVersion[];
-}
+import {
+  BLADE_STYLE_LABELS, BLADE_MATERIAL_LABELS, BLADE_FINISH_LABELS,
+  HANDLE_MATERIAL_LABELS, HANDLE_FINISH_LABELS, HANDLE_CONSTRUCTION_LABELS,
+  PIVOT_SYSTEM_LABELS, LATCH_TYPE_LABELS, PIN_SYSTEM_LABELS, enumToLabel,
+} from "../utils/catalogEnumLabels";
 
 // ── Spec row ──────────────────────────────────────────────────────────────────
 
@@ -200,7 +156,19 @@ const KnifeDetailPage = () => {
   const currency        = useAppSelector((state) => state.auth.user?.currency);
   const measurementUnit = useAppSelector((state) => state.auth.user?.measurementUnit);
 
-  const knife = (knivesData as KnifeEntry[]).find((k) => k.slug === knifeSlug) ?? null;
+  const [knife, setKnife] = useState<KnifeDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!knifeSlug) return;
+    setIsLoading(true);
+    setNotFound(false);
+    getKnifeCatalogDetail(knifeSlug)
+      .then((data) => setKnife(data))
+      .catch(() => setNotFound(true))
+      .finally(() => setIsLoading(false));
+  }, [knifeSlug]);
 
   // Resolve active version: URL param → first in-production → first overall
   const activeVersion: KnifeVersion | null = knife
@@ -213,15 +181,15 @@ const KnifeDetailPage = () => {
   // Resolve active variant: URL param → trainer → first
   const activeVariant: KnifeVariant | null = activeVersion
     ? (activeVersion.variants.find((v) => v.variantSlug === variantParam)
-      ?? activeVersion.variants.find((v) => v.type === "trainer")
+      ?? activeVersion.variants.find((v) => v.type === "TRAINER")
       ?? activeVersion.variants[0]
       ?? null)
     : null;
 
-  const liveVariants = activeVersion?.variants.filter((v) => v.type === "live") ?? [];
+  const liveVariants = activeVersion?.variants.filter((v) => v.type === "LIVE_BLADE") ?? [];
 
   const goToVersion = (v: KnifeVersion) => {
-    const defaultVariant = v.variants.find((va) => va.type === "trainer") ?? v.variants[0];
+    const defaultVariant = v.variants.find((va) => va.type === "TRAINER") ?? v.variants[0];
     navigate(`/product-world/knife/${knifeSlug}/${v.versionSlug}/${defaultVariant?.variantSlug ?? ""}`);
   };
 
@@ -229,7 +197,18 @@ const KnifeDetailPage = () => {
     navigate(`/product-world/knife/${knifeSlug}/${activeVersion!.versionSlug}/${va.variantSlug}`);
   };
 
-  if (!knife || !activeVersion || !activeVariant) {
+  if (isLoading) {
+    return (
+      <div
+        className="w-full min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(to bottom, #0e0000 0%, #080000 100%)" }}
+      >
+        <div className="w-6 h-6 rounded-full border-2 border-gold/60 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (notFound || !knife || !activeVersion || !activeVariant) {
     return (
       <div
         className="w-full min-h-screen flex flex-col items-center justify-center gap-4 text-white"
@@ -247,7 +226,7 @@ const KnifeDetailPage = () => {
     );
   }
 
-  const isTrainer = activeVariant.type === "trainer";
+  const isTrainer = activeVariant.type === "TRAINER";
 
   return (
     <div
@@ -275,7 +254,7 @@ const KnifeDetailPage = () => {
             <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-gold/25 bg-gold/5">
               <FontAwesomeIcon icon={faTriangleExclamation} className="text-gold text-sm flex-shrink-0" />
               <div>
-                <p className="text-gold text-xs font-bold uppercase tracking-wider">Discontinued — {activeVersion.version}</p>
+                <p className="text-gold text-xs font-bold uppercase tracking-wider">Discontinued — {activeVersion.versionLabel}</p>
                 <p className="text-white/45 text-xs leading-relaxed mt-0.5">
                   This version is no longer in production. It may be available on the secondary market.
                 </p>
@@ -284,7 +263,7 @@ const KnifeDetailPage = () => {
           ) : (
             <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-green/25 bg-green/5">
               <FontAwesomeIcon icon={faCircleCheck} className="text-green text-sm flex-shrink-0" />
-              <p className="text-green text-xs font-bold uppercase tracking-wider">In Production — {activeVersion.version}</p>
+              <p className="text-green text-xs font-bold uppercase tracking-wider">In Production — {activeVersion.versionLabel}</p>
             </div>
           )}
 
@@ -296,7 +275,7 @@ const KnifeDetailPage = () => {
               onClick={() => navigate(`/product-world/maker/${knife.makerSlug}`)}
               className="text-gold/70 hover:text-gold text-sm font-medium transition-colors duration-200 w-fit flex items-center gap-1.5"
             >
-              by {knife.maker}
+              by {knife.makerName}
               <FontAwesomeIcon icon={faChevronRight} className="text-[10px]" />
             </button>
           </div>
@@ -312,7 +291,7 @@ const KnifeDetailPage = () => {
             <span className="w-px h-3 bg-white/10" />
             <span>
               <FontAwesomeIcon icon={faTag} className="mr-1 text-[10px]" />
-              {knife.priceRange} on secondary market
+              {knife.priceRangeSummary} on secondary market
             </span>
           </div>
         </div>
@@ -343,7 +322,7 @@ const KnifeDetailPage = () => {
                               : "border-green/25 bg-green/5 text-green/70 hover:text-green hover:border-green/40"
                         }`}
                       >
-                        {v.version}
+                        {v.versionLabel}
                         {!isActive && v.discontinued && (
                           <span className="text-gold/40 text-[9px] uppercase tracking-wide font-medium">disc.</span>
                         )}
@@ -358,10 +337,10 @@ const KnifeDetailPage = () => {
             <div className="flex flex-col gap-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Variant</p>
               <div className="flex items-center gap-2">
-                {activeVersion.variants.some((v) => v.type === "trainer") && (
+                {activeVersion.variants.some((v) => v.type === "TRAINER") && (
                   <button
                     type="button"
-                    onClick={() => goToVariant(activeVersion.variants.find((v) => v.type === "trainer")!)}
+                    onClick={() => goToVariant(activeVersion.variants.find((v) => v.type === "TRAINER")!)}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-150 ${
                       isTrainer
                         ? "bg-blue-primary/20 border-blue-primary/50 text-blue-primary"
@@ -440,24 +419,24 @@ const KnifeDetailPage = () => {
             </div>
 
             <SpecCard title="Hardware">
-              <SpecRow label="Pivot System" value={activeVersion.pivotSystem} />
-              <SpecRow label="Latch Type"   value={activeVersion.latchType} />
-              <SpecRow label="Pin System"   value={activeVersion.pinSystem} />
+              <SpecRow label="Pivot System" value={enumToLabel(PIVOT_SYSTEM_LABELS, activeVersion.pivotSystem)} />
+              <SpecRow label="Latch Type"   value={enumToLabel(LATCH_TYPE_LABELS, activeVersion.latchType)} />
+              <SpecRow label="Pin System"   value={enumToLabel(PIN_SYSTEM_LABELS, activeVersion.pinSystem)} />
               {activeVersion.hasModularBalance && (
                 <SpecRow label="Balance" value={activeVersion.balanceValue ?? "Modular"} />
               )}
             </SpecCard>
 
             <SpecCard title="Blade">
-              <SpecRow label="Style"    value={activeVariant.bladeStyle} />
-              <SpecRow label="Material" value={activeVariant.bladeMaterial} />
-              <SpecRow label="Finish"   value={activeVariant.bladeFinish} />
+              <SpecRow label="Style"    value={enumToLabel(BLADE_STYLE_LABELS, activeVariant.bladeStyle)} />
+              <SpecRow label="Material" value={enumToLabel(BLADE_MATERIAL_LABELS, activeVariant.bladeMaterial)} />
+              <SpecRow label="Finish"   value={enumToLabel(BLADE_FINISH_LABELS, activeVariant.bladeFinish)} />
             </SpecCard>
 
             <SpecCard title="Handle">
-              <SpecRow label="Construction" value={activeVersion.handleConstruction} />
-              <SpecRow label="Material"     value={activeVersion.handleMaterial} />
-              <SpecRow label="Finish"       value={activeVersion.handleFinish} />
+              <SpecRow label="Construction" value={enumToLabel(HANDLE_CONSTRUCTION_LABELS, activeVersion.handleConstruction)} />
+              <SpecRow label="Material"     value={enumToLabel(HANDLE_MATERIAL_LABELS, activeVersion.handleMaterial)} />
+              <SpecRow label="Finish"       value={enumToLabel(HANDLE_FINISH_LABELS, activeVersion.handleFinish)} />
             </SpecCard>
 
           </div>
@@ -471,13 +450,14 @@ const KnifeDetailPage = () => {
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Where to Find</p>
           <div className="flex flex-col gap-2">
             {activeVersion.whereToFind.map((w, i) => {
+              const typeKey = w.type.toLowerCase();
               const inner = (
-                <div className={`flex items-start gap-3 p-4 rounded-2xl border transition-all duration-150 ${WHERE_TYPE_STYLE[w.type]}`}>
+                <div className={`flex items-start gap-3 p-4 rounded-2xl border transition-all duration-150 ${WHERE_TYPE_STYLE[typeKey]}`}>
                   <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-sm font-semibold ${WHERE_TYPE_LABEL_STYLE[w.type]}`}>{w.label}</span>
+                      <span className={`text-sm font-semibold ${WHERE_TYPE_LABEL_STYLE[typeKey]}`}>{w.label}</span>
                       <span className="text-[10px] font-medium uppercase tracking-wider text-white/25 border border-white/10 px-1.5 py-0.5 rounded-full">
-                        {WHERE_TYPE_TAG[w.type]}
+                        {WHERE_TYPE_TAG[typeKey]}
                       </span>
                     </div>
                     {w.note && <p className="text-white/35 text-xs leading-relaxed mt-0.5">{w.note}</p>}

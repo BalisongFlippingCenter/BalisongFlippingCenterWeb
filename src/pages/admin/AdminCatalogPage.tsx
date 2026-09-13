@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import {
   listMakers, deleteMaker, MakerSummary,
   listKnives, deleteKnife, KnifeSummary,
@@ -56,6 +56,12 @@ const AdminCatalogPage = () => {
         dispatch(addUIToast({ type: "error", message: typeof msg === "string" ? msg : "Failed to delete maker." }));
       })
       .finally(() => setDeletingSlug(null));
+  };
+
+  const handleViewKnifePublicPage = (e: React.MouseEvent, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(`/product-world/knife/${slug}`, "_blank", "noopener,noreferrer");
   };
 
   const handleDeleteKnife = (e: React.MouseEvent, slug: string) => {
@@ -191,6 +197,14 @@ const AdminCatalogPage = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => handleViewKnifePublicPage(e, knife.slug)}
+                  title="View public page"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
+                >
+                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
+                </button>
                 <button
                   type="button"
                   disabled={deletingSlug === knife.slug}

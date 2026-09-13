@@ -13,8 +13,7 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { useAppSelector } from "../redux/hooks";
-import knivesData from "../data/knives.json";
-import makersData from "../data/makers.json";
+import { searchKnivesCatalog, listMakersCatalog, KnifeSummary, MakerSummary } from "../api/catalogApi";
 import { bladeStyle as bladeStyleOpts }                 from "../comboBoxData/BladeStyle";
 import { bladeMaterial as bladeMaterialOpts }           from "../comboBoxData/BladeMaterial";
 import { bladeFinish as bladeFinishOpts }               from "../comboBoxData/BladeFinish";
@@ -26,10 +25,6 @@ import { pinSystem as pinSystemOpts }                   from "../comboBoxData/Pi
 import { latchType as latchTypeOpts }                   from "../comboBoxData/LatchType";
 
 // ── Suggestion types ──────────────────────────────────────────────────────────
-
-interface KnifeVersion { discontinued: boolean }
-interface KnifeSuggestion { slug: string; name: string; maker: string; versions: KnifeVersion[] }
-interface MakerSuggestion { slug: string; name: string; country: string }
 
 const suggestionMatch = (haystack: string, q: string): boolean =>
   !!q.trim() && haystack.toLowerCase().includes(q.toLowerCase().trim());
@@ -568,6 +563,14 @@ const ProductWorldPage = () => {
   const [query,       setQuery]       = useState("");
   const [searchOpen,  setSearchOpen]  = useState(false);
 
+  // Catalog suggestions (knives/makers), fetched once for the search dropdown
+  const [catalogKnives, setCatalogKnives] = useState<KnifeSummary[]>([]);
+  const [catalogMakers, setCatalogMakers] = useState<MakerSummary[]>([]);
+  useEffect(() => {
+    searchKnivesCatalog().then(setCatalogKnives).catch(() => {});
+    listMakersCatalog().then(setCatalogMakers).catch(() => {});
+  }, []);
+
   // Filter state
   const [specsFilter,       setSpecsFilter]       = useState<KnifeSpecs>({ ...EMPTY_SPECS });
   const [priceMin,          setPriceMin]          = useState("");
@@ -770,8 +773,8 @@ const ProductWorldPage = () => {
               const recent = loadList(lsRecentKey);
               const saved  = loadList(lsSavedKey);
               const q = query.trim();
-              const knifeMatches = q ? (knivesData as KnifeSuggestion[]).filter((k) => suggestionMatch(k.name, q) || suggestionMatch(k.maker, q)).slice(0, 4) : [];
-              const makerMatches = q ? (makersData as MakerSuggestion[]).filter((m) => suggestionMatch(m.name, q) || suggestionMatch(m.country, q)).slice(0, 3) : [];
+              const knifeMatches = q ? catalogKnives.filter((k) => suggestionMatch(k.name, q) || suggestionMatch(k.makerName, q)).slice(0, 4) : [];
+              const makerMatches = q ? catalogMakers.filter((m) => suggestionMatch(m.name, q) || suggestionMatch(m.country ?? "", q)).slice(0, 3) : [];
               const filteredHistory = q ? [...new Set([...saved, ...recent])].filter((s) => s.toLowerCase().includes(q.toLowerCase())) : [];
               const showSaved   = !q && saved.length > 0;
               const showRecent  = !q && recent.length > 0;
@@ -784,21 +787,18 @@ const ProductWorldPage = () => {
                   {knifeMatches.length > 0 && (
                     <div className="pt-3 pb-1">
                       <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1.5">Knife Pages</p>
-                      {knifeMatches.map((k) => {
-                        const hasActive = k.versions.some((v) => !v.discontinued);
-                        return (
-                          <button key={k.slug} type="button" onMouseDown={() => { setSearchOpen(false); navigate(`/product-world/knife/${k.slug}`); }}
-                            className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left group">
-                            <FontAwesomeIcon icon={faBook} className="text-gold/40 text-[10px] flex-shrink-0" />
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-white/80 text-sm truncate font-medium">{k.name}</span>
-                              <span className="text-white/35 text-xs truncate">{k.maker}</span>
-                            </div>
-                            {hasActive && <span className="text-[9px] font-semibold text-green/70 border border-green/25 bg-green/5 px-1.5 py-0.5 rounded-full flex-shrink-0">In Production</span>}
-                            <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
-                          </button>
-                        );
-                      })}
+                      {knifeMatches.map((k) => (
+                        <button key={k.slug} type="button" onMouseDown={() => { setSearchOpen(false); navigate(`/product-world/knife/${k.slug}`); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-white/[0.04] transition-colors duration-100 text-left group">
+                          <FontAwesomeIcon icon={faBook} className="text-gold/40 text-[10px] flex-shrink-0" />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-white/80 text-sm truncate font-medium">{k.name}</span>
+                            <span className="text-white/35 text-xs truncate">{k.makerName}</span>
+                          </div>
+                          {k.hasActiveVersion && <span className="text-[9px] font-semibold text-green/70 border border-green/25 bg-green/5 px-1.5 py-0.5 rounded-full flex-shrink-0">In Production</span>}
+                          <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
+                        </button>
+                      ))}
                     </div>
                   )}
                   {makerMatches.length > 0 && (
