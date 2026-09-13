@@ -156,44 +156,60 @@ const MakerDetailPage = () => {
           {maker.knives.length === 0 ? (
             <p className="text-white/30 text-sm text-center py-8">No knives listed for this maker yet.</p>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {maker.knives.map((knife) => (
                 <button
                   key={knife.slug}
                   type="button"
                   onClick={() => navigate(`/product-world/knife/${knife.slug}`)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
+                  className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-150 text-left group ${
                     knife.hasActiveVersion
                       ? "border-blue-primary/25 bg-blue-primary/5 hover:border-blue-primary/45 hover:bg-blue-primary/[0.09]"
                       : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {/* Cover image */}
+                  <div className="w-full aspect-[4/3] bg-black/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {knife.coverPhotoUrl ? (
-                      <img src={knife.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={knife.coverPhotoUrl}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     ) : (
-                      <FontAwesomeIcon icon={faTag} className="text-white/20" />
+                      <FontAwesomeIcon icon={faTag} className="text-white/15 text-3xl" />
                     )}
                   </div>
-                  <div className="flex flex-col flex-1 min-w-0">
+
+                  {/* Details */}
+                  <div className="flex flex-col gap-2 p-4 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-sm font-semibold truncate ${knife.hasActiveVersion ? "text-white/85" : "text-white/50"}`}>
+                      <span className={`text-base font-semibold truncate ${knife.hasActiveVersion ? "text-white/90" : "text-white/50"}`}>
                         {knife.name}
                       </span>
                       {!knife.hasActiveVersion && (
                         <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wider text-gold/50 border border-gold/20 bg-gold/5 px-1.5 py-0.5 rounded-md leading-none">
-                          All Discontinued
+                          Discontinued
                         </span>
                       )}
                     </div>
+
                     {knife.bladeStyleSummary && (
-                      <span className="text-white/35 text-xs truncate">{knife.bladeStyleSummary}</span>
+                      <span className="text-white/40 text-xs truncate">{knife.bladeStyleSummary}</span>
                     )}
+
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-white/[0.06]">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        {knife.priceRangeSummary && (
+                          <span className="text-blue-primary/80 text-sm font-bold truncate">{knife.priceRangeSummary}</span>
+                        )}
+                        {knife.handleMaterialSummary && (
+                          <span className="text-white/30 text-[11px] truncate">{knife.handleMaterialSummary}</span>
+                        )}
+                      </div>
+                      <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
+                    </div>
                   </div>
-                  {knife.priceRangeSummary && (
-                    <span className="text-blue-primary/70 text-xs font-medium flex-shrink-0">{knife.priceRangeSummary}</span>
-                  )}
-                  <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
                 </button>
               ))}
             </div>

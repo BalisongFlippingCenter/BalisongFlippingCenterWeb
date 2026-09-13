@@ -6,6 +6,7 @@ export interface KnifeSummary {
   makerName: string;
   makerSlug: string;
   bladeStyleSummary: string;
+  handleMaterialSummary: string;
   priceRangeSummary: string | null;
   coverPhotoUrl: string | null;
   hasActiveVersion: boolean;
