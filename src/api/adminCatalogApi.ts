@@ -31,6 +31,7 @@ export interface KnifeSummary {
   name: string;
   makerName: string;
   makerSlug: string;
+  coverPhotoUrl: string | null;
   hasActiveVersion: boolean;
 }
 
@@ -49,6 +50,7 @@ export interface VariantFormData {
   bladeStyle: string;
   bladeMaterial: string;
   bladeFinish: string;
+  imageUrl: string;
 }
 
 export interface VersionFormData {
@@ -82,6 +84,24 @@ export interface KnifeFormData {
   description: string;
   versions: VersionFormData[];
 }
+
+export interface CatalogImageUploadUrlRequest {
+  knifeSlug: string;
+  versionSlug?: string;
+  variantSlug?: string;
+  filename: string;
+  contentType: string;
+}
+
+export interface PresignedUploadTarget {
+  key: string;
+  uploadUrl: string;
+  publicUrl: string;
+  isVideo: boolean;
+}
+
+export const getCatalogImageUploadUrl = (req: CatalogImageUploadUrlRequest) =>
+  axiosApiInstanceAuth.post<PresignedUploadTarget>("/admin/catalog/upload-url", req).then((res) => res.data);
 
 export const listMakers = () =>
   axiosApiInstanceAuth.get<MakerSummary[]>("/catalog/any/makers").then((res) => res.data);

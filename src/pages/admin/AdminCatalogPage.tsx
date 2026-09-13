@@ -185,8 +185,12 @@ const AdminCatalogPage = () => {
               className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4 hover:border-white/20 transition-colors duration-150"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faTag} className="text-white/20" />
+                <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {knife.coverPhotoUrl ? (
+                    <img src={knife.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <FontAwesomeIcon icon={faTag} className="text-white/20" />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-white text-sm font-semibold truncate">{knife.name}</p>

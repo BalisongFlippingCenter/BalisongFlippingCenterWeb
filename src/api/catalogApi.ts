@@ -19,6 +19,7 @@ export interface KnifeVariant {
   bladeStyle: string | null;
   bladeMaterial: string | null;
   bladeFinish: string | null;
+  imageUrl: string | null;
 }
 
 export interface WhereToFind {

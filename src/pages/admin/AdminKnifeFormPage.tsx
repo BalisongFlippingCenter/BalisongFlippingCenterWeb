@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faPlus, faTrash, faImage } from "@fortawesome/free-solid-svg-icons";
 import {
   getKnife, createKnife, updateKnife, listMakers,
   KnifeFormData, VersionFormData, VariantFormData, WhereToFindFormData, MakerSummary,
 } from "../../api/adminCatalogApi";
+import { uploadCatalogImageDirect } from "../../api/directUpload";
 import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useAppDispatch } from "../../redux/hooks";
 import { bladeStyle as BLADE_STYLE_OPTIONS } from "../../comboBoxData/BladeStyle";
@@ -31,7 +32,7 @@ const FIELD_INPUT = "w-full bg-dark-neutral border border-white/10 focus:border-
 
 const emptyWhereToFind = (): WhereToFindFormData => ({ label: "", url: "", type: "official", note: "" });
 const emptyVariant = (): VariantFormData => ({
-  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", bladeFinish: "",
+  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", bladeFinish: "", imageUrl: "",
 });
 const emptyVersion = (): VersionFormData => ({
   versionSlug: "", version: "", discontinued: false, releaseYear: null, description: "",
@@ -77,6 +78,7 @@ const mapDetailToForm = (data: any): KnifeFormData => ({
       bladeStyle: enumToLabel(BLADE_STYLE_LABELS, variant.bladeStyle),
       bladeMaterial: enumToLabel(BLADE_MATERIAL_LABELS, variant.bladeMaterial),
       bladeFinish: enumToLabel(BLADE_FINISH_LABELS, variant.bladeFinish),
+      imageUrl: variant.imageUrl ?? "",
     })),
     whereToFind: (v.whereToFind ?? []).map((w: any) => ({
       label: w.label,
@@ -94,6 +96,63 @@ const Select = ({ value, onChange, options, disabled }: { value: string; onChang
   </select>
 );
 
+const ImageUploadField = ({
+  label, imageUrl, disabled, disabledHint, uploading, onUpload, onClear,
+}: {
+  label: string;
+  imageUrl: string;
+  disabled?: boolean;
+  disabledHint?: string;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onClear: () => void;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className={FIELD_LABEL}>{label}</label>
+      <div className="flex items-center gap-3">
+        <div className="w-16 h-16 rounded-lg bg-dark-neutral border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {imageUrl ? (
+            <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <FontAwesomeIcon icon={faImage} className="text-white/15" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            disabled={disabled || uploading}
+            onClick={() => inputRef.current?.click()}
+            className="px-3 py-1.5 rounded-lg border border-white/10 text-white/60 text-xs font-medium hover:text-white hover:border-white/25 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed w-fit"
+          >
+            {uploading ? "Uploading..." : imageUrl ? "Replace" : "Upload Image"}
+          </button>
+          {imageUrl && !uploading && (
+            <button type="button" onClick={onClear} className="text-white/30 hover:text-red text-[11px] w-fit transition-colors duration-150">
+              Remove
+            </button>
+          )}
+          {disabled && disabledHint && !uploading && (
+            <p className="text-white/25 text-[11px]">{disabledHint}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminKnifeFormPage = () => {
   const { slug } = useParams<{ slug?: string }>();
   const isEdit = !!slug;
@@ -104,6 +163,8 @@ const AdminKnifeFormPage = () => {
   const [makers, setMakers] = useState<MakerSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [uploadingVariantKey, setUploadingVariantKey] = useState<string | null>(null);
 
   useEffect(() => {
     const makersPromise = listMakers().then(setMakers);
@@ -131,6 +192,29 @@ const AdminKnifeFormPage = () => {
   };
   const addVariant = (vi: number) => updateVersion(vi, { variants: [...form.versions[vi].variants, emptyVariant()] });
   const removeVariant = (vi: number, ci: number) => updateVersion(vi, { variants: form.versions[vi].variants.filter((_, i) => i !== ci) });
+
+  const handleCoverUpload = (file: File) => {
+    const slug = form.slug.trim();
+    if (!slug) return;
+    setCoverUploading(true);
+    uploadCatalogImageDirect(slug, file)
+      .then((target) => setForm((p) => ({ ...p, coverPhotoUrl: target.publicUrl })))
+      .catch(() => dispatch(addUIToast({ type: "error", message: "Failed to upload image." })))
+      .finally(() => setCoverUploading(false));
+  };
+
+  const handleVariantImageUpload = (vi: number, ci: number, file: File) => {
+    const slug = form.slug.trim();
+    const version = form.versions[vi];
+    const variant = version.variants[ci];
+    if (!slug || !version.versionSlug.trim() || !variant.variantSlug.trim()) return;
+    const key = `${vi}-${ci}`;
+    setUploadingVariantKey(key);
+    uploadCatalogImageDirect(slug, file, { versionSlug: version.versionSlug.trim(), variantSlug: variant.variantSlug.trim() })
+      .then((target) => updateVariant(vi, ci, { imageUrl: target.publicUrl }))
+      .catch(() => dispatch(addUIToast({ type: "error", message: "Failed to upload image." })))
+      .finally(() => setUploadingVariantKey(null));
+  };
 
   const updateWhereToFind = (vi: number, wi: number, patch: Partial<WhereToFindFormData>) => {
     updateVersion(vi, {
@@ -198,10 +282,15 @@ const AdminKnifeFormPage = () => {
                 {makers.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)}
               </select>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={FIELD_LABEL}>Cover Photo URL</label>
-              <input value={form.coverPhotoUrl} onChange={(e) => setForm((p) => ({ ...p, coverPhotoUrl: e.target.value }))} className={FIELD_INPUT} />
-            </div>
+            <ImageUploadField
+              label="Cover Photo"
+              imageUrl={form.coverPhotoUrl}
+              disabled={!form.slug.trim()}
+              disabledHint="Enter a slug first"
+              uploading={coverUploading}
+              onUpload={handleCoverUpload}
+              onClear={() => setForm((p) => ({ ...p, coverPhotoUrl: "" }))}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -343,6 +432,15 @@ const AdminKnifeFormPage = () => {
                       <Select value={variant.bladeMaterial} onChange={(v) => updateVariant(vi, ci, { bladeMaterial: v })} options={BLADE_MATERIAL_OPTIONS} />
                       <Select value={variant.bladeFinish} onChange={(v) => updateVariant(vi, ci, { bladeFinish: v })} options={BLADE_FINISH_OPTIONS} />
                     </div>
+                    <ImageUploadField
+                      label="Variant Image"
+                      imageUrl={variant.imageUrl}
+                      disabled={!form.slug.trim() || !version.versionSlug.trim() || !variant.variantSlug.trim()}
+                      disabledHint="Enter knife slug, version slug, and variant slug first"
+                      uploading={uploadingVariantKey === `${vi}-${ci}`}
+                      onUpload={(file) => handleVariantImageUpload(vi, ci, file)}
+                      onClear={() => updateVariant(vi, ci, { imageUrl: "" })}
+                    />
                   </div>
                 ))}
               </div>
