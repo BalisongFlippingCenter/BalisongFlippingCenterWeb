@@ -92,7 +92,7 @@ const MainLayout = () => {
     return (
       <div className="min-h-screen bg-dark-neutral flex">
         <AdminSidebar />
-        <main className="flex-1 min-w-0 overflow-y-auto">
+        <main className="flex-1 min-w-0 overflow-y-auto pt-16 md:pt-0">
           <Outlet />
         </main>
       </div>
