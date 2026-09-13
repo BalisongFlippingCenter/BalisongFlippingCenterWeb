@@ -38,6 +38,25 @@ const AdminSidebar = () => {
 
   return (
     <>
+      {/* Logo badge — below md only, mirrors the hamburger in the opposite corner */}
+      {!isOpen && (
+        <Link
+          to="/admin"
+          aria-label="Balisong Flipping Center"
+          className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-lg border border-white/10 bg-dark-neutral-offset flex items-center justify-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" className="h-6 w-auto" aria-hidden="true">
+            <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
+            <path d="M 52,55 L 6,12 L 10,8 L 56,51 Z" fill="white" opacity="0.3"/>
+            <path d="M 52,55 L 6,98 L 0,92 L 4,84 L 44,51 Z" fill="white" opacity="0.95"/>
+            <path d="M 52,55 L 6,98 L 10,102 L 56,59 Z" fill="white" opacity="0.3"/>
+            <path d="M 52,55 C 70,54 92,50 112,46 C 130,42 142,38 148,35 C 142,41 130,47 112,52 C 92,57 70,58 52,57 Z" fill="white" opacity="0.95"/>
+            <circle cx="52" cy="55" r="4.5" fill="white"/>
+            <circle cx="52" cy="55" r="2" fill="black"/>
+          </svg>
+        </Link>
+      )}
+
       {/* Hamburger toggle — below md only, sidebar is always visible at md+ */}
       {!isOpen && (
         <button
@@ -71,7 +90,8 @@ const AdminSidebar = () => {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 540 110"
-              className="h-8 w-auto"
+              preserveAspectRatio="none"
+              className="h-8 w-full"
               aria-label="Balisong Flipping Center"
             >
               <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
