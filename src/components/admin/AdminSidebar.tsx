@@ -68,10 +68,24 @@ const AdminSidebar = () => {
             onClick={() => setIsOpen(false)}
             className="flex-1 block px-5 py-6 hover:bg-white/[0.03] transition-colors duration-150"
           >
-            <p className="text-white/30 text-sm font-medium">
-              <span className="text-blue-primary">Balisong</span> Flipping Center
-            </p>
-            <p className="text-white font-bold text-2xl mt-0.5">Admin</p>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 540 110"
+              className="h-8 w-auto"
+              aria-label="Balisong Flipping Center"
+            >
+              <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
+              <path d="M 52,55 L 6,12 L 10,8 L 56,51 Z" fill="white" opacity="0.3"/>
+              <path d="M 52,55 L 6,98 L 0,92 L 4,84 L 44,51 Z" fill="white" opacity="0.95"/>
+              <path d="M 52,55 L 6,98 L 10,102 L 56,59 Z" fill="white" opacity="0.3"/>
+              <path d="M 52,55 C 70,54 92,50 112,46 C 130,42 142,38 148,35 C 142,41 130,47 112,52 C 92,57 70,58 52,57 Z" fill="white" opacity="0.95"/>
+              <circle cx="52" cy="55" r="4.5" fill="white"/>
+              <circle cx="52" cy="55" r="2" fill="black"/>
+              <text x="178" y="52" fontFamily="'Bebas Neue','Impact',sans-serif" fontSize="44" letterSpacing="4" fill="white">BALISONG</text>
+              <rect x="182" y="61" width="240" height="1.5" rx="0.75" fill="white" opacity="0.75"/>
+              <text x="182" y="84" fontFamily="'Barlow','Arial Narrow',sans-serif" fontSize="20" fontWeight="600" letterSpacing="4" fill="white" opacity="0.7">FLIPPING CENTER</text>
+            </svg>
+            <p className="text-white font-bold text-2xl mt-2">Admin</p>
           </Link>
           <button
             type="button"
