@@ -58,10 +58,10 @@ const AdminCatalogPage = () => {
       .finally(() => setDeletingSlug(null));
   };
 
-  const handleViewKnifePublicPage = (e: React.MouseEvent, slug: string) => {
+  const handleViewPublicPage = (e: React.MouseEvent, path: string) => {
     e.preventDefault();
     e.stopPropagation();
-    window.open(`/product-world/knife/${slug}`, "_blank", "noopener,noreferrer");
+    window.open(path, "_blank", "noopener,noreferrer");
   };
 
   const handleDeleteKnife = (e: React.MouseEvent, slug: string) => {
@@ -148,6 +148,14 @@ const AdminCatalogPage = () => {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   type="button"
+                  onClick={(e) => handleViewPublicPage(e, `/product-world/maker/${maker.slug}`)}
+                  title="View public page"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
+                >
+                  <FontAwesomeIcon icon={faDesktop} className="text-xs" />
+                </button>
+                <button
+                  type="button"
                   disabled={deletingSlug === maker.slug}
                   onClick={(e) => handleDeleteMaker(e, maker.slug)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
@@ -203,7 +211,7 @@ const AdminCatalogPage = () => {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={(e) => handleViewKnifePublicPage(e, knife.slug)}
+                  onClick={(e) => handleViewPublicPage(e, `/product-world/knife/${knife.slug}`)}
                   title="View public page"
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
                 >

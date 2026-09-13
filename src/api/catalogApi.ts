@@ -68,6 +68,21 @@ export interface MakerSummary {
   logoUrl: string | null;
 }
 
+export interface MakerDetail {
+  slug: string;
+  name: string;
+  country: string | null;
+  knownFor: string | null;
+  officialSiteUrl: string | null;
+  logoUrl: string | null;
+  foundedYear: number | null;
+  instagramUrl: string | null;
+  youtubeUrl: string | null;
+  facebookUrl: string | null;
+  twitterUrl: string | null;
+  knives: KnifeSummary[];
+}
+
 export const searchKnivesCatalog = (search?: string) =>
   axiosApiInstance
     .get<KnifeSummary[]>("/catalog/any/knives", { params: search ? { search } : {} })
@@ -78,3 +93,6 @@ export const getKnifeCatalogDetail = (slug: string) =>
 
 export const listMakersCatalog = () =>
   axiosApiInstance.get<MakerSummary[]>("/catalog/any/makers").then((res) => res.data);
+
+export const getMakerCatalogDetail = (slug: string) =>
+  axiosApiInstance.get<MakerDetail>(`/catalog/any/makers/${slug}`).then((res) => res.data);
