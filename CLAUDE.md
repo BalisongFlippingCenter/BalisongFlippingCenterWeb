@@ -148,7 +148,7 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 
 ## Future Implementation
 
-- **Registration verify redirect** — `UserRegistrationForm.tsx` line 94 hardcodes `navigate("/register/verify/tzenisekj@gmail.com")` after successful registration. This needs to be updated to use the `email` state variable: `navigate(\`/register/verify/${email.trim()}\`)` once the email verification flow is built out.
+- **Email verification** — Done. `UserRegistrationForm.tsx` redirects to `/register/verify/${email}` after a non-admin registration; `LoginForm.tsx` surfaces a "Verify email" link (routing to the same page) when login is rejected for being unverified. Google sign-in is unaffected — see the backend repo's Auth section for the full flow.
 
 ### Settings Page TODOs
 

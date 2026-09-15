@@ -113,7 +113,8 @@ const UserRegistrationForm = () => {
       .then((res) => {
         // reserved admin email pauses here for a code — the form below switches to code entry
         if (res.requiresAdminVerification) return;
-        navigate("/login");
+        // every other new account must verify its email before it can log in
+        navigate(`/register/verify/${email.trim()}`);
       })
       .catch(() => {});
   };
