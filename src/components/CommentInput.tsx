@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { useAppSelector } from "../redux/hooks";
+import { useAppSelector, useAppDispatch } from "../redux/hooks";
+import { addUIToast } from "../redux/uiToast/uiToastSlice";
 
 interface CommentInputProps {
   onSubmit: (content: string) => Promise<void>;
@@ -11,6 +12,7 @@ interface CommentInputProps {
 
 const CommentInput = ({ onSubmit, placeholder = "Write a comment...", onCancel, autoFocus, initialValue = "" }: CommentInputProps) => {
   const user = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
   const [content,    setContent]    = useState(initialValue);
   const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -22,6 +24,9 @@ const CommentInput = ({ onSubmit, placeholder = "Write a comment...", onCancel, 
     try {
       await onSubmit(trimmed);
       setContent("");
+    } catch (err: any) {
+      const msg = typeof err.response?.data === "string" ? err.response.data : "Failed to post comment. Please try again.";
+      dispatch(addUIToast({ type: "error", message: msg }));
     } finally {
       setSubmitting(false);
     }
