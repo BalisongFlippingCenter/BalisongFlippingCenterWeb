@@ -49,7 +49,6 @@ export interface VariantFormData {
   msrp: string;
   bladeStyle: string;
   bladeMaterial: string;
-  bladeFinish: string;
   imageUrl: string;
 }
 

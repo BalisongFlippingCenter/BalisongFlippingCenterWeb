@@ -29,12 +29,12 @@ const MakerDetailPage = () => {
       .finally(() => setIsLoading(false));
   }, [makerSlug]);
 
-  const BG = "linear-gradient(to bottom, #00080e 0%, #000a10 40%, #000305 100%)";
+  const BG = "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)";
 
   if (isLoading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: BG }}>
-        <div className="w-6 h-6 rounded-full border-2 border-blue-primary/60 border-t-transparent animate-spin" />
+        <div className="w-6 h-6 rounded-full border-2 border-gold/60 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -46,7 +46,7 @@ const MakerDetailPage = () => {
         <button
           type="button"
           onClick={() => navigate("/product-world")}
-          className="text-blue-primary/70 text-sm hover:text-blue-primary transition-colors"
+          className="text-gold/70 text-sm hover:text-gold transition-colors"
         >
           ← Back to Product World
         </button>
@@ -69,7 +69,7 @@ const MakerDetailPage = () => {
         <button
           type="button"
           onClick={() => navigate("/product-world")}
-          className="self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-blue-primary/25 text-white/70 hover:text-white hover:border-blue-primary/50 text-sm font-medium transition-all duration-150"
+          className="self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gold/25 text-white/70 hover:text-white hover:border-gold/50 text-sm font-medium transition-all duration-150"
           style={{ background: "rgba(0,0,0,0.35)" }}
         >
           <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
@@ -78,19 +78,19 @@ const MakerDetailPage = () => {
 
         {/* ── Company header ────────────────────────────────────────────────── */}
         <div
-          className="flex flex-col gap-5 p-6 rounded-2xl border border-blue-primary/25"
-          style={{ background: "linear-gradient(135deg, rgba(16,129,152,0.10), rgba(16,129,152,0.02))" }}
+          className="flex flex-col gap-5 p-6 rounded-2xl border border-gold/25"
+          style={{ background: "linear-gradient(135deg, rgba(230,184,0,0.10), rgba(230,184,0,0.02))" }}
         >
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border border-blue-primary/30 bg-black/40 flex-shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border border-gold/30 bg-black/40 flex-shrink-0 flex items-center justify-center overflow-hidden">
               {maker.logoUrl ? (
                 <img src={maker.logoUrl} alt={maker.name} className="w-full h-full object-cover" />
               ) : (
-                <FontAwesomeIcon icon={faIndustry} className="text-blue-primary/40 text-3xl" />
+                <FontAwesomeIcon icon={faIndustry} className="text-gold/40 text-3xl" />
               )}
             </div>
             <div className="flex flex-col gap-2 min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-primary/60">Maker</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gold/60">Maker</p>
               <h1 className="text-white font-extrabold text-3xl md:text-4xl leading-tight truncate">{maker.name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {maker.country && (
@@ -99,7 +99,7 @@ const MakerDetailPage = () => {
                   </span>
                 )}
                 {maker.foundedYear && (
-                  <span className="text-blue-primary/80 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-primary/30 bg-blue-primary/10">
+                  <span className="text-gold/80 text-xs font-bold px-2.5 py-1 rounded-full border border-gold/30 bg-gold/10">
                     Est. {maker.foundedYear}
                   </span>
                 )}
@@ -119,7 +119,7 @@ const MakerDetailPage = () => {
                   href={maker.officialSiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-primary/30 bg-blue-primary/[0.06] text-blue-primary text-xs font-semibold hover:bg-blue-primary/[0.12] hover:border-blue-primary/50 transition-all duration-150"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gold/30 bg-gold/[0.06] text-gold text-xs font-semibold hover:bg-gold/[0.12] hover:border-gold/50 transition-all duration-150"
                 >
                   <FontAwesomeIcon icon={faGlobe} className="text-[11px]" />
                   Official Site
@@ -146,11 +146,11 @@ const MakerDetailPage = () => {
         {/* ── Knives ────────────────────────────────────────────────────────── */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(16,129,152,0.35), rgba(16,129,152,0.05))" }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-primary/60 flex-shrink-0">
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(230,184,0,0.35), rgba(230,184,0,0.05))" }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gold/60 flex-shrink-0">
               Knives by {maker.name}
             </span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, rgba(16,129,152,0.35), rgba(16,129,152,0.05))" }} />
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, rgba(230,184,0,0.35), rgba(230,184,0,0.05))" }} />
           </div>
 
           {maker.knives.length === 0 ? (
@@ -164,7 +164,7 @@ const MakerDetailPage = () => {
                   onClick={() => navigate(`/product-world/knife/${knife.slug}`)}
                   className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-150 text-left group ${
                     knife.hasActiveVersion
-                      ? "border-blue-primary/25 bg-blue-primary/5 hover:border-blue-primary/45 hover:bg-blue-primary/[0.09]"
+                      ? "border-white/[0.14] bg-white/[0.04] hover:border-white/25 hover:bg-white/[0.08]"
                       : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
                   }`}
                 >
@@ -201,7 +201,7 @@ const MakerDetailPage = () => {
                     <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-white/[0.06]">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         {knife.priceRangeSummary && (
-                          <span className="text-blue-primary/80 text-sm font-bold truncate">{knife.priceRangeSummary}</span>
+                          <span className="text-white/80 text-sm font-bold truncate">{knife.priceRangeSummary}</span>
                         )}
                         {knife.handleMaterialSummary && (
                           <span className="text-white/30 text-[11px] truncate">{knife.handleMaterialSummary}</span>

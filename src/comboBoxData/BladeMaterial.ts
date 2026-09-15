@@ -18,6 +18,10 @@ export const bladeMaterial = [
     "AEB-L",
     "12C27",
     "440C",
+    "CPVC",
+    "Acetal",
+    "Ultem",
+    "HDPE",
     "Other",
     "Unknown"
 ]

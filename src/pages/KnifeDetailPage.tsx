@@ -12,7 +12,7 @@ import { formatCurrency, formatWeight, formatLength } from "../utils/unitConvers
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import {
-  BLADE_STYLE_LABELS, BLADE_MATERIAL_LABELS, BLADE_FINISH_LABELS,
+  BLADE_STYLE_LABELS, BLADE_MATERIAL_LABELS,
   HANDLE_MATERIAL_LABELS, HANDLE_FINISH_LABELS, HANDLE_CONSTRUCTION_LABELS,
   PIVOT_SYSTEM_LABELS, LATCH_TYPE_LABELS, PIN_SYSTEM_LABELS, enumToLabel,
 } from "../utils/catalogEnumLabels";
@@ -427,6 +427,9 @@ const KnifeDetailPage = () => {
                 <SpecRow label="MSRP"           value={formatCurrency(activeVariant.msrp, currency)} />
                 <SpecRow label="Overall Length" value={formatLength(activeVersion.overallLength, measurementUnit)} />
                 <SpecRow label="Weight"         value={formatWeight(activeVersion.weight, measurementUnit)} />
+                {activeVersion.hasModularBalance && (
+                  <SpecRow label="Balance" value={activeVersion.balanceValue ?? "Modular"} />
+                )}
               </div>
             </div>
 
@@ -442,7 +445,6 @@ const KnifeDetailPage = () => {
             <SpecCard title="Blade">
               <SpecRow label="Style"    value={enumToLabel(BLADE_STYLE_LABELS, activeVariant.bladeStyle)} />
               <SpecRow label="Material" value={enumToLabel(BLADE_MATERIAL_LABELS, activeVariant.bladeMaterial)} />
-              <SpecRow label="Finish"   value={enumToLabel(BLADE_FINISH_LABELS, activeVariant.bladeFinish)} />
             </SpecCard>
 
             <SpecCard title="Handle">

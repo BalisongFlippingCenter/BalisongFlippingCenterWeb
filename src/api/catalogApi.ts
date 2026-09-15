@@ -19,7 +19,6 @@ export interface KnifeVariant {
   msrp: number | null;
   bladeStyle: string | null;
   bladeMaterial: string | null;
-  bladeFinish: string | null;
   imageUrl: string | null;
 }
 

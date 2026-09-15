@@ -11,6 +11,10 @@ export const handleMaterial = [
     "Plastic",
     "Brass",
     "Copper",
+    "CPVC",
+    "Acetal",
+    "Ultem",
+    "HDPE",
     "Other",
     "Unknown"
 ]

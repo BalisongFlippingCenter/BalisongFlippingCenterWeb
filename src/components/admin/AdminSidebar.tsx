@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGaugeHigh, faFlag, faIndustry, faRightFromBracket, faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { logout } from "../../redux/auth/authActions";
@@ -21,8 +21,10 @@ const NAV_ITEMS = [
 const AdminSidebar = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
   const [isOpen, setIsOpen] = useState(false);
+  const isOnAdminRoute = location.pathname.startsWith("/admin");
 
   const handleLogout = () => {
     dispatch(logout())
@@ -38,8 +40,8 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Logo badge — below md only, mirrors the hamburger in the opposite corner */}
-      {!isOpen && (
+      {/* Logo badge — below md only, mirrors the hamburger in the opposite corner. Only on /admin/* — the public pages an admin can still browse keep just the hamburger. */}
+      {!isOpen && isOnAdminRoute && (
         <Link
           to="/admin"
           aria-label="Balisong Flipping Center"
@@ -91,7 +93,7 @@ const AdminSidebar = () => {
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 540 110"
               preserveAspectRatio="none"
-              className="h-8 w-full"
+              className="h-14 w-full"
               aria-label="Balisong Flipping Center"
             >
               <path d="M 52,55 L 6,12 L 0,18 L 4,26 L 44,59 Z" fill="white" opacity="0.95"/>
@@ -101,11 +103,10 @@ const AdminSidebar = () => {
               <path d="M 52,55 C 70,54 92,50 112,46 C 130,42 142,38 148,35 C 142,41 130,47 112,52 C 92,57 70,58 52,57 Z" fill="white" opacity="0.95"/>
               <circle cx="52" cy="55" r="4.5" fill="white"/>
               <circle cx="52" cy="55" r="2" fill="black"/>
-              <text x="178" y="52" fontFamily="'Bebas Neue','Impact',sans-serif" fontSize="44" letterSpacing="4" fill="white">BALISONG</text>
-              <rect x="182" y="61" width="240" height="1.5" rx="0.75" fill="white" opacity="0.75"/>
-              <text x="182" y="84" fontFamily="'Barlow','Arial Narrow',sans-serif" fontSize="20" fontWeight="600" letterSpacing="4" fill="white" opacity="0.7">FLIPPING CENTER</text>
+              <text x="170" y="55" fontFamily="'Bebas Neue','Impact',sans-serif" fontSize="54" letterSpacing="4" fill="white">BALISONG</text>
+              <rect x="174" y="66" width="270" height="1.5" rx="0.75" fill="white" opacity="0.75"/>
+              <text x="174" y="90" fontFamily="'Barlow','Arial Narrow',sans-serif" fontSize="26" fontWeight="600" letterSpacing="4" fill="white" opacity="0.7">FLIPPING CENTER</text>
             </svg>
-            <p className="text-white font-bold text-2xl mt-2">Admin</p>
           </Link>
           <button
             type="button"

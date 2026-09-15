@@ -11,7 +11,6 @@ import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useAppDispatch } from "../../redux/hooks";
 import { bladeStyle as BLADE_STYLE_OPTIONS } from "../../comboBoxData/BladeStyle";
 import { bladeMaterial as BLADE_MATERIAL_OPTIONS } from "../../comboBoxData/BladeMaterial";
-import { bladeFinish as BLADE_FINISH_OPTIONS } from "../../comboBoxData/BladeFinish";
 import { handleMaterial as HANDLE_MATERIAL_OPTIONS } from "../../comboBoxData/HandleMaterial";
 import { handleFinish as HANDLE_FINISH_OPTIONS } from "../../comboBoxData/HandleFinish";
 import { handleConstruction as HANDLE_CONSTRUCTION_OPTIONS } from "../../comboBoxData/HandleConstruction";
@@ -19,7 +18,7 @@ import { pivotSystem as PIVOT_SYSTEM_OPTIONS } from "../../comboBoxData/PivotSys
 import { latchType as LATCH_TYPE_OPTIONS } from "../../comboBoxData/LatchType";
 import { pinSystem as PIN_SYSTEM_OPTIONS } from "../../comboBoxData/PinSystem";
 import {
-  BLADE_STYLE_LABELS, BLADE_MATERIAL_LABELS, BLADE_FINISH_LABELS,
+  BLADE_STYLE_LABELS, BLADE_MATERIAL_LABELS,
   HANDLE_MATERIAL_LABELS, HANDLE_FINISH_LABELS, HANDLE_CONSTRUCTION_LABELS,
   PIVOT_SYSTEM_LABELS, LATCH_TYPE_LABELS, PIN_SYSTEM_LABELS, enumToLabel,
 } from "../../utils/catalogEnumLabels";
@@ -32,7 +31,7 @@ const FIELD_INPUT = "w-full bg-dark-neutral border border-white/10 focus:border-
 
 const emptyWhereToFind = (): WhereToFindFormData => ({ label: "", url: "", type: "official", note: "" });
 const emptyVariant = (): VariantFormData => ({
-  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", bladeFinish: "", imageUrl: "",
+  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", imageUrl: "",
 });
 const emptyVersion = (): VersionFormData => ({
   versionSlug: "", version: "", discontinued: false, releaseYear: null, description: "",
@@ -77,7 +76,6 @@ const mapDetailToForm = (data: any): KnifeFormData => ({
       msrp: variant.msrp != null ? String(variant.msrp) : "",
       bladeStyle: enumToLabel(BLADE_STYLE_LABELS, variant.bladeStyle),
       bladeMaterial: enumToLabel(BLADE_MATERIAL_LABELS, variant.bladeMaterial),
-      bladeFinish: enumToLabel(BLADE_FINISH_LABELS, variant.bladeFinish),
       imageUrl: variant.imageUrl ?? "",
     })),
     whereToFind: (v.whereToFind ?? []).map((w: any) => ({
@@ -89,8 +87,8 @@ const mapDetailToForm = (data: any): KnifeFormData => ({
   })),
 });
 
-const Select = ({ value, onChange, options, disabled }: { value: string; onChange: (v: string) => void; options: string[]; disabled?: boolean }) => (
-  <select disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} className={FIELD_INPUT}>
+const Select = ({ value, onChange, options, disabled, required }: { value: string; onChange: (v: string) => void; options: string[]; disabled?: boolean; required?: boolean }) => (
+  <select required={required} disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} className={FIELD_INPUT}>
     <option value="">—</option>
     {options.map((o) => <option key={o} value={o}>{o}</option>)}
   </select>
@@ -340,12 +338,12 @@ const AdminKnifeFormPage = () => {
                   <input type="number" value={version.releaseYear ?? ""} onChange={(e) => updateVersion(vi, { releaseYear: e.target.value === "" ? null : Number(e.target.value) })} className={FIELD_INPUT} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Overall Length</label>
-                  <input value={version.overallLength} onChange={(e) => updateVersion(vi, { overallLength: e.target.value })} className={FIELD_INPUT} placeholder="10.5" />
+                  <label className={FIELD_LABEL}>Overall Length *</label>
+                  <input required value={version.overallLength} onChange={(e) => updateVersion(vi, { overallLength: e.target.value })} className={FIELD_INPUT} placeholder="10.5" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Weight</label>
-                  <input value={version.weight} onChange={(e) => updateVersion(vi, { weight: e.target.value })} className={FIELD_INPUT} placeholder="4.19" />
+                  <label className={FIELD_LABEL}>Weight *</label>
+                  <input required value={version.weight} onChange={(e) => updateVersion(vi, { weight: e.target.value })} className={FIELD_INPUT} placeholder="4.19" />
                 </div>
               </div>
 
@@ -361,31 +359,31 @@ const AdminKnifeFormPage = () => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Pivot System</label>
-                  <Select value={version.pivotSystem} onChange={(v) => updateVersion(vi, { pivotSystem: v })} options={PIVOT_SYSTEM_OPTIONS} />
+                  <label className={FIELD_LABEL}>Pivot System *</label>
+                  <Select required value={version.pivotSystem} onChange={(v) => updateVersion(vi, { pivotSystem: v })} options={PIVOT_SYSTEM_OPTIONS} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Latch Type</label>
-                  <Select value={version.latchType} onChange={(v) => updateVersion(vi, { latchType: v })} options={LATCH_TYPE_OPTIONS} />
+                  <label className={FIELD_LABEL}>Latch Type *</label>
+                  <Select required value={version.latchType} onChange={(v) => updateVersion(vi, { latchType: v })} options={LATCH_TYPE_OPTIONS} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Pin System</label>
-                  <Select value={version.pinSystem} onChange={(v) => updateVersion(vi, { pinSystem: v })} options={PIN_SYSTEM_OPTIONS} />
+                  <label className={FIELD_LABEL}>Pin System *</label>
+                  <Select required value={version.pinSystem} onChange={(v) => updateVersion(vi, { pinSystem: v })} options={PIN_SYSTEM_OPTIONS} />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Handle Construction</label>
-                  <Select value={version.handleConstruction} onChange={(v) => updateVersion(vi, { handleConstruction: v })} options={HANDLE_CONSTRUCTION_OPTIONS} />
+                  <label className={FIELD_LABEL}>Handle Construction *</label>
+                  <Select required value={version.handleConstruction} onChange={(v) => updateVersion(vi, { handleConstruction: v })} options={HANDLE_CONSTRUCTION_OPTIONS} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Handle Material</label>
-                  <Select value={version.handleMaterial} onChange={(v) => updateVersion(vi, { handleMaterial: v })} options={HANDLE_MATERIAL_OPTIONS} />
+                  <label className={FIELD_LABEL}>Handle Material *</label>
+                  <Select required value={version.handleMaterial} onChange={(v) => updateVersion(vi, { handleMaterial: v })} options={HANDLE_MATERIAL_OPTIONS} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={FIELD_LABEL}>Handle Finish</label>
-                  <Select value={version.handleFinish} onChange={(v) => updateVersion(vi, { handleFinish: v })} options={HANDLE_FINISH_OPTIONS} />
+                  <label className={FIELD_LABEL}>Handle Finish *</label>
+                  <Select required value={version.handleFinish} onChange={(v) => updateVersion(vi, { handleFinish: v })} options={HANDLE_FINISH_OPTIONS} />
                 </div>
               </div>
 
@@ -426,12 +424,14 @@ const AdminKnifeFormPage = () => {
                       </select>
                       <input required value={variant.label} onChange={(e) => updateVariant(vi, ci, { label: e.target.value })} className={FIELD_INPUT} placeholder="label" />
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
-                      <input value={variant.msrp} onChange={(e) => updateVariant(vi, ci, { msrp: e.target.value })} className={FIELD_INPUT} placeholder="MSRP" />
-                      <Select value={variant.bladeStyle} onChange={(v) => updateVariant(vi, ci, { bladeStyle: v })} options={BLADE_STYLE_OPTIONS} disabled={variant.type === "trainer"} />
-                      <Select value={variant.bladeMaterial} onChange={(v) => updateVariant(vi, ci, { bladeMaterial: v })} options={BLADE_MATERIAL_OPTIONS} />
-                      <Select value={variant.bladeFinish} onChange={(v) => updateVariant(vi, ci, { bladeFinish: v })} options={BLADE_FINISH_OPTIONS} />
+                    <div className="grid grid-cols-3 gap-3">
+                      <input required value={variant.msrp} onChange={(e) => updateVariant(vi, ci, { msrp: e.target.value })} className={FIELD_INPUT} placeholder="MSRP *" />
+                      <Select required={variant.type === "live"} value={variant.bladeStyle} onChange={(v) => updateVariant(vi, ci, { bladeStyle: v })} options={BLADE_STYLE_OPTIONS} />
+                      <Select required={variant.type === "live"} value={variant.bladeMaterial} onChange={(v) => updateVariant(vi, ci, { bladeMaterial: v })} options={BLADE_MATERIAL_OPTIONS} />
                     </div>
+                    <p className="text-white/25 text-[11px] -mt-1">
+                      MSRP required for all variants. Blade style/material required for live blade{variant.type === "trainer" ? " (optional for trainer, but can still be set)" : ""}.
+                    </p>
                     <ImageUploadField
                       label="Variant Image"
                       imageUrl={variant.imageUrl}

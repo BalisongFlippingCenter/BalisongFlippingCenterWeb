@@ -45,6 +45,10 @@ export const BLADE_MATERIAL_LABELS: Record<string, string> = {
   AEB_L: "AEB-L",
   STEEL_12C27: "12C27",
   STEEL_440C: "440C",
+  CPVC: "CPVC",
+  ACETAL: "Acetal",
+  ULTEM: "Ultem",
+  HDPE: "HDPE",
   OTHER: "Other",
   UNKNOWN: "Unknown",
 };
@@ -78,6 +82,10 @@ export const HANDLE_MATERIAL_LABELS: Record<string, string> = {
   PLASTIC: "Plastic",
   BRASS: "Brass",
   COPPER: "Copper",
+  CPVC: "CPVC",
+  ACETAL: "Acetal",
+  ULTEM: "Ultem",
+  HDPE: "HDPE",
   OTHER: "Other",
   UNKNOWN: "Unknown",
 };
