@@ -65,6 +65,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import MessagesPage from "./pages/MessagesPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import KnifeDetailPage from "./pages/KnifeDetailPage";
+import MakerDetailPage from "./pages/MakerDetailPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import GlobalSearchPage from "./pages/GlobalSearchPage";
@@ -204,6 +205,7 @@ const App = () => {
           <Route path="/tutorial-center/:level/:trickSlug" element={<TrickTutorialPage />} />
           <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
           <Route path="/product-world/knife/:knifeSlug/:version?/:variant?" element={<KnifeDetailPage />} />
+          <Route path="/product-world/maker/:makerSlug" element={<MakerDetailPage />} />
 
           {/*Public, but off-limits to an admin session — browsing/discovery hubs*/}
           <Route element={<BlockAdminRoutes />}>

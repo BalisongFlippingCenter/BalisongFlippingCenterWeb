@@ -13,15 +13,11 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { SITE_ROUTES, matchRoute, SiteRoute } from "../data/siteRoutes";
-import knivesData from "../data/knives.json";
-import makersData from "../data/makers.json";
+import { searchKnivesCatalog, listMakersCatalog } from "../api/catalogApi";
 import tricksData from "../data/tricks.json";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface KnifeVersion { versionSlug: string; version: string; discontinued: boolean }
-interface KnifeEntry  { slug: string; maker: string; name: string; bladeStyle: string; priceRange: string; versions: KnifeVersion[] }
-interface MakerEntry  { slug: string; name: string; country: string; knownFor: string }
 interface TrickEntry  { slug: string; level: string; name: string; duration: string; aliases?: string[] }
 interface UserEntry   { accountId: string; displayName: string; identifierCode: string; profileImg: string | null; profileCaption: string | null }
 
@@ -183,40 +179,40 @@ const TrickResults = ({ query, onNavigate }: { query: string; onNavigate: (p: st
 // ── Knife results ─────────────────────────────────────────────────────────────
 
 const KnifeResults = ({ query, onNavigate }: { query: string; onNavigate: (p: string) => void }) => {
-  const matches = (knivesData as KnifeEntry[]).filter(
-    (k) => tokenMatch(k.name, query) || tokenMatch(k.maker, query) || tokenMatch(k.bladeStyle, query)
-  );
+  const [matches, setMatches] = useState<Awaited<ReturnType<typeof searchKnivesCatalog>>>([]);
+
+  useEffect(() => {
+    searchKnivesCatalog(query).then(setMatches).catch(() => setMatches([]));
+  }, [query]);
+
   if (matches.length === 0) return null;
   return (
     <div>
       <SectionLabel>Knives</SectionLabel>
       <div className="flex flex-col gap-2">
-        {matches.map((k) => {
-          const hasActive = k.versions.some((v) => !v.discontinued);
-          return (
-            <button
-              key={k.slug}
-              type="button"
-              onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
-                hasActive
-                  ? "border-green/25 bg-green/5 hover:border-green/40 hover:bg-green/[0.08]"
-                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
-              }`}
-            >
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className={`text-sm font-semibold truncate ${hasActive ? "text-white/80" : "text-white/50"}`}>
-                  {k.name}
-                </span>
-                <span className="text-white/35 text-xs truncate">{k.maker} · {k.bladeStyle}</span>
-              </div>
-              {k.priceRange && (
-                <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRange}</span>
-              )}
-              <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
-            </button>
-          );
-        })}
+        {matches.map((k) => (
+          <button
+            key={k.slug}
+            type="button"
+            onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
+              k.hasActiveVersion
+                ? "border-green/25 bg-green/5 hover:border-green/40 hover:bg-green/[0.08]"
+                : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
+            }`}
+          >
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className={`text-sm font-semibold truncate ${k.hasActiveVersion ? "text-white/80" : "text-white/50"}`}>
+                {k.name}
+              </span>
+              <span className="text-white/35 text-xs truncate">{k.makerName} · {k.bladeStyleSummary}</span>
+            </div>
+            {k.priceRangeSummary && (
+              <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRangeSummary}</span>
+            )}
+            <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -225,8 +221,14 @@ const KnifeResults = ({ query, onNavigate }: { query: string; onNavigate: (p: st
 // ── Maker results ─────────────────────────────────────────────────────────────
 
 const MakerResults = ({ query, onNavigate }: { query: string; onNavigate: (p: string) => void }) => {
-  const matches = (makersData as MakerEntry[]).filter(
-    (m) => tokenMatch(m.name, query) || tokenMatch(m.knownFor ?? "", query) || tokenMatch(m.country, query)
+  const [makers, setMakers] = useState<Awaited<ReturnType<typeof listMakersCatalog>>>([]);
+
+  useEffect(() => {
+    listMakersCatalog().then(setMakers).catch(() => setMakers([]));
+  }, []);
+
+  const matches = makers.filter(
+    (m) => tokenMatch(m.name, query) || tokenMatch(m.country ?? "", query)
   );
   if (matches.length === 0) return null;
   return (
@@ -242,7 +244,7 @@ const MakerResults = ({ query, onNavigate }: { query: string; onNavigate: (p: st
           >
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-white/80 text-sm font-semibold truncate">{m.name}</span>
-              <span className="text-white/35 text-xs truncate">{m.country}{m.knownFor ? ` · ${m.knownFor}` : ""}</span>
+              <span className="text-white/35 text-xs truncate">{m.country}</span>
             </div>
             <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
           </button>
@@ -352,9 +354,7 @@ const GlobalSearchPage = () => {
     query &&
     (
       SITE_ROUTES.some((r) => matchRoute(r, query)) ||
-      (tricksData as TrickEntry[]).some((t) => [t.name, ...(t.aliases ?? [])].some((c) => tokenMatch(c, query))) ||
-      (knivesData as KnifeEntry[]).some((k) => tokenMatch(k.name, query) || tokenMatch(k.maker, query)) ||
-      (makersData as MakerEntry[]).some((m) => tokenMatch(m.name, query))
+      (tricksData as TrickEntry[]).some((t) => [t.name, ...(t.aliases ?? [])].some((c) => tokenMatch(c, query)))
     );
 
   return (
@@ -428,7 +428,7 @@ const GlobalSearchPage = () => {
               <KnifeResults query={query} onNavigate={navigate} />
               <MakerResults query={query} onNavigate={navigate} />
               {!hasStaticResults && (
-                <p className="text-white/25 text-sm -mt-2">No pages, tricks, knives or makers matched.</p>
+                <p className="text-white/25 text-sm -mt-2">No pages or tricks matched.</p>
               )}
             </div>
           )}

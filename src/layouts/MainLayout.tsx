@@ -50,7 +50,7 @@ const SiteFooter = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
     </div>
 
     {/* Desktop layout */}
-    <div className={`hidden md:flex max-w-[1775px] mx-auto px-6 pt-14 flex-row items-center justify-between gap-6 ${isLoggedIn ? "pb-[132px]" : "pb-14"}`}>
+    <div className={`hidden md:flex max-w-[1775px] mx-auto px-6 pt-14 flex-row items-center justify-between gap-6 ${isLoggedIn ? "pb-[177px]" : "pb-14"}`}>
       <div className="flex flex-col items-start gap-1">
         <span className="text-white font-bold text-sm">Balisong Flipping Center</span>
         <span className="text-white/30 text-xs">© {new Date().getFullYear()} All rights reserved.</span>
