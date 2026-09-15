@@ -61,6 +61,13 @@ All routes render inside `MainLayout` (auto-hiding header via `react-headroom` +
 
 User profile pages use dynamic routes: `/:account/:identifier` for profile, `/:account/:identifier/collection` for collection, `/:account/:identifier/collection/:knife` for a specific knife.
 
+### Admin Dashboard (`/admin/**`)
+`AdminLayout` + `AdminSidebar` — no normal site header/footer/nav, `ADMIN` role required (`AuthProtectedRoutes`). Pages, all under `src/pages/admin/`:
+- `/admin` — `AdminDashboardPage`, currently just a pending-reports count
+- `/admin/reports` — `AdminReportsPage`, the report review queue
+- `/admin/accounts` — `AdminAccountsPage`, search an account then ban/suspend/mute it (backend: `/admin/accounts/**`, see the backend repo's `CLAUDE.md`)
+- `/admin/catalog`, `/admin/catalog/import`, `/admin/catalog/makers/new|:slug/edit`, `/admin/catalog/knives/new|:slug/edit` — Maker/Knife CRUD + bulk-JSON import (backend: `/admin/catalog/**`)
+
 ### Data Models (`src/modals/`)
 
 Note the directory is named `modals` (not `models`) — this is intentional in this codebase.
