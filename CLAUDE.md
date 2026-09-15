@@ -166,10 +166,9 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 - **Tutorial/Combo post disclaimer** — add a visible notice on Tutorial/Trick Tutorial/Combo posts: *"Attempting these tricks involves risk of serious injury. Always use safety gear and train responsibly."*
 
 ### Priority 2 — Report / Flag System
-- **"Report this post" button** on all user-generated content (posts, comments). Backend review queue required.
-- **Flagged content policy** — remove posts flagged as illegal sales in restricted jurisdictions. Document the policy publicly.
-- A working report system demonstrates good-faith moderation and strengthens Section 230 coverage.
-- *The Discord bot flag system is partially in place — this needs a full backend review queue to be complete.*
+- **Done**: `ReportModal.tsx` provides a "Report this post" flow on posts, comments, profiles, and messages, posting to `/reports`; the backend has a full review queue with an admin dashboard UI (`AdminReportsPage`).
+- **Still open — Flagged content policy**: remove posts flagged as illegal sales in restricted jurisdictions, and document the policy publicly. A working report system plus a public policy statement are what demonstrate good-faith moderation and strengthen Section 230 coverage.
+- *The Discord bot flag system is planned but not started (see the backend repo's Known Gaps).*
 
 ### Priority 3 — Attorney Review (~$500–$1,500 one-time)
 - Hire a business or internet law attorney to draft/review the ToS. Bundle a Privacy Policy review at the same time.
