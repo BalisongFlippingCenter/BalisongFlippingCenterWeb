@@ -8,6 +8,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import AdminCatalogPage from "./pages/admin/AdminCatalogPage";
+import AdminAccountsPage from "./pages/admin/AdminAccountsPage";
 import AdminMakerFormPage from "./pages/admin/AdminMakerFormPage";
 import AdminCatalogImportPage from "./pages/admin/AdminCatalogImportPage";
 import AdminKnifeFormPage from "./pages/admin/AdminKnifeFormPage";
@@ -186,6 +187,7 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="accounts" element={<AdminAccountsPage />} />
             <Route path="catalog" element={<AdminCatalogPage />} />
             <Route path="catalog/import" element={<AdminCatalogImportPage />} />
             <Route path="catalog/makers/new" element={<AdminMakerFormPage />} />
