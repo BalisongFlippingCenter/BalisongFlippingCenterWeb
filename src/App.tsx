@@ -223,7 +223,7 @@ const App = () => {
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:topic" element={<LearnTopicPage />} />
           <Route path="/search" element={<GlobalSearchPage />} />
-          <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />
+          <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
           <Route path="/google/setup" element={<GoogleSetupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/test" element={<TestPage />} />
