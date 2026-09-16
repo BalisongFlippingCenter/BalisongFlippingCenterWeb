@@ -37,8 +37,8 @@ const HomePageIntroductorySectionComponent = () => {
 
     const videoTimer   = setTimeout(() => setVideoVisible(true),  400);
     const overlayTimer = setTimeout(() => setOverlayVisible(true), 600);
-    const cardTimer    = setTimeout(() => setCardVisible(true),    2300);
-    const statsTimer   = setTimeout(() => setStatsVisible(true),   3000);
+    const cardTimer    = setTimeout(() => setCardVisible(true),    700);
+    const statsTimer   = setTimeout(() => setStatsVisible(true),   1100);
 
     return () => {
       clearTimeout(videoTimer);
@@ -101,7 +101,7 @@ const HomePageIntroductorySectionComponent = () => {
 
       {/* Hero content */}
       <div
-        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pt-8 xsm:pb-6 sm:pt-0 sm:pb-20 short:sm:pt-6 short:sm:pb-6 transition-all duration-[2000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`relative z-20 flex-1 flex flex-col items-center justify-center xsm:px-3 sm:px-6 text-center xsm:pt-8 xsm:pb-6 sm:pt-0 sm:pb-20 short:sm:pt-6 short:sm:pb-6 transition-all duration-[700ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
         }`}
       >
