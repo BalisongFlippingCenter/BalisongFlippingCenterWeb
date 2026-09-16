@@ -5,8 +5,13 @@ export const bladeStyle = [
     "Japanese Tanto", 
     "Spear Point", 
     "American Tanto", 
-    "Horse Shoe", 
+    "Horse Shoe",
     "Weehawk",
-    "Other", 
+    "Clip Point",
+    "Drop Point",
+    "Wharncliffe",
+    "Sheepsfoot",
+    "Dagger",
+    "Other",
     "Unknown"
 ]

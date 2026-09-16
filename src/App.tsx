@@ -4,11 +4,20 @@ import PostDrawer from "./components/PostDrawer";
 import WebSocketManager from "./components/WebSocketManager";
 import { PostDetail } from "./modals/Post";
 import MainLayout from "./layouts/MainLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
+import AdminCatalogPage from "./pages/admin/AdminCatalogPage";
+import AdminAccountsPage from "./pages/admin/AdminAccountsPage";
+import AdminMakerFormPage from "./pages/admin/AdminMakerFormPage";
+import AdminCatalogImportPage from "./pages/admin/AdminCatalogImportPage";
+import AdminKnifeFormPage from "./pages/admin/AdminKnifeFormPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 
 import ProfilePage from "./pages/ProfilePage";
 import AuthProtectedRoutes from "./routes/AuthProtectedRoutes";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
+import BlockAdminRoutes from "./routes/BlockAdminRoutes";
 import TutorialCenterPage from "./pages/TutorialCenterPage";
 import TutorialCenterLevelPage from "./pages/TutorialCenterLevelPage";
 import TutorialCenterGettingStartedPage from "./pages/TutorialCenterGettingStartedPage";
@@ -45,7 +54,6 @@ import { setConversations } from "./redux/messages/messagesSlice";
 import { axiosApiInstanceAuth } from "./api/axios";
 import NotificationToastContainer from "./components/NotificationToastContainer";
 import UIToastContainer from "./components/UIToastContainer";
-import AiChatWidget from "./components/aiChat/AiChatWidget";
 import ProfileConfigurationCollectionBannerImagePage from "./pages/configuration/ProfileConfigurationCollectionBannerImagePage";
 import ProfileConfigurationCollectionKnifeCoverPage from "./pages/configuration/ProfileConfigurationCollectionKnifeCoverPage";
 import CollectionKnifePage from "./pages/CollectionKnifePage";
@@ -58,6 +66,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import MessagesPage from "./pages/MessagesPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import KnifeDetailPage from "./pages/KnifeDetailPage";
+import MakerDetailPage from "./pages/MakerDetailPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import GlobalSearchPage from "./pages/GlobalSearchPage";
@@ -172,30 +181,49 @@ const App = () => {
       <WebSocketManager />
       <NotificationToastContainer />
       <UIToastContainer />
-      <AiChatWidget />
       <Routes location={bgLocation ?? location}>
+        {/*Admin dashboard — fully separate from the normal site UI, no MainLayout*/}
+        <Route element={<AuthProtectedRoutes allowedRoles={["ADMIN"]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="accounts" element={<AdminAccountsPage />} />
+            <Route path="catalog" element={<AdminCatalogPage />} />
+            <Route path="catalog/import" element={<AdminCatalogImportPage />} />
+            <Route path="catalog/makers/new" element={<AdminMakerFormPage />} />
+            <Route path="catalog/makers/:slug/edit" element={<AdminMakerFormPage />} />
+            <Route path="catalog/knives/new" element={<AdminKnifeFormPage />} />
+            <Route path="catalog/knives/:slug/edit" element={<AdminKnifeFormPage />} />
+          </Route>
+        </Route>
+
         <Route path="/" element={<MainLayout />}>
           {/*Public Routes*/}
           <Route path="/" element={<HomePage />} />
-          <Route path="/community" element={<CommunityPage />} />
           <Route path="/post/:postId" element={<PostPage />} />
           <Route path="/post/:postId/edit" element={<EditPostPage />} />
 
-          <Route path="/tutorial-center" element={<TutorialCenterPage />} />
           <Route path="/tutorial-center/getting-started" element={<TutorialCenterGettingStartedPage />} />
-          <Route path="/tutorial-center/search" element={<TutorialCenterSearchPage />} />
           <Route path="/tutorial-center/:level/:trickSlug" element={<TrickTutorialPage />} />
           <Route path="/tutorial-center/:level" element={<TutorialCenterLevelPage />} />
-          <Route path="/product-world" element={<ProductWorldPage />} />
-          <Route path="/product-world/search" element={<ProductWorldSearchPage />} />
           <Route path="/product-world/knife/:knifeSlug/:version?/:variant?" element={<KnifeDetailPage />} />
+          <Route path="/product-world/maker/:makerSlug" element={<MakerDetailPage />} />
+
+          {/*Public, but off-limits to an admin session — browsing/discovery hubs*/}
+          <Route element={<BlockAdminRoutes />}>
+            <Route path="/community" element={<CommunityPage />} />
+            <Route path="/tutorial-center" element={<TutorialCenterPage />} />
+            <Route path="/tutorial-center/search" element={<TutorialCenterSearchPage />} />
+            <Route path="/product-world" element={<ProductWorldPage />} />
+            <Route path="/product-world/search" element={<ProductWorldSearchPage />} />
+          </Route>
           <Route path="/about" element={<AboutPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:topic" element={<LearnTopicPage />} />
           <Route path="/search" element={<GlobalSearchPage />} />
-          <Route path="/unauthorized" element={<h2>Unaothorized</h2>} />
+          <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
           <Route path="/google/setup" element={<GoogleSetupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/test" element={<TestPage />} />
@@ -308,10 +336,7 @@ const App = () => {
             />
           </Route>
 
-          {/*Auth protected routes for both admins and users*/}
-          <Route
-            element={<AuthProtectedRoutes allowedRoles={["USER", "ADMIN"]} />}
-          >
+          <Route element={<AuthProtectedRoutes allowedRoles={["USER"]} />}>
             <Route path="/create-post" element={<CreatePostPage />} />
           </Route>
 

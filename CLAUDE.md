@@ -66,6 +66,13 @@ All routes render inside `MainLayout` (auto-hiding header via `react-headroom` +
 
 User profile pages use dynamic routes: `/:account/:identifier` for profile, `/:account/:identifier/collection` for collection, `/:account/:identifier/collection/:knife` for a specific knife.
 
+### Admin Dashboard (`/admin/**`)
+`AdminLayout` + `AdminSidebar` — no normal site header/footer/nav, `ADMIN` role required (`AuthProtectedRoutes`). Pages, all under `src/pages/admin/`:
+- `/admin` — `AdminDashboardPage`, currently just a pending-reports count
+- `/admin/reports` — `AdminReportsPage`, the report review queue
+- `/admin/accounts` — `AdminAccountsPage`, search an account then ban/suspend/mute it (backend: `/admin/accounts/**`, see the backend repo's `CLAUDE.md`)
+- `/admin/catalog`, `/admin/catalog/import`, `/admin/catalog/makers/new|:slug/edit`, `/admin/catalog/knives/new|:slug/edit` — Maker/Knife CRUD + bulk-JSON import (backend: `/admin/catalog/**`)
+
 ### Data Models (`src/modals/`)
 
 Note the directory is named `modals` (not `models`) — this is intentional in this codebase.
@@ -153,7 +160,7 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 
 ## Future Implementation
 
-- **Registration verify redirect** — `UserRegistrationForm.tsx` line 94 hardcodes `navigate("/register/verify/tzenisekj@gmail.com")` after successful registration. This needs to be updated to use the `email` state variable: `navigate(\`/register/verify/${email.trim()}\`)` once the email verification flow is built out.
+- **Email verification** — Done. `UserRegistrationForm.tsx` redirects to `/register/verify/${email}` after a non-admin registration; `LoginForm.tsx` surfaces a "Verify email" link (routing to the same page) when login is rejected for being unverified. Google sign-in is unaffected — see the backend repo's Auth section for the full flow.
 
 ### Settings Page TODOs
 
@@ -171,10 +178,9 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 - **Tutorial/Combo post disclaimer** — add a visible notice on Tutorial/Trick Tutorial/Combo posts: *"Attempting these tricks involves risk of serious injury. Always use safety gear and train responsibly."*
 
 ### Priority 2 — Report / Flag System
-- **"Report this post" button** on all user-generated content (posts, comments). Backend review queue required.
-- **Flagged content policy** — remove posts flagged as illegal sales in restricted jurisdictions. Document the policy publicly.
-- A working report system demonstrates good-faith moderation and strengthens Section 230 coverage.
-- *The Discord bot flag system is partially in place — this needs a full backend review queue to be complete.*
+- **Done**: `ReportModal.tsx` provides a "Report this post" flow on posts, comments, profiles, and messages, posting to `/reports`; the backend has a full review queue with an admin dashboard UI (`AdminReportsPage`).
+- **Still open — Flagged content policy**: remove posts flagged as illegal sales in restricted jurisdictions, and document the policy publicly. A working report system plus a public policy statement are what demonstrate good-faith moderation and strengthen Section 230 coverage.
+- *The Discord bot flag system is planned but not started (see the backend repo's Known Gaps).*
 
 ### Priority 3 — Attorney Review (~$500–$1,500 one-time)
 - Hire a business or internet law attorney to draft/review the ToS. Bundle a Privacy Policy review at the same time.

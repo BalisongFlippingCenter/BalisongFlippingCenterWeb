@@ -6,8 +6,10 @@ export const bladeFinish = [
     "DLC", 
     "Plain", 
     "Polished",
-    "Mirror Polished", 
-    "Black Wash", 
-    "Other", 
+    "Mirror Polished",
+    "Black Wash",
+    "Bead Blasted",
+    "PVD",
+    "Other",
     "Unknown"
 ]

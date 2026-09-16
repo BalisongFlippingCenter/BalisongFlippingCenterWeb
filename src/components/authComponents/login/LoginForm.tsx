@@ -22,6 +22,7 @@ const LoginForm = () => {
   const [topError, setTopError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
   const [adminCode, setAdminCode] = useState("");
@@ -38,13 +39,14 @@ const LoginForm = () => {
     if (rememberInfo) localStorage.setItem("saved-user-email", email);
     dispatch(setCollection(mapCollection(res.collection)));
     dispatch(addUIToast({ type: "success", message: "Welcome back!" }));
-    navigate("/community");
+    navigate(res.account?.role === "ADMIN" ? "/admin" : "/community");
   };
 
   const clearErrors = () => {
     setTopError("");
     setPasswordError("");
     setEmailError("");
+    setNeedsEmailVerification(false);
   };
 
   const handleOnChangeEmail = (e: string) => {
@@ -77,6 +79,7 @@ const LoginForm = () => {
           setPasswordError(err);
         } else if (msg.includes("verif") || msg.includes("unverified")) {
           setEmailError(err);
+          setNeedsEmailVerification(true);
         } else {
           setTopError(err);
         }
@@ -231,6 +234,15 @@ const LoginForm = () => {
             value={email}
             className="w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm px-4 py-3 outline-none transition-colors duration-200 placeholder:text-white/25"
           />
+          {needsEmailVerification && (
+            <button
+              type="button"
+              onClick={() => navigate(`/register/verify/${email.trim()}`)}
+              className="self-start text-blue-primary text-xs font-medium hover:brightness-125 transition-[filter] duration-200"
+            >
+              Verify email
+            </button>
+          )}
         </div>
 
         {/* Password */}

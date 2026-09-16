@@ -113,7 +113,8 @@ const UserRegistrationForm = () => {
       .then((res) => {
         // reserved admin email pauses here for a code — the form below switches to code entry
         if (res.requiresAdminVerification) return;
-        navigate("/login");
+        // every other new account must verify its email before it can log in
+        navigate(`/register/verify/${email.trim()}`);
       })
       .catch(() => {});
   };
@@ -169,7 +170,7 @@ const UserRegistrationForm = () => {
           <div className="flex items-center gap-2.5 px-4 py-2 rounded-full border border-white/10 bg-white/5 w-fit">
             <FontAwesomeIcon icon={faUsers} className="text-blue-primary text-sm" />
             <span className="text-white/60 text-sm">
-              Join <span className="text-white font-semibold">2,400+</span> flippers worldwide
+              Join flippers from around the world
             </span>
           </div>
 

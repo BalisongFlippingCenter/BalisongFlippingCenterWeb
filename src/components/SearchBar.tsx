@@ -11,14 +11,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { SITE_ROUTES, matchRoute, SiteRoute } from "../data/siteRoutes";
 import { axiosApiInstance } from "../api/axios";
-import knivesData from "../data/knives.json";
-import makersData from "../data/makers.json";
+import { searchKnivesCatalog, listMakersCatalog, KnifeSummary, MakerSummary } from "../api/catalogApi";
 import tricksData from "../data/tricks.json";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface KnifeEntry  { slug: string; maker: string; name: string; bladeStyle: string; priceRange: string }
-interface MakerEntry  { slug: string; name: string; country: string; knownFor: string }
 interface TrickEntry  { slug: string; level: string; name: string; aliases?: string[] }
 
 interface UserEntry {
@@ -32,8 +29,6 @@ interface UserEntry {
 interface SearchResults {
   pages:  SiteRoute[];
   tricks: TrickEntry[];
-  knives: KnifeEntry[];
-  makers: MakerEntry[];
 }
 
 const MAX = 3;
@@ -79,7 +74,7 @@ function tokenMatch(haystack: string, query: string): boolean {
 
 function computeResults(query: string): SearchResults {
   const q = query.trim();
-  if (!q) return { pages: [], tricks: [], knives: [], makers: [] };
+  if (!q) return { pages: [], tricks: [] };
 
   const pages = SITE_ROUTES.filter((r) => matchRoute(r, q)).slice(0, MAX);
 
@@ -87,15 +82,7 @@ function computeResults(query: string): SearchResults {
     .filter((t) => [t.name, ...(t.aliases ?? [])].some((c) => tokenMatch(c, q)))
     .slice(0, MAX);
 
-  const knives = (knivesData as KnifeEntry[])
-    .filter((k) => tokenMatch(k.name, q) || tokenMatch(k.maker, q))
-    .slice(0, MAX);
-
-  const makers = (makersData as MakerEntry[])
-    .filter((m) => tokenMatch(m.name, q) || tokenMatch(m.knownFor ?? "", q))
-    .slice(0, MAX);
-
-  return { pages, tricks, knives, makers };
+  return { pages, tricks };
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -111,6 +98,8 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
   const [query,       setQuery]       = useState("");
   const [results,     setResults]     = useState<SearchResults | null>(null);
   const [userResults, setUserResults] = useState<UserEntry[]>([]);
+  const [knifeResults, setKnifeResults] = useState<KnifeSummary[]>([]);
+  const [makerResults, setMakerResults] = useState<MakerSummary[]>([]);
   const [isOpen,      setIsOpen]      = useState(false);
   const [isFocused,   setIsFocused]   = useState(false);
   const [history,     setHistory]     = useState<string[]>([]);
@@ -166,6 +155,8 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
       } else {
         setResults(null);
         setUserResults([]);
+        setKnifeResults([]);
+        setMakerResults([]);
         setIsOpen(false);
       }
     }, 200);
@@ -185,10 +176,24 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Debounced knife/maker catalog search (live API)
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) { setKnifeResults([]); setMakerResults([]); return; }
+    const timer = setTimeout(() => {
+      searchKnivesCatalog(trimmed).then((r) => setKnifeResults(r.slice(0, MAX))).catch(() => setKnifeResults([]));
+      listMakersCatalog()
+        .then((all) => setMakerResults(
+          all.filter((m) => tokenMatch(m.name, trimmed) || tokenMatch(m.country ?? "", trimmed)).slice(0, MAX)
+        ))
+        .catch(() => setMakerResults([]));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const hasResults =
-    userResults.length > 0 ||
-    (results && (results.pages.length > 0 || results.tricks.length > 0 ||
-     results.knives.length > 0 || results.makers.length > 0));
+    userResults.length > 0 || knifeResults.length > 0 || makerResults.length > 0 ||
+    (results && (results.pages.length > 0 || results.tricks.length > 0));
 
   const goTo = (path: string) => {
     const trimmed = query.trim();
@@ -403,12 +408,12 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
               )}
 
               {/* Knives */}
-              {results && results.knives.length > 0 && (
+              {knifeResults.length > 0 && (
                 <div className="mb-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 px-2 pt-1.5 pb-1.5">
                     Knives
                   </p>
-                  {results.knives.map((k) => (
+                  {knifeResults.map((k) => (
                     <button
                       key={k.slug}
                       type="button"
@@ -417,10 +422,10 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-white/80 text-sm font-medium truncate">{k.name}</p>
-                        <p className="text-white/30 text-[11px] truncate">{k.maker}</p>
+                        <p className="text-white/30 text-[11px] truncate">{k.makerName}</p>
                       </div>
-                      {k.priceRange && (
-                        <span className="text-gold/60 text-xs flex-shrink-0">{k.priceRange}</span>
+                      {k.priceRangeSummary && (
+                        <span className="text-gold/60 text-xs flex-shrink-0">{k.priceRangeSummary}</span>
                       )}
                       <FontAwesomeIcon
                         icon={faChevronRight}
@@ -432,12 +437,12 @@ const SearchBar = ({ toggleSearchBar, mobile = false }: Props) => {
               )}
 
               {/* Makers */}
-              {results && results.makers.length > 0 && (
+              {makerResults.length > 0 && (
                 <div className="mb-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 px-2 pt-1.5 pb-1.5">
                     Makers
                   </p>
-                  {results.makers.map((m) => (
+                  {makerResults.map((m) => (
                     <button
                       key={m.slug}
                       type="button"

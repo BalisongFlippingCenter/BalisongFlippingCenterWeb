@@ -7,14 +7,7 @@ import {
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
-import knivesData from "../data/knives.json";
-import makersData from "../data/makers.json";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface KnifeVersion { versionSlug: string; version: string; discontinued: boolean; releaseYear: number }
-interface KnifeEntry  { slug: string; maker: string; name: string; bladeStyle: string; priceRange: string; versions: KnifeVersion[] }
-interface MakerEntry  { slug: string; name: string; country: string; knownFor: string }
+import { searchKnivesCatalog, listMakersCatalog, KnifeSummary, MakerSummary } from "../api/catalogApi";
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
@@ -51,51 +44,44 @@ const tokenMatch = (haystack: string, query: string): boolean => {
 
 // ── Knife results ─────────────────────────────────────────────────────────────
 
-const KnifeResults = ({ query, onNavigate }: { query: string; onNavigate: (path: string) => void }) => {
-  const matches = (knivesData as KnifeEntry[])
-    .filter((k) => tokenMatch(k.name, query) || tokenMatch(k.maker, query) || tokenMatch(k.bladeStyle, query));
+const KnifeResults = ({
+  query, knives, onNavigate,
+}: { query: string; knives: KnifeSummary[]; onNavigate: (path: string) => void }) => {
+  const matches = knives
+    .filter((k) => tokenMatch(k.name, query) || tokenMatch(k.makerName, query) || tokenMatch(k.bladeStyleSummary, query));
   if (matches.length === 0) return null;
   return (
     <div className="mb-2">
       <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-3">Knife Pages</p>
       <div className="flex flex-col gap-2">
-        {matches.map((k) => {
-          const hasActiveVersion = k.versions.some((v) => !v.discontinued);
-          const versionCount = k.versions.length;
-          return (
-            <button
-              key={k.slug}
-              type="button"
-              onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
-                hasActiveVersion
-                  ? "border-green/25 bg-green/5 hover:border-green/40 hover:bg-green/[0.08]"
-                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
-              }`}
-            >
-              <div className="flex flex-col flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-sm font-semibold truncate ${hasActiveVersion ? "text-white/80" : "text-white/50"}`}>{k.name}</span>
-                  {versionCount > 1 && (
-                    <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-white/40 border border-white/15 bg-white/5 px-1.5 py-0.5 rounded-md leading-none">
-                      {versionCount} versions
-                    </span>
-                  )}
-                  {!hasActiveVersion && (
-                    <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wider text-gold/50 border border-gold/20 bg-gold/5 px-1.5 py-0.5 rounded-md leading-none">
-                      All Discontinued
-                    </span>
-                  )}
-                </div>
-                <span className="text-white/35 text-xs truncate">{k.maker} · {k.bladeStyle}</span>
+        {matches.map((k) => (
+          <button
+            key={k.slug}
+            type="button"
+            onClick={() => onNavigate(`/product-world/knife/${k.slug}`)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 text-left group ${
+              k.hasActiveVersion
+                ? "border-green/25 bg-green/5 hover:border-green/40 hover:bg-green/[0.08]"
+                : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]"
+            }`}
+          >
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`text-sm font-semibold truncate ${k.hasActiveVersion ? "text-white/80" : "text-white/50"}`}>{k.name}</span>
+                {!k.hasActiveVersion && (
+                  <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-wider text-gold/50 border border-gold/20 bg-gold/5 px-1.5 py-0.5 rounded-md leading-none">
+                    All Discontinued
+                  </span>
+                )}
               </div>
-              {k.priceRange && (
-                <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRange}</span>
-              )}
-              <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
-            </button>
-          );
-        })}
+              <span className="text-white/35 text-xs truncate">{k.makerName} · {k.bladeStyleSummary}</span>
+            </div>
+            {k.priceRangeSummary && (
+              <span className="text-gold/60 text-xs font-medium flex-shrink-0">{k.priceRangeSummary}</span>
+            )}
+            <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -103,9 +89,11 @@ const KnifeResults = ({ query, onNavigate }: { query: string; onNavigate: (path:
 
 // ── Maker results ─────────────────────────────────────────────────────────────
 
-const MakerResults = ({ query, onNavigate }: { query: string; onNavigate: (path: string) => void }) => {
-  const matches = (makersData as MakerEntry[]).filter(
-    (m) => tokenMatch(m.name, query) || tokenMatch(m.knownFor, query) || tokenMatch(m.country, query)
+const MakerResults = ({
+  query, makers, onNavigate,
+}: { query: string; makers: MakerSummary[]; onNavigate: (path: string) => void }) => {
+  const matches = makers.filter(
+    (m) => tokenMatch(m.name, query) || tokenMatch(m.country ?? "", query)
   );
   if (matches.length === 0) return null;
   return (
@@ -121,7 +109,7 @@ const MakerResults = ({ query, onNavigate }: { query: string; onNavigate: (path:
           >
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-white/80 text-sm font-semibold truncate">{m.name}</span>
-              <span className="text-white/35 text-xs truncate">{m.country}{m.knownFor ? ` · ${m.knownFor}` : ""}</span>
+              <span className="text-white/35 text-xs truncate">{m.country}</span>
             </div>
             <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-white/15 group-hover:text-white/40 transition-colors flex-shrink-0" />
           </button>
@@ -232,6 +220,13 @@ const ProductWorldSearchPage = () => {
   const [inputValue, setInputValue] = useState(query);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [catalogKnives, setCatalogKnives] = useState<KnifeSummary[]>([]);
+  const [catalogMakers, setCatalogMakers] = useState<MakerSummary[]>([]);
+  useEffect(() => {
+    searchKnivesCatalog().then(setCatalogKnives).catch(() => {});
+    listMakersCatalog().then(setCatalogMakers).catch(() => {});
+  }, []);
+
   useEffect(() => { setInputValue(query); }, [query]);
 
   const handleSubmit = () => {
@@ -314,10 +309,10 @@ const ProductWorldSearchPage = () => {
           </div>
 
           {/* Knife page matches */}
-          {query && <KnifeResults query={query} onNavigate={navigate} />}
+          {query && <KnifeResults query={query} knives={catalogKnives} onNavigate={navigate} />}
 
           {/* Maker page matches */}
-          {query && <MakerResults query={query} onNavigate={navigate} />}
+          {query && <MakerResults query={query} makers={catalogMakers} onNavigate={navigate} />}
 
           <div className="h-px bg-white/[0.06]" />
 

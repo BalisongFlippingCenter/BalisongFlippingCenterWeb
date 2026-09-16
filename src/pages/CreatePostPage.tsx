@@ -829,10 +829,11 @@ const CreatePostPage = () => {
       dispatch(addUIToast({ type: "success", message: "Post published!" }));
       if (user) dispatch(setNewUser({ ...user, postCount: (user.postCount ?? 0) + 1 }));
       navigate(-1);
-    } catch (err) {
+    } catch (err: any) {
       console.log(err);
-      setError("Something went wrong. Please try again.");
-      dispatch(addUIToast({ type: "error", message: "Failed to publish post. Please try again." }));
+      const msg = typeof err.response?.data === "string" ? err.response.data : "Something went wrong. Please try again.";
+      setError(msg);
+      dispatch(addUIToast({ type: "error", message: msg }));
     } finally {
       setIsLoading(false);
     }
