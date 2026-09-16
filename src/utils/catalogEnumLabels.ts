@@ -106,7 +106,7 @@ export const HANDLE_FINISH_LABELS: Record<string, string> = {
 };
 
 export const HANDLE_CONSTRUCTION_LABELS: Record<string, string> = {
-  CHANNEL: "Chanel",
+  CHANNEL: "Channel",
   SANDWHICH: "Sandwhich",
   CHANWHICH: "Chanwhich",
   OTHER: "Other",
