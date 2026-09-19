@@ -22,7 +22,7 @@ const ScrollToTop = () => {
 const SiteFooter = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
   <footer className="w-full bg-[#0a0c10] border-t border-white/[0.06]">
     {/* Mobile layout */}
-    <div className="md:hidden flex flex-col items-center gap-5 px-6 pt-8 pb-28">
+    <div className={`md:hidden flex flex-col items-center gap-5 px-6 pt-8 ${isLoggedIn ? "pb-28" : "pb-[192px]"}`}>
       {/* Discord CTA */}
       <a
         href={DISCORD_URL}
@@ -50,7 +50,7 @@ const SiteFooter = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
     </div>
 
     {/* Desktop layout */}
-    <div className={`hidden md:flex max-w-[1775px] mx-auto px-6 pt-14 flex-row items-center justify-between gap-6 ${isLoggedIn ? "pb-[177px]" : "pb-14"}`}>
+    <div className={`hidden md:flex max-w-[1775px] mx-auto px-6 pt-14 flex-row items-center justify-between gap-6 ${isLoggedIn ? "pb-[177px]" : "pb-[136px]"}`}>
       <div className="flex flex-col items-start gap-1">
         <span className="text-white font-bold text-sm">Balisong Flipping Center</span>
         <span className="text-white/30 text-xs">© {new Date().getFullYear()} All rights reserved.</span>

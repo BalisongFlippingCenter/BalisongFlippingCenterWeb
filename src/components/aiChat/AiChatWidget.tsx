@@ -145,7 +145,7 @@ const AiChatWidget = () => {
   const closeTransition = { type: "spring" as const, damping: 30, stiffness: 300 };
 
   return (
-    <div className="fixed bottom-[75px] right-8 z-[300]">
+    <div className={`fixed right-8 z-[300] ${accessToken ? "bottom-[75px]" : "bottom-[35px]"}`}>
       <AnimatePresence initial={false} mode="popLayout">
         {isOpen ? (
           <motion.div

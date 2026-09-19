@@ -1033,6 +1033,32 @@ const ProductWorldPage = () => {
                 </button>
               </div>
             </div>
+
+            {/* Popular knives */}
+            {catalogKnives.length > 0 && (
+              <>
+                <div className="h-5" />
+                <div className={CARD} style={CARD_SHADOW}>
+                  <span className={LABEL}>Popular Knives</span>
+                  <div className="flex flex-col gap-1">
+                    {catalogKnives.map((k) => (
+                      <button
+                        key={k.slug}
+                        type="button"
+                        onClick={() => navigate(`/product-world/knife/${k.slug}`)}
+                        className="w-full flex items-center gap-2.5 py-1.5 text-left group"
+                      >
+                        <FontAwesomeIcon icon={faBook} className="text-gold/40 text-[10px] flex-shrink-0" />
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-white/70 text-xs truncate group-hover:text-white/90 transition-colors duration-150">{k.name}</span>
+                          <span className="text-white/30 text-[10px] truncate">{k.makerName}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </aside>
 
         </div>
