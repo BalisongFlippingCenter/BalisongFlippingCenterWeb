@@ -33,3 +33,6 @@ if (!("IntersectionObserver" in globalThis)) {
 if (!Element.prototype.scrollTo) {
   Element.prototype.scrollTo = () => {};
 }
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
