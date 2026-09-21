@@ -4,8 +4,9 @@ import collectionReducer from "../redux/collection/collectionSlice";
 import notificationReducer from "../redux/notifications/notificationSlice";
 import uiToastReducer from "../redux/uiToast/uiToastSlice";
 import messagesReducer from "../redux/messages/messagesSlice";
+import { Profile } from "../modals/User";
 
-export function makeTestStore(accessToken: string | null = null) {
+export function makeTestStore(accessToken: string | null = null, user: Profile | null = null) {
   return configureStore({
     reducer: {
       auth: authReducer,
@@ -16,7 +17,7 @@ export function makeTestStore(accessToken: string | null = null) {
     },
     preloadedState: {
       auth: {
-        user: null,
+        user,
         accessToken,
         rememberLoginCredentials: false,
         error: false,
@@ -26,4 +27,18 @@ export function makeTestStore(accessToken: string | null = null) {
       },
     },
   });
+}
+
+export function makeProfile(overrides: Partial<Profile> = {}): Profile {
+  return {
+    id: "1",
+    email: "user@example.com",
+    accountCreationDate: null,
+    lastLogin: null,
+    role: "USER",
+    likedPostIds: [],
+    likedCommentIds: [],
+    followingIds: [],
+    ...overrides,
+  };
 }
