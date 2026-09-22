@@ -9,22 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-verion: [22.x]
-    
+        node-version: [22.x]
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Configure Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-verions: ${{ matrix.node-verion }}
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
-      # - name: Run Tests
-      #   run: npm test
+      - name: Run Tests
+        run: npm test -- --run
 
       - name: Build Project
         run: npm run build
