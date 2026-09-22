@@ -36,6 +36,7 @@ BalisongFlippingCenterWeb is the client for the BalisongFlippingCenter platform.
 | Animation | Motion |
 | Virtualization | TanStack Virtual |
 | Containerization | Docker (multi-stage build → Nginx) |
+| Testing | Vitest + React Testing Library |
 
 ---
 
@@ -75,6 +76,16 @@ npm run build       # type-checks with tsc, then builds with Vite (mode: product
 npm run preview     # serve the production build locally
 ```
 
+### Test
+
+```bash
+npm test               # run the Vitest suite once
+npm run test:watch     # watch mode
+npm run test:coverage  # with a coverage report
+```
+
+Vitest + React Testing Library. Coverage spans redux, the API layer, and effectively every page/component actually wired into the app (a handful of files with zero imports anywhere — unused `EditAndDisplay` variants, individual social-link config components, a few unused `input/` components — are intentionally left untested, since nothing renders them).
+
 ### Run with Docker
 
 ```bash
@@ -105,24 +116,25 @@ src/
 
 ## CI/CD
 
-Two GitHub Actions pipelines, split by branch:
+`dev`, `test`, and `main` are all branch-protected — every change goes through a PR, and merging requires the `Build Check` status check (Vitest suite + `tsc`/Vite build) to pass. Direct pushes, including from repo admins, are rejected.
 
-- **`test`** (`.github/workflows/deploy-web-to-ecr.yml`) — builds a Docker image, pushes to ECR, and deploys via SSH to a container on the staging EC2 host, port 80. Push or merge into `test` to update staging.
-- **`main`** (`.github/workflows/deploy-web-to-prod.yml`) — builds the static site with Vite, syncs `dist/` to the production S3 bucket, and invalidates CloudFront. Authenticates to AWS via GitHub OIDC, assuming the `balisong-frontend-deploy` IAM role provisioned in the [Terraform infra repo](https://github.com/BalisongFlippingCenter/BalisongFlippingCenterTerraformProd) — no static AWS keys involved.
+Two deploy pipelines, both S3 + CloudFront (neither environment runs a Docker container in production — the `Dockerfile`/`nginx/` setup here is for local container testing only, not how either environment is actually served):
 
-Note production here is **not** a Docker container — CloudFront serves the built static assets directly from S3, and only routes `/api/*` to the backend EC2 instance.
+- **`test`** (`.github/workflows/deploy-web-to-test.yml`) — runs the test suite, then builds with Vite in test mode (`npm run build:test`), syncs `dist/` to the staging S3 bucket, and invalidates its CloudFront distribution. Push or merge into `test` to update staging at `test.balisongflippingcenter.com`.
+- **`main`** (`.github/workflows/deploy-web-to-prod.yml`) — same test gate, then builds the static site with Vite, syncs `dist/` to the production S3 bucket, and invalidates CloudFront. Both pipelines authenticate to AWS via GitHub OIDC — no static AWS keys involved.
 
 Promote staging to production by merging `test` into `main`.
 
-Two additional checks run independent of deploy:
-- **`devChecks.yml`** — type-check + build on push to `main`/`dev`.
-- **`pr-checks.yml`** — type-check + build, plus a guard against merging with the dummy dev-login token left active, on PRs into `main`.
+Two additional checks run independent of deploy, both now also running the test suite:
+- **`devChecks.yml`** — install, test, build on push to `main`/`dev`.
+- **`pr-checks.yml`** — install, test, build on PRs into `main`/`dev`/`test`. (The dummy dev-login guard that used to live here was removed along with the dead code it was guarding — the commented-out dummy user in `App.tsx` is gone now that the real refresh-token auth flow works.)
 
 ---
 
 ## Related
 
 - [BalisongFlippingCenterServer](https://github.com/BalisongFlippingCenter/BalisongFlippingCenterServer) — Spring Boot backend
+- [BalisongFlippingCenterAIPython](https://github.com/BalisongFlippingCenter/BalisongFlippingCenterAIPython) — Latch, the FastAPI AI assistant microservice the chat widget talks to (via the backend)
 - [BalisongFlippingCenterTerraformProd](https://github.com/BalisongFlippingCenter/BalisongFlippingCenterTerraformProd) — production AWS infrastructure (Terraform)
 
 ---
