@@ -11,7 +11,13 @@ npm run lint       # ESLint with zero warnings allowed
 npm run preview    # Preview the production build locally
 ```
 
-There are no tests in this project.
+```bash
+npm test           # Run the Vitest suite once
+npm run test:watch # Watch mode
+npm run test:coverage
+```
+
+Vitest + React Testing Library. Most pages, redux slices, the api layer, and components actually wired into the app have coverage. Note: several component directories contain dead code with zero imports (unused `EditAndDisplay`/`DisplayAndToggle` variants in `collectionKnifePageComponents/`, individual social-link config components in `accountConfigurationComponents/` other than the generic `LinkConfiguration`, and a few unused `input/` components like `BladeLengthInput`) — these are intentionally untested since nothing renders them; only `LinkConfiguration` and `NewCollectionKnifeForm`'s actual input set are live.
 
 ### Docker / Production
 
