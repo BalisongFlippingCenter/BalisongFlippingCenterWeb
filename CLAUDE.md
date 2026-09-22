@@ -173,8 +173,8 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 - **Notifications settings** — Add a Notifications section to `ProfileConfigurePage.tsx` with toggles for email/push preferences (e.g. likes, comments, new followers). Depends on the notifications system being built on the backend first.
 - **Privacy settings** — Add a Privacy section with controls for profile visibility (Public / Followers Only) and who can comment on posts. Ties into the follow system (which is fully implemented).
 - **Connected Accounts** — Add a Connected Accounts section showing whether Google OAuth is linked, with the ability to link/unlink. Relevant since Google login already exists via `GoogleLoginComponent.tsx`.
-- **Terms of Service page** — `/terms` route currently leads to 404. A static `TermsOfServicePage.tsx` needs to be created and added to the router in `App.tsx`.
-- **Privacy Policy page** — `/privacy` route currently leads to 404. A static `PrivacyPolicyPage.tsx` needs to be created and added to the router in `App.tsx`.
+- **Terms of Service page** — Done. `TermsOfServicePage.tsx` is built and routed at `/terms`.
+- **Privacy Policy page** — Done. `PrivacyPolicyPage.tsx` is built and routed at `/privacy`.
 
 ## Legal TODOs (Pre-Launch)
 

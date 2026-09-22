@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { makeTestStore, makeProfile } from "../../test/testStore";
 import UserProfileImage from "./UserProfileImage";
