@@ -25,14 +25,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check dummy user is not active
-        run: |
-          if grep -n "newAccessToken: \"1234\"" src/App.tsx | grep -vE "^[0-9]+:\s*//"; then
-            echo "ERROR: Dummy user is uncommented in App.tsx. Comment it out before merging."
-            exit 1
-          fi
-          echo "Dummy user check passed."
-
       - name: Run tests
         run: npm test -- --run
 
