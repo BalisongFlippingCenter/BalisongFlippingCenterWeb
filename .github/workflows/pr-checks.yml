@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
       - test
 
 jobs:
@@ -31,6 +32,9 @@ jobs:
             exit 1
           fi
           echo "Dummy user check passed."
+
+      - name: Run tests
+        run: npm test -- --run
 
       - name: Build
         run: npm run build
