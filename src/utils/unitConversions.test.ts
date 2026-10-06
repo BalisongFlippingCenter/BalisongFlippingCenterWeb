@@ -1,9 +1,26 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { formatCurrency, formatWeight, formatLength } from "./unitConversions";
 
 describe("formatCurrency", () => {
   it("formats USD by default", () => {
     expect(formatCurrency(100, "USD")).toBe("$100.00");
+  });
+
+  it("formats USD with US separators", () => {
+    expect(formatCurrency(1800, "USD")).toBe("$1,800.00");
+    expect(formatCurrency(139.99, null)).toBe("$139.99");
+  });
+
+  it("keeps US formatting for USD even when the viewer's locale is non-US", () => {
+    const original = Number.prototype.toLocaleString;
+    const spy = vi.spyOn(Number.prototype, "toLocaleString").mockImplementation(function (this: number, locales, options) {
+      return original.call(this, locales ?? "de-DE", options);
+    });
+    try {
+      expect(formatCurrency(1800.5, "USD")).toBe("$1,800.50");
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("converts to EUR", () => {
