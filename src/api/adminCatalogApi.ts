@@ -50,6 +50,7 @@ export interface VariantFormData {
   bladeStyle: string;
   bladeMaterial: string;
   imageUrl: string;
+  trainerBlade: string;
 }
 
 export interface VersionFormData {

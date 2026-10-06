@@ -25,13 +25,17 @@ import {
 
 const WHERE_TO_FIND_TYPES = ["official", "retailer", "secondary"];
 const VARIANT_TYPES = ["trainer", "live"];
+const TRAINER_BLADES = [
+  { value: "standard", label: "Standard" },
+  { value: "false_edge", label: "False Edge" },
+];
 
 const FIELD_LABEL = "text-xs text-white/50 font-medium uppercase tracking-wide";
 const FIELD_INPUT = "w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm px-3 py-2 outline-none transition-colors duration-200 placeholder:text-white/25 disabled:opacity-50";
 
 const emptyWhereToFind = (): WhereToFindFormData => ({ label: "", url: "", type: "official", note: "" });
 const emptyVariant = (): VariantFormData => ({
-  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", imageUrl: "",
+  variantSlug: "", type: "live", label: "", msrp: "", bladeStyle: "", bladeMaterial: "", imageUrl: "", trainerBlade: "",
 });
 const emptyVersion = (): VersionFormData => ({
   versionSlug: "", version: "", discontinued: false, releaseYear: null, description: "",
@@ -77,6 +81,7 @@ const mapDetailToForm = (data: any): KnifeFormData => ({
       bladeStyle: enumToLabel(BLADE_STYLE_LABELS, variant.bladeStyle),
       bladeMaterial: enumToLabel(BLADE_MATERIAL_LABELS, variant.bladeMaterial),
       imageUrl: variant.imageUrl ?? "",
+      trainerBlade: variant.type === "LIVE_BLADE" ? "" : variant.trainerBlade === "FALSE_EDGE" ? "false_edge" : "standard",
     })),
     whereToFind: (v.whereToFind ?? []).map((w: any) => ({
       label: w.label,
@@ -419,7 +424,7 @@ const AdminKnifeFormPage = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <input required value={variant.variantSlug} onChange={(e) => updateVariant(vi, ci, { variantSlug: e.target.value })} className={FIELD_INPUT} placeholder="slug" />
-                      <select value={variant.type} onChange={(e) => updateVariant(vi, ci, { type: e.target.value })} className={FIELD_INPUT}>
+                      <select value={variant.type} onChange={(e) => updateVariant(vi, ci, { type: e.target.value, trainerBlade: e.target.value === "trainer" ? "standard" : "" })} className={FIELD_INPUT}>
                         {VARIANT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
                       <input required value={variant.label} onChange={(e) => updateVariant(vi, ci, { label: e.target.value })} className={FIELD_INPUT} placeholder="label" />
@@ -429,6 +434,18 @@ const AdminKnifeFormPage = () => {
                       <Select required={variant.type === "live"} value={variant.bladeStyle} onChange={(v) => updateVariant(vi, ci, { bladeStyle: v })} options={BLADE_STYLE_OPTIONS} />
                       <Select required={variant.type === "live"} value={variant.bladeMaterial} onChange={(v) => updateVariant(vi, ci, { bladeMaterial: v })} options={BLADE_MATERIAL_OPTIONS} />
                     </div>
+                    {variant.type === "trainer" && (
+                      <label className="flex items-center gap-3">
+                        <span className={FIELD_LABEL}>Trainer Blade</span>
+                        <select
+                          value={variant.trainerBlade || "standard"}
+                          onChange={(e) => updateVariant(vi, ci, { trainerBlade: e.target.value })}
+                          className={`${FIELD_INPUT} w-auto`}
+                        >
+                          {TRAINER_BLADES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                      </label>
+                    )}
                     <p className="text-white/25 text-[11px] -mt-1">
                       MSRP required for all variants. Blade style/material required for live blade{variant.type === "trainer" ? " (optional for trainer, but can still be set)" : ""}.
                     </p>

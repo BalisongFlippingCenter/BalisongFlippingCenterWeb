@@ -184,6 +184,48 @@ describe("AdminKnifeFormPage — edit mode", () => {
     expect(screen.getAllByDisplayValue("—").length).toBeGreaterThan(0);
   });
 
+  it("populates a false-edge trainer's Trainer Blade and submits it, clearing it when switched to live", async () => {
+    const falseEdgeTrainer = {
+      variantSlug: "false-edge", type: "TRAINER", label: "Ladder Pattern", msrp: 159.99,
+      bladeStyle: "BOWIE", bladeMaterial: "AUS_10", imageUrl: null, trainerBlade: "FALSE_EDGE",
+    };
+    const live = { ...makeKnifeData().versions[0].variants[0], trainerBlade: null };
+    authMock.onGet("/catalog/any/knives/krake-raken").reply(200, makeKnifeData({
+      versions: [{ ...makeKnifeData().versions[0], variants: [falseEdgeTrainer, live] }],
+    }));
+    authMock.onPut("/admin/catalog/knives/krake-raken").reply(200);
+    renderPage();
+
+    await screen.findByDisplayValue("Krake Raken");
+    expect(screen.getAllByText("Trainer Blade")).toHaveLength(1);
+    expect(screen.getByDisplayValue("False Edge")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Save Changes"));
+    await waitFor(() => expect(authMock.history.put.length).toBe(1));
+    expect(JSON.parse(authMock.history.put[0].data).versions[0].variants).toMatchObject([
+      { variantSlug: "false-edge", type: "trainer", trainerBlade: "false_edge" },
+      { variantSlug: "tanto", type: "live", trainerBlade: "" },
+    ]);
+
+    fireEvent.change(screen.getByDisplayValue("trainer"), { target: { value: "live" } });
+    expect(screen.queryByText("Trainer Blade")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Save Changes"));
+    await waitFor(() => expect(authMock.history.put.length).toBe(2));
+    expect(JSON.parse(authMock.history.put[1].data).versions[0].variants[0]).toMatchObject({ type: "live", trainerBlade: "" });
+  });
+
+  it("shows a Standard Trainer Blade selector when a variant is switched to trainer", async () => {
+    authMock.onGet("/catalog/any/knives/krake-raken").reply(200, makeKnifeData());
+    renderPage();
+
+    await screen.findByDisplayValue("Krake Raken");
+    expect(screen.queryByText("Trainer Blade")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue("live"), { target: { value: "trainer" } });
+
+    expect(screen.getByText("Trainer Blade")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Standard")).toBeInTheDocument();
+  });
+
   it("submits an update request with edited fields and navigates on success", async () => {
     authMock.onGet("/catalog/any/knives/krake-raken").reply(200, makeKnifeData());
     authMock.onPut("/admin/catalog/knives/krake-raken").reply(200);
