@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faUpload } from "@fortawesome/free-solid-svg-icons";
 import { importCatalog } from "../../api/adminCatalogApi";
 import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useAppDispatch } from "../../redux/hooks";
@@ -21,6 +21,26 @@ const AdminCatalogImportPage = () => {
   const [raw, setRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadFile = (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      setError("Only .json files can be imported.");
+      return;
+    }
+    file.text().then((text) => {
+      setError(null);
+      setRaw(text);
+    });
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  };
 
   const handleSubmit = () => {
     setError(null);
@@ -54,29 +74,57 @@ const AdminCatalogImportPage = () => {
 
       <h1 className="text-white text-2xl font-bold">Bulk Import</h1>
       <p className="text-white/40 text-sm mt-1">
-        Paste JSON in the same shape as the seed files (<code className="text-white/60">makers</code> and/or{" "}
+        Paste JSON, or drop a <code className="text-white/60">.json</code> file here, in the same shape as the seed files (<code className="text-white/60">makers</code> and/or{" "}
         <code className="text-white/60">knives</code> arrays). Upserts by slug — safe to re-run after fixing a mistake.
       </p>
 
       <textarea
         value={raw}
         onChange={(e) => setRaw(e.target.value)}
-        placeholder={PLACEHOLDER}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        placeholder={isDragging ? "Drop JSON file to load it" : PLACEHOLDER}
         rows={20}
         spellCheck={false}
-        className="mt-5 w-full bg-dark-neutral border border-white/10 focus:border-blue-primary rounded-lg text-white text-sm font-mono px-4 py-3 outline-none transition-colors duration-200 placeholder:text-white/20 resize-y"
+        className={`mt-5 w-full bg-dark-neutral border ${isDragging ? "border-blue-primary" : "border-white/10"} focus:border-blue-primary rounded-lg text-white text-sm font-mono px-4 py-3 outline-none transition-colors duration-200 placeholder:text-white/20 resize-y`}
       />
 
       {error && <p className="text-red text-sm mt-3">{error}</p>}
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={isSubmitting || !raw.trim()}
-        className="mt-4 px-6 py-2.5 rounded-lg bg-blue-primary text-white text-sm font-semibold hover:brightness-110 transition-[filter] duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? "Importing..." : "Import"}
-      </button>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting || !raw.trim()}
+          className="px-6 py-2.5 rounded-lg bg-blue-primary text-white text-sm font-semibold hover:brightness-110 transition-[filter] duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "Importing..." : "Import"}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 text-white/60 text-sm hover:text-white hover:border-white/30 transition-colors duration-150"
+        >
+          <FontAwesomeIcon icon={faUpload} className="text-xs" />
+          Choose file
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          data-testid="catalog-import-file-input"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) loadFile(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
     </div>
   );
 };
