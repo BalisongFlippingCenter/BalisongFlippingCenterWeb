@@ -60,11 +60,27 @@ describe("usePageMeta", () => {
     expect(canonical()).toBeUndefined();
   });
 
+  it("emits structured data as a single JSON-LD graph", () => {
+    const product = { "@type": "Product", name: "Mako" };
+    renderAt("/product-world/knife/mako", { title: "Mako", structuredData: [product] });
+
+    const scripts = document.head.querySelectorAll('script[type="application/ld+json"]');
+    expect(scripts).toHaveLength(1);
+    expect(JSON.parse(scripts[0].textContent!)).toEqual({ "@context": "https://schema.org", "@graph": [product] });
+  });
+
+  it("omits structured data on noindex pages", () => {
+    renderAt("/product-world/knife/nope", { noindex: true, structuredData: [{ "@type": "Product", name: "Nope" }] });
+
+    expect(document.head.querySelector('script[type="application/ld+json"]')).toBeNull();
+  });
+
   it("restores the defaults on unmount", () => {
-    const { unmount } = renderAt("/search", { title: "Search", noindex: true });
+    const { unmount } = renderAt("/learn/x", { title: "X", structuredData: [{ "@type": "Article" }] });
     unmount();
 
     expect(document.title).toBe(SITE_NAME);
+    expect(document.head.querySelector('script[type="application/ld+json"]')).toBeNull();
     expect(meta('meta[name="robots"]')).toBeUndefined();
     expect(canonical()).toBeUndefined();
   });

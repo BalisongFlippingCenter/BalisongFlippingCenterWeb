@@ -7,6 +7,9 @@ export const DEFAULT_DESCRIPTION =
   "The community hub for balisong flippers — share your collection, learn tricks from beginner to advanced, and browse a catalog of butterfly knives and trainers.";
 
 const MAX_DESCRIPTION_LENGTH = 160;
+const STRUCTURED_DATA_ID = "page-structured-data";
+
+export type StructuredData = Record<string, unknown>;
 
 interface PageMeta {
   title?: string;
@@ -14,6 +17,8 @@ interface PageMeta {
   // Overrides the current pathname as the canonical URL, e.g. to fold variant URLs into one page
   path?: string;
   noindex?: boolean;
+  // schema.org JSON-LD nodes, emitted as a single @graph
+  structuredData?: StructuredData[];
 }
 
 const truncate = (text: string) => {
@@ -50,7 +55,22 @@ const setCanonical = (href: string | null) => {
   el.href = href;
 };
 
-const applyMeta = (title: string, description: string, url: string | null, noindex: boolean) => {
+const setStructuredData = (json: string | null) => {
+  let el = document.getElementById(STRUCTURED_DATA_ID) as HTMLScriptElement | null;
+  if (json === null) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("script");
+    el.id = STRUCTURED_DATA_ID;
+    el.type = "application/ld+json";
+    document.head.appendChild(el);
+  }
+  el.textContent = json;
+};
+
+const applyMeta = (title: string, description: string, url: string | null, noindex: boolean, structuredData: string | null) => {
   document.title = title;
   setMeta("name", "description", description);
   setMeta("property", "og:title", title);
@@ -58,11 +78,16 @@ const applyMeta = (title: string, description: string, url: string | null, noind
   setMeta("property", "og:url", url);
   setMeta("name", "robots", noindex ? "noindex" : null);
   setCanonical(url);
+  setStructuredData(structuredData);
 };
 
-export const usePageMeta = ({ title, description, path, noindex = false }: PageMeta) => {
+export const usePageMeta = ({ title, description, path, noindex = false, structuredData }: PageMeta) => {
   const { pathname } = useLocation();
   const canonicalPath = (path ?? pathname).replace(/\/+$/, "") || "/";
+  const structuredDataJson =
+    structuredData?.length && !noindex
+      ? JSON.stringify({ "@context": "https://schema.org", "@graph": structuredData })
+      : null;
 
   useEffect(() => {
     applyMeta(
@@ -70,7 +95,8 @@ export const usePageMeta = ({ title, description, path, noindex = false }: PageM
       truncate(description || DEFAULT_DESCRIPTION),
       noindex ? null : SITE_URL + canonicalPath,
       noindex,
+      structuredDataJson,
     );
-    return () => applyMeta(SITE_NAME, DEFAULT_DESCRIPTION, null, false);
-  }, [title, description, canonicalPath, noindex]);
+    return () => applyMeta(SITE_NAME, DEFAULT_DESCRIPTION, null, false, null);
+  }, [title, description, canonicalPath, noindex, structuredDataJson]);
 };
