@@ -95,3 +95,65 @@ describe("AdminCatalogImportPage — submit", () => {
     expect(screen.queryByText("Bad data")).not.toBeInTheDocument();
   });
 });
+
+describe("AdminCatalogImportPage — loading from a file", () => {
+  const jsonFile = (contents: string, name = "catalog.json") => new File([contents], name, { type: "application/json" });
+
+  it("fills the textarea with the contents of a dropped .json file", async () => {
+    renderPage();
+    const textarea = screen.getByPlaceholderText(/makers/);
+
+    fireEvent.dragOver(textarea);
+    expect(screen.getByPlaceholderText("Drop JSON file to load it")).toBeInTheDocument();
+
+    fireEvent.drop(textarea, { dataTransfer: { files: [jsonFile('{"makers":[]}')] } });
+
+    expect(await screen.findByDisplayValue('{"makers":[]}')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/makers/)).toBeInTheDocument();
+    expect(authMock.history.post.length).toBe(0);
+  });
+
+  it("clears the drag highlight when the file leaves the textarea", () => {
+    renderPage();
+    const textarea = screen.getByPlaceholderText(/makers/);
+
+    fireEvent.dragOver(textarea);
+    fireEvent.dragLeave(textarea);
+
+    expect(screen.getByPlaceholderText(/makers/)).toBeInTheDocument();
+  });
+
+  it("fills the textarea from the Choose file picker", async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByTestId("catalog-import-file-input"), {
+      target: { files: [jsonFile('{"knives":[]}')] },
+    });
+
+    expect(await screen.findByDisplayValue('{"knives":[]}')).toBeInTheDocument();
+  });
+
+  it("rejects a non-.json file and leaves the textarea unchanged", async () => {
+    renderPage();
+    const textarea = screen.getByPlaceholderText(/makers/);
+    fireEvent.change(textarea, { target: { value: "{}" } });
+
+    fireEvent.drop(textarea, { dataTransfer: { files: [new File(["hello"], "notes.txt", { type: "text/plain" })] } });
+
+    expect(await screen.findByText("Only .json files can be imported.")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("{}")).toBeInTheDocument();
+  });
+
+  it("clears a previous error once a valid file is loaded", async () => {
+    renderPage();
+    const textarea = screen.getByPlaceholderText(/makers/);
+
+    fireEvent.drop(textarea, { dataTransfer: { files: [new File(["x"], "notes.txt")] } });
+    await screen.findByText("Only .json files can be imported.");
+
+    fireEvent.drop(textarea, { dataTransfer: { files: [jsonFile("{}")] } });
+
+    await screen.findByDisplayValue("{}");
+    expect(screen.queryByText("Only .json files can be imported.")).not.toBeInTheDocument();
+  });
+});

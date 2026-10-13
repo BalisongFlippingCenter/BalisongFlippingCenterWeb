@@ -30,6 +30,7 @@ function makeVariant(overrides: Partial<KnifeVariant> = {}): KnifeVariant {
     bladeStyle: "SPEAR_POINT",
     bladeMaterial: null,
     imageUrl: null,
+    trainerBlade: null,
     ...overrides,
   };
 }
@@ -239,6 +240,52 @@ describe("KnifeDetailPage — version/variant resolution", () => {
     renderPage("/product-world/knife/widget/v1/damascus");
     await screen.findByText("Damascus");
     expect(screen.getByText("Stonewash")).toBeInTheDocument();
+  });
+
+  it("shows a sub-picker for multiple trainer variants and only the active group's sub-variants", async () => {
+    plainMock.onGet("/catalog/any/knives/widget").reply(200, makeKnife({
+      versions: [makeVersion({
+        variants: [
+          makeVariant({ variantSlug: "tanto-trainer", type: "TRAINER", label: "Tanto", trainerBlade: "STANDARD" }),
+          makeVariant({ variantSlug: "bowie-trainer", type: "TRAINER", label: "Bowie", trainerBlade: "STANDARD" }),
+          makeVariant({ variantSlug: "live-a", type: "LIVE_BLADE", label: "Damascus" }),
+          makeVariant({ variantSlug: "live-b", type: "LIVE_BLADE", label: "Stonewash" }),
+        ],
+      })],
+    }));
+    mockPostsEmpty();
+    renderPage("/product-world/knife/widget/v1/bowie-trainer");
+
+    fireEvent.click(await screen.findByText("Tanto"));
+    expect(mockNavigate).toHaveBeenCalledWith("/product-world/knife/widget/v1/tanto-trainer");
+    expect(screen.queryByText("Damascus")).not.toBeInTheDocument();
+  });
+
+  it("tags false-edge trainers in the sub-picker and shows the trainer blade spec", async () => {
+    plainMock.onGet("/catalog/any/knives/widget").reply(200, makeKnife({
+      versions: [makeVersion({
+        variants: [
+          makeVariant({ variantSlug: "standard", type: "TRAINER", label: "Standard", trainerBlade: "STANDARD" }),
+          makeVariant({ variantSlug: "ladder", type: "TRAINER", label: "Ladder", trainerBlade: "FALSE_EDGE" }),
+        ],
+      })],
+    }));
+    mockPostsEmpty();
+    renderPage("/product-world/knife/widget/v1/ladder");
+
+    expect(await screen.findByText("Ladder")).toBeInTheDocument();
+    expect(screen.getAllByText("False Edge")).toHaveLength(2);
+  });
+
+  it("shows a Standard trainer blade spec for a standard trainer", async () => {
+    plainMock.onGet("/catalog/any/knives/widget").reply(200, makeKnife({
+      versions: [makeVersion({ variants: [makeVariant({ trainerBlade: "STANDARD" })] })],
+    }));
+    mockPostsEmpty();
+    renderPage("/product-world/knife/widget/v1/trainer");
+
+    expect(await screen.findByText("Trainer Blade")).toBeInTheDocument();
+    expect(screen.getByText("Standard")).toBeInTheDocument();
   });
 });
 
