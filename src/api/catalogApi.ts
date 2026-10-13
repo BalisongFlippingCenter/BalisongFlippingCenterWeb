@@ -20,6 +20,7 @@ export interface KnifeVariant {
   bladeStyle: string | null;
   bladeMaterial: string | null;
   imageUrl: string | null;
+  trainerBlade: "STANDARD" | "FALSE_EDGE" | null;
 }
 
 export interface WhereToFind {

@@ -186,6 +186,7 @@ const KnifeDetailPage = () => {
       ?? null)
     : null;
 
+  const trainerVariants = activeVersion?.variants.filter((v) => v.type === "TRAINER") ?? [];
   const liveVariants = activeVersion?.variants.filter((v) => v.type === "LIVE_BLADE") ?? [];
 
   const goToVersion = (v: KnifeVersion) => {
@@ -227,6 +228,7 @@ const KnifeDetailPage = () => {
   }
 
   const isTrainer = activeVariant.type === "TRAINER";
+  const activeGroup = isTrainer ? trainerVariants : liveVariants;
 
   return (
     <div
@@ -337,10 +339,10 @@ const KnifeDetailPage = () => {
             <div className="flex flex-col gap-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Variant</p>
               <div className="flex items-center gap-2">
-                {activeVersion.variants.some((v) => v.type === "TRAINER") && (
+                {trainerVariants.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => goToVariant(activeVersion.variants.find((v) => v.type === "TRAINER")!)}
+                    onClick={() => goToVariant(trainerVariants[0])}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-150 ${
                       isTrainer
                         ? "bg-blue-primary/20 border-blue-primary/50 text-blue-primary"
@@ -364,9 +366,9 @@ const KnifeDetailPage = () => {
                   </button>
                 )}
               </div>
-              {!isTrainer && liveVariants.length > 1 && (
+              {activeGroup.length > 1 && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  {liveVariants.map((v) => (
+                  {activeGroup.map((v) => (
                     <button
                       key={v.variantSlug}
                       type="button"
@@ -378,6 +380,9 @@ const KnifeDetailPage = () => {
                       }`}
                     >
                       {v.label}
+                      {v.trainerBlade === "FALSE_EDGE" && !/false edge/i.test(v.label) && (
+                        <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-70">False Edge</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -443,6 +448,9 @@ const KnifeDetailPage = () => {
             </SpecCard>
 
             <SpecCard title="Blade">
+              {isTrainer && (
+                <SpecRow label="Trainer Blade" value={activeVariant.trainerBlade === "FALSE_EDGE" ? "False Edge" : "Standard"} />
+              )}
               <SpecRow label="Style"    value={enumToLabel(BLADE_STYLE_LABELS, activeVariant.bladeStyle)} />
               <SpecRow label="Material" value={enumToLabel(BLADE_MATERIAL_LABELS, activeVariant.bladeMaterial)} />
             </SpecCard>
