@@ -115,25 +115,31 @@ describe("ProductWorldPage — loading/error/empty", () => {
     expect(screen.queryByText("feedcard:4")).not.toBeInTheDocument();
   });
 
-  // Pins a real bug: on a failed fetch, `hasMore` is never reset (only the
-  // success branch calls setHasMore), so the infinite-scroll effect keeps
-  // seeing the loader row as "still pending more content" and retries
-  // immediately, forever, with no backoff — hammering the API on any
-  // transient failure whenever the loader row is within the viewport
-  // (which it always is for an empty/failed initial load).
-  it("retries the failed fetch repeatedly with no backoff because hasMore is never cleared on error", async () => {
+  // The loader row stays in view after a failed load, so infinite scroll
+  // used to refetch in a tight loop against a failing API.
+  it("does not automatically retry a failed fetch", async () => {
     virtualizerFull.value = true;
     mockEmptyCatalog();
     plainMock.onGet("/posts/any").reply(500);
     renderPage();
 
-    await waitFor(
-      () => {
-        const postCalls = plainMock.history.get.filter((c) => c.url === "/posts/any");
-        expect(postCalls.length).toBeGreaterThan(2);
-      },
-      { timeout: 3000 },
-    );
+    await screen.findByText("Failed to load posts.");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(plainMock.history.get.filter((c) => c.url === "/posts/any")).toHaveLength(1);
+  });
+
+  it("retries a failed fetch when the user clicks Try again", async () => {
+    virtualizerFull.value = true;
+    mockEmptyCatalog();
+    plainMock.onGet("/posts/any").replyOnce(500);
+    plainMock.onGet("/posts/any").reply(200, { content: [makePost({ id: "1" })], totalPages: 1 });
+    renderPage();
+
+    fireEvent.click(await screen.findByText("Try again"));
+
+    await screen.findByText("feedcard:1");
+    expect(plainMock.history.get.filter((c) => c.url === "/posts/any")).toHaveLength(2);
   });
 });
 
