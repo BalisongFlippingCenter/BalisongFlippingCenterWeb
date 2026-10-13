@@ -711,10 +711,10 @@ const ProductWorldPage = () => {
   useEffect(() => {
     const last = virtualItems[virtualItems.length - 1];
     if (!last) return;
-    if (last.index >= posts.length - 1 && hasMore && !isLoading && !isFetching.current && initialDone) {
+    if (last.index >= posts.length - 1 && hasMore && !isLoading && !isFetching.current && initialDone && !fetchError) {
       fetchPosts(Math.ceil(posts.length / PAGE_SIZE));
     }
-  }, [virtualItems, posts.length, hasMore, isLoading, initialDone, fetchPosts]);
+  }, [virtualItems, posts.length, hasMore, isLoading, initialDone, fetchError, fetchPosts]);
 
   const filterProps: FilterSidebarProps = {
     filterType, onTypeChange: handleTypeChange,
