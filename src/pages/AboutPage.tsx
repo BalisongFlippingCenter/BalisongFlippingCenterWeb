@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGlobe, faEarthAmericas, faTv, faEnvelope, faPaperPlane, faBookOpen, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const pillars = [
   {
@@ -30,6 +31,10 @@ const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 const MAX_LENGTH = 1000;
 
 const AboutPage = () => {
+  usePageMeta({
+    title: "About",
+    description: "What Balisong Flipping Center is, who it's for, and how to get in touch.",
+  });
   const navigate = useNavigate();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");

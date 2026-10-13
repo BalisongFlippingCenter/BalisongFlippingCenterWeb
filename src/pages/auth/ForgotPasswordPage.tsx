@@ -4,12 +4,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faLock, faEye, faEyeSlash, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { axiosApiInstance } from "../../api/axios";
 import OtpInput from "../../components/OtpInput";
+import { usePageMeta } from "../../hooks/usePageMeta";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Step = "email" | "verify" | "password";
 
 const ForgotPasswordPage = () => {
+  usePageMeta({ title: "Forgot Password", noindex: true });
   const navigate = useNavigate();
 
   const [step,            setStep]            = useState<Step>("email");

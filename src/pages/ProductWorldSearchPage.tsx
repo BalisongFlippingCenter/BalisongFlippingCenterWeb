@@ -8,6 +8,7 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { searchKnivesCatalog, listMakersCatalog, KnifeSummary, MakerSummary } from "../api/catalogApi";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
@@ -211,6 +212,7 @@ const SearchPostFeed = ({ query, listingType }: { query: string; listingType: st
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const ProductWorldSearchPage = () => {
+  usePageMeta({ title: "Search Product World", noindex: true });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 

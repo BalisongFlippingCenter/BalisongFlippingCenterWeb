@@ -8,6 +8,7 @@ import { PostDetail, mapPostDetail } from "../modals/Post";
 import { useAppSelector } from "../redux/hooks";
 import FeedPostCard from "../components/FeedPostCard";
 import FeedPostCardSkeleton from "../components/skeletons/FeedPostCardSkeleton";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const PAGE_SIZE = 20;
 
@@ -242,6 +243,10 @@ const CreatePostPrompt = ({ posts: _ }: { posts: PostDetail[] }) => {
 };
 
 const CommunityPage = () => {
+  usePageMeta({
+    title: "Community",
+    description: "Collection showcases, buy/sell and trade posts, trick tutorials, and combos from balisong flippers.",
+  });
   const navigate = useNavigate();
   const [posts,       setPosts]       = useState<PostDetail[]>([]);
   const [page,        setPage]        = useState(0);
