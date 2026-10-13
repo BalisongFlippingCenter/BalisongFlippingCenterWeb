@@ -69,7 +69,7 @@ const renderRoute = async (browser, baseUrl, route) => {
 
     // Runtime-injected third-party scripts (e.g. Google sign-in) would load twice once the app boots
     await page.evaluate(() => {
-      document.querySelectorAll('script:not([type="module"]), iframe').forEach((el) => el.remove());
+      document.querySelectorAll('script:not([type="module"]):not([type="application/ld+json"]), iframe').forEach((el) => el.remove());
     });
     return "<!DOCTYPE html>\n" + (await page.evaluate(() => document.documentElement.outerHTML));
   } finally {

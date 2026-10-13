@@ -14,6 +14,7 @@ import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import TutorialCenterPageBackground from "../components/TutorialCenterPageBackground";
 import { usePageMeta } from "../hooks/usePageMeta";
+import { breadcrumbs } from "../utils/structuredData";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -187,6 +188,15 @@ const TrickTutorialPage = () => {
     title: trick ? `How to Do the ${trick.name}` : undefined,
     description: trick?.description,
     noindex: !trick,
+    structuredData: trick
+      ? [
+          breadcrumbs([
+            ["Tutorial Center", "/tutorial-center"],
+            [`${trick.level[0].toUpperCase()}${trick.level.slice(1)}`, `/tutorial-center/${trick.level}`],
+            [trick.name, `/tutorial-center/${trick.level}/${trick.slug}`],
+          ]),
+        ]
+      : undefined,
   });
 
   const levelStyle = level && level in LEVEL_STYLES ? LEVEL_STYLES[level] : LEVEL_STYLES.beginner;
