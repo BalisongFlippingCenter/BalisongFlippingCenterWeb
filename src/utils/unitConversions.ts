@@ -25,7 +25,7 @@ export function formatCurrency(
   }
 
   // Default: USD
-  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // ── Weight ────────────────────────────────────────────────────────────────────
