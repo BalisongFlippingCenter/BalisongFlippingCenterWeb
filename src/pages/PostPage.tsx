@@ -7,6 +7,7 @@ import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import CommentsSection from "../components/CommentsSection";
 import FeedPostCardSkeleton from "../components/skeletons/FeedPostCardSkeleton";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const PAGE_BG = {
   tutorialCenter: "radial-gradient(ellipse at 50% 40%, #0d6b65 0%, #074440 50%, #021a18 100%)",
@@ -32,6 +33,12 @@ const PostPage = () => {
   const [isLoading,        setIsLoading]        = useState(true);
   const [fetchError,       setFetchError]       = useState(false);
   const [liveCommentCount, setLiveCommentCount] = useState<number | undefined>(undefined);
+
+  usePageMeta({
+    title: post ? post.caption || `Post by ${post.creatorDisplayName}` : undefined,
+    description: post?.description || post?.caption,
+    noindex: fetchError,
+  });
 
   useEffect(() => {
     if (!postId) { setFetchError(true); setIsLoading(false); return; }

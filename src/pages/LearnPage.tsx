@@ -9,6 +9,7 @@ import {
 import { LEARN_TOPICS, LearnTopic } from "../data/learnContent";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const TopicCard = ({ topic, onClick }: { topic: LearnTopic; onClick: () => void }) => (
   <button
@@ -166,6 +167,10 @@ const CommunityCarousel = () => {
 };
 
 const LearnPage = () => {
+  usePageMeta({
+    title: "A Guide to Balisongs",
+    description: "Balisong basics: what a butterfly knife is, legality, choosing your first knife, construction, pivot systems, and pin systems.",
+  });
   const navigate = useNavigate();
 
   return (

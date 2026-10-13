@@ -8,6 +8,7 @@ import {
   faInstagram, faYoutubeSquare, faFacebookSquare, faTwitterSquare,
 } from "@fortawesome/free-brands-svg-icons";
 import { getMakerCatalogDetail, MakerDetail } from "../api/catalogApi";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,14 @@ const MakerDetailPage = () => {
       .catch(() => setNotFound(true))
       .finally(() => setIsLoading(false));
   }, [makerSlug]);
+
+  usePageMeta({
+    title: maker ? `${maker.name} Balisongs` : undefined,
+    description: maker
+      ? maker.knownFor ?? `Balisong knives and trainers from ${maker.name}${maker.country ? `, based in ${maker.country}` : ""}.`
+      : undefined,
+    noindex: notFound,
+  });
 
   const BG = "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)";
 

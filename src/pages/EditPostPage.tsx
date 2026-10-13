@@ -8,8 +8,10 @@ import { axiosApiInstance, axiosApiInstanceAuth } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { addUIToast } from "../redux/uiToast/uiToastSlice";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const EditPostPage = () => {
+  usePageMeta({ title: "Edit Post", noindex: true });
   const { postId }       = useParams<{ postId: string }>();
   const navigate         = useNavigate();
   const dispatch         = useAppDispatch();

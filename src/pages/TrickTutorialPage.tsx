@@ -13,6 +13,7 @@ import { useAppSelector } from "../redux/hooks";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import TutorialCenterPageBackground from "../components/TutorialCenterPageBackground";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -181,6 +182,12 @@ const TrickTutorialPage = () => {
   useEffect(() => {
     if (trick) pushRecentlyViewed({ name: trick.name, slug: trick.slug, level: trick.level }, lsViewedKey);
   }, [trick?.slug]);
+
+  usePageMeta({
+    title: trick ? `How to Do the ${trick.name}` : undefined,
+    description: trick?.description,
+    noindex: !trick,
+  });
 
   const levelStyle = level && level in LEVEL_STYLES ? LEVEL_STYLES[level] : LEVEL_STYLES.beginner;
 

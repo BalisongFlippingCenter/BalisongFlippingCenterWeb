@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { axiosApiInstanceAuth } from "../api/axios";
 import { setNewUser } from "../redux/auth/authSlice";
 import { AppDispatch } from "../redux/store";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // Shown after first-time Google sign-in (isNewUser: true from POST /auth/google).
 // Backend auto-generates a temporary display name from the Google account name.
@@ -14,6 +15,7 @@ import { AppDispatch } from "../redux/store";
 const DISPLAY_NAME_RE = /^[a-zA-Z0-9_!.]+$/;
 
 const GoogleSetupPage = () => {
+  usePageMeta({ title: "Finish Signing Up", noindex: true });
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 

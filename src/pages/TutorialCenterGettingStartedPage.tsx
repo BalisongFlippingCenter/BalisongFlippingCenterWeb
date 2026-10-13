@@ -7,6 +7,7 @@ import {
   faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import TutorialCenterPageBackground from "../components/TutorialCenterPageBackground";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Media placeholder ─────────────────────────────────────────────────────────
 
@@ -67,6 +68,10 @@ const SectionSub = ({ children }: { children: React.ReactNode }) => (
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const TutorialCenterGettingStartedPage = () => {
+  usePageMeta({
+    title: "Start Your Balisong Journey",
+    description: "New to balisong flipping? Grip, safety, and the first tricks to learn before moving on to anything else.",
+  });
   const navigate = useNavigate();
 
   return (

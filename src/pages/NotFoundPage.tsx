@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const NotFoundPage = () => {
+  usePageMeta({ title: "Page Not Found", noindex: true });
   const navigate = useNavigate();
 
   return (

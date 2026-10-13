@@ -16,6 +16,7 @@ import {
   HANDLE_MATERIAL_LABELS, HANDLE_FINISH_LABELS, HANDLE_CONSTRUCTION_LABELS,
   PIVOT_SYSTEM_LABELS, LATCH_TYPE_LABELS, PIN_SYSTEM_LABELS, enumToLabel,
 } from "../utils/catalogEnumLabels";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Spec row ──────────────────────────────────────────────────────────────────
 
@@ -185,6 +186,13 @@ const KnifeDetailPage = () => {
       ?? activeVersion.variants[0]
       ?? null)
     : null;
+
+  usePageMeta({
+    title: knife ? `${knife.name} by ${knife.makerName}` : undefined,
+    description: knife?.description ?? activeVersion?.description,
+    path: `/product-world/knife/${knifeSlug}`,
+    noindex: notFound,
+  });
 
   const liveVariants = activeVersion?.variants.filter((v) => v.type === "LIVE_BLADE") ?? [];
 

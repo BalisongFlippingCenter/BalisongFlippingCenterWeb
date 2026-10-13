@@ -67,7 +67,7 @@ jobs:
       - name: Verify deployment
         run: |
           for i in $(seq 1 10); do
-            if curl -fsS https://balisongflippingcenter.com/ > /dev/null; then
+            if curl -fsS https://www.balisongflippingcenter.com/ > /dev/null; then
               echo "Frontend healthy"
               exit 0
             fi
