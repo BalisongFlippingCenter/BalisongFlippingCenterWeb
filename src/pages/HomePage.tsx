@@ -13,12 +13,16 @@ import { faBookOpen, faChevronRight, faInfo } from "@fortawesome/free-solid-svg-
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { usePageMeta } from "../hooks/usePageMeta";
+import { siteOrganization, siteWebsite } from "../utils/structuredData";
 
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 
 
 const HomePage = () => {
-  usePageMeta({ title: "Butterfly Knife Community, Tutorials & Catalog" });
+  usePageMeta({
+    title: "Butterfly Knife Community, Tutorials & Catalog",
+    structuredData: [siteWebsite, siteOrganization],
+  });
   const navigate = useNavigate();
 
   return (

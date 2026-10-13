@@ -5,7 +5,8 @@ import { faChevronLeft, faChevronRight, faChevronDown, faVolumeXmark, faVolumeHi
 import { getTopicBySlug, LearnMedia, StatusListItem, TieredListItem } from "../data/learnContent";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
-import { usePageMeta } from "../hooks/usePageMeta";
+import { usePageMeta, SITE_URL } from "../hooks/usePageMeta";
+import { breadcrumbs, sitePublisher } from "../utils/structuredData";
 
 const TopicMedia = ({ media }: { media: LearnMedia }) => {
   const [muted, setMuted] = useState(true);
@@ -380,7 +381,28 @@ const LearnTopicPage = () => {
     });
 
   const topic = getTopicBySlug(slug ?? "");
-  usePageMeta({ title: topic?.title, description: topic?.subtitle, noindex: !topic });
+  usePageMeta({
+    title: topic?.title,
+    description: topic?.subtitle,
+    noindex: !topic,
+    structuredData: topic
+      ? [
+          {
+            "@type": "Article",
+            headline: topic.title,
+            description: topic.subtitle,
+            url: `${SITE_URL}/learn/${topic.slug}`,
+            image: topic.media?.type === "image" ? new URL(topic.media.src, SITE_URL).href : `${SITE_URL}/og-default.png`,
+            author: sitePublisher,
+            publisher: sitePublisher,
+          },
+          breadcrumbs([
+            ["Learn", "/learn"],
+            [topic.title, `/learn/${topic.slug}`],
+          ]),
+        ]
+      : undefined,
+  });
 
   if (!topic) {
     return (

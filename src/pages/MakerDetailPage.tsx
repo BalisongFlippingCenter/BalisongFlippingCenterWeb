@@ -8,7 +8,8 @@ import {
   faInstagram, faYoutubeSquare, faFacebookSquare, faTwitterSquare,
 } from "@fortawesome/free-brands-svg-icons";
 import { getMakerCatalogDetail, MakerDetail } from "../api/catalogApi";
-import { usePageMeta } from "../hooks/usePageMeta";
+import { usePageMeta, SITE_URL } from "../hooks/usePageMeta";
+import { breadcrumbs } from "../utils/structuredData";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -30,12 +31,32 @@ const MakerDetailPage = () => {
       .finally(() => setIsLoading(false));
   }, [makerSlug]);
 
+  const makerProfiles = [maker?.instagramUrl, maker?.youtubeUrl, maker?.facebookUrl, maker?.twitterUrl].filter(Boolean);
+
   usePageMeta({
     title: maker ? `${maker.name} Balisongs` : undefined,
     description: maker
       ? maker.knownFor ?? `Balisong knives and trainers from ${maker.name}${maker.country ? `, based in ${maker.country}` : ""}.`
       : undefined,
     noindex: notFound,
+    structuredData: maker
+      ? [
+          {
+            "@type": "Organization",
+            name: maker.name,
+            url: maker.officialSiteUrl ?? `${SITE_URL}/product-world/maker/${maker.slug}`,
+            ...(maker.knownFor && { description: maker.knownFor }),
+            ...(maker.logoUrl && { logo: maker.logoUrl }),
+            ...(maker.foundedYear && { foundingDate: String(maker.foundedYear) }),
+            ...(maker.country && { address: { "@type": "PostalAddress", addressCountry: maker.country } }),
+            ...(makerProfiles.length && { sameAs: makerProfiles }),
+          },
+          breadcrumbs([
+            ["Product World", "/product-world"],
+            [maker.name, `/product-world/maker/${maker.slug}`],
+          ]),
+        ]
+      : undefined,
   });
 
   const BG = "linear-gradient(to bottom, #0e0000 0%, #0b0000 40%, #080000 100%)";

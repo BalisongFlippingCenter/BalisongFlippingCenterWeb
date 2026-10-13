@@ -12,6 +12,7 @@ import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { usePageMeta } from "../hooks/usePageMeta";
+import { breadcrumbs } from "../utils/structuredData";
 
 // ── Level config ──────────────────────────────────────────────────────────────
 
@@ -210,6 +211,14 @@ const TutorialCenterLevelPage = () => {
     title: config ? `${config.label} Balisong Tricks` : undefined,
     description: config?.desc,
     noindex: !config,
+    structuredData: config
+      ? [
+          breadcrumbs([
+            ["Tutorial Center", "/tutorial-center"],
+            [config.label, `/tutorial-center/${level}`],
+          ]),
+        ]
+      : undefined,
   });
 
   if (!config) {

@@ -16,7 +16,8 @@ import {
   HANDLE_MATERIAL_LABELS, HANDLE_FINISH_LABELS, HANDLE_CONSTRUCTION_LABELS,
   PIVOT_SYSTEM_LABELS, LATCH_TYPE_LABELS, PIN_SYSTEM_LABELS, enumToLabel,
 } from "../utils/catalogEnumLabels";
-import { usePageMeta } from "../hooks/usePageMeta";
+import { usePageMeta, SITE_URL } from "../hooks/usePageMeta";
+import { breadcrumbs } from "../utils/structuredData";
 
 // ── Spec row ──────────────────────────────────────────────────────────────────
 
@@ -187,11 +188,44 @@ const KnifeDetailPage = () => {
       ?? null)
     : null;
 
+  const knifePath = `/product-world/knife/${knifeSlug}`;
+  const currentMsrps = (knife?.versions ?? [])
+    .filter((v) => !v.discontinued)
+    .flatMap((v) => v.variants.map((va) => va.msrp))
+    .filter((msrp): msrp is number => msrp !== null);
+  const knifeDescription = knife?.description ?? activeVersion?.description;
+
   usePageMeta({
     title: knife ? `${knife.name} by ${knife.makerName}` : undefined,
-    description: knife?.description ?? activeVersion?.description,
-    path: `/product-world/knife/${knifeSlug}`,
+    description: knifeDescription,
+    path: knifePath,
     noindex: notFound,
+    structuredData: knife
+      ? [
+          {
+            "@type": "Product",
+            name: knife.name,
+            url: SITE_URL + knifePath,
+            brand: { "@type": "Brand", name: knife.makerName },
+            ...(knifeDescription && { description: knifeDescription }),
+            ...(knife.coverPhotoUrl && { image: knife.coverPhotoUrl }),
+            ...(currentMsrps.length && {
+              offers: {
+                "@type": "AggregateOffer",
+                priceCurrency: "USD",
+                lowPrice: Math.min(...currentMsrps),
+                highPrice: Math.max(...currentMsrps),
+                offerCount: currentMsrps.length,
+              },
+            }),
+          },
+          breadcrumbs([
+            ["Product World", "/product-world"],
+            [knife.makerName, `/product-world/maker/${knife.makerSlug}`],
+            [knife.name, knifePath],
+          ]),
+        ]
+      : undefined,
   });
 
   const trainerVariants = activeVersion?.variants.filter((v) => v.type === "TRAINER") ?? [];
