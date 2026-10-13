@@ -11,6 +11,7 @@ import {
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Level config ──────────────────────────────────────────────────────────────
 
@@ -204,6 +205,12 @@ const TutorialCenterLevelPage = () => {
   const config = level && level in LEVEL_CONFIG
     ? LEVEL_CONFIG[level as LevelSlug]
     : null;
+
+  usePageMeta({
+    title: config ? `${config.label} Balisong Tricks` : undefined,
+    description: config?.desc,
+    noindex: !config,
+  });
 
   if (!config) {
     return (

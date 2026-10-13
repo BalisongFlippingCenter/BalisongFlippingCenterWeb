@@ -15,6 +15,7 @@ import FeedPostCard from "../components/FeedPostCard";
 import { SITE_ROUTES, matchRoute, SiteRoute } from "../data/siteRoutes";
 import { searchKnivesCatalog, listMakersCatalog } from "../api/catalogApi";
 import tricksData from "../data/tricks.json";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -335,6 +336,7 @@ const PostFeed = ({ query }: { query: string }) => {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const GlobalSearchPage = () => {
+  usePageMeta({ title: "Search", noindex: true });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 

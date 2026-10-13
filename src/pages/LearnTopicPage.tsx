@@ -5,6 +5,7 @@ import { faChevronLeft, faChevronRight, faChevronDown, faVolumeXmark, faVolumeHi
 import { getTopicBySlug, LearnMedia, StatusListItem, TieredListItem } from "../data/learnContent";
 import { axiosApiInstance } from "../api/axios";
 import { PostDetail, mapPostDetail } from "../modals/Post";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const TopicMedia = ({ media }: { media: LearnMedia }) => {
   const [muted, setMuted] = useState(true);
@@ -379,6 +380,7 @@ const LearnTopicPage = () => {
     });
 
   const topic = getTopicBySlug(slug ?? "");
+  usePageMeta({ title: topic?.title, description: topic?.subtitle, noindex: !topic });
 
   if (!topic) {
     return (

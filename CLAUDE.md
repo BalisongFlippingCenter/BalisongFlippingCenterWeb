@@ -113,6 +113,8 @@ Single-image uploads (profile img, banner img, collection banner, knife cover ph
 
 **`comboBoxData/`** — `src/comboBoxData/` contains static string arrays (e.g. `BladeFinish.ts`, `PivotSystem.ts`) that drive the dropdown options in input and `EditAndDisplay` components.
 
+**SEO / page metadata** — every routed page calls `usePageMeta` (`src/hooks/usePageMeta.ts`) near the top of the component, before any early return. It sets the document title (`<title> | Balisong Flipping Center`), meta description (truncated to 160 chars), Open Graph tags, and the canonical URL on `https://www.balisongflippingcenter.com` (the apex domain 301s to `www` at CloudFront). Pass `noindex: true` for search, auth, edit, and "not found" states; pass `path` to collapse URL variants onto one canonical page (knife version/variant URLs all canonicalize to `/product-world/knife/:slug`). Site-wide fallbacks plus `og:image` (`public/og-default.png`, 1200×630) live in `index.html`, which is all non-JS link-preview crawlers (Discord, Reddit) see until pages are prerendered. `public/robots.txt` blocks private/utility routes with `$`-anchored rules so profile URLs (`/:displayName/:code`) whose names merely start with a blocked word aren't caught.
+
 ### Tailwind Custom Configuration
 
 The project overrides Tailwind's default color palette entirely — standard colors like `text-gray-500` will not work. Use only the defined custom colors:

@@ -10,6 +10,7 @@ import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import { useAppSelector } from "../redux/hooks";
 import tricksData from "../data/tricks.json";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -391,6 +392,10 @@ const FilterSidebar = ({ filterType, filterDifficulty, onTypeChange, onDifficult
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const TutorialCenterPage = () => {
+  usePageMeta({
+    title: "Tutorial Center",
+    description: "Learn balisong tricks step by step, from your first rollout to advanced combos, organized by skill level.",
+  });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 

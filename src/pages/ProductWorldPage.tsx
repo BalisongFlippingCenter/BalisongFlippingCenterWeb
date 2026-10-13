@@ -23,6 +23,7 @@ import { handleFinish as handleFinishOpts }             from "../comboBoxData/Ha
 import { pivotSystem as pivotSystemOpts }               from "../comboBoxData/PivotSystem";
 import { pinSystem as pinSystemOpts }                   from "../comboBoxData/PinSystem";
 import { latchType as latchTypeOpts }                   from "../comboBoxData/LatchType";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Suggestion types ──────────────────────────────────────────────────────────
 
@@ -543,6 +544,10 @@ const CompactPostCard = ({ post }: { post: PostDetail }) => {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const ProductWorldPage = () => {
+  usePageMeta({
+    title: "Product World",
+    description: "Browse balisong knives and trainers by maker — specs, versions, live blade and trainer variants, and where to find them.",
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

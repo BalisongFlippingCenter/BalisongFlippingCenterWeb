@@ -12,11 +12,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookOpen, faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { useNavigate } from "react-router-dom";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const DISCORD_URL = "https://discord.gg/k6JPnkbBC";
 
 
 const HomePage = () => {
+  usePageMeta({ title: "Butterfly Knife Community, Tutorials & Catalog" });
   const navigate = useNavigate();
 
   return (

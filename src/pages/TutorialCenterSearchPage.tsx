@@ -7,6 +7,7 @@ import { PostDetail, mapPostDetail } from "../modals/Post";
 import FeedPostCard from "../components/FeedPostCard";
 import TutorialCenterPageBackground from "../components/TutorialCenterPageBackground";
 import tricksData from "../data/tricks.json";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -197,6 +198,7 @@ const FilterChip = ({ label, active, onClick }: { label: string; active: boolean
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const TutorialCenterSearchPage = () => {
+  usePageMeta({ title: "Search Tricks", noindex: true });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
