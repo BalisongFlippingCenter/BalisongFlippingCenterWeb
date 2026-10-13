@@ -30,3 +30,6 @@ node_modules
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# prerender output consumed by the deploy workflow
+prerender-routes.json
