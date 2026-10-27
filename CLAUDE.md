@@ -36,7 +36,7 @@ React 18 + TypeScript + Vite, Tailwind CSS (custom config — see below), Redux 
 
 The app communicates with a **custom REST API**, base URL set per-environment via `VITE_API_BASE_URL`:
 - **Production** (`.env.production`) — `https://balisongflippingcenter.com/api`, routed by CloudFront's `/api/*` behavior to the Terraform-managed production backend EC2 instance (see `BalisongFlippingCenterServer/CLAUDE.md` for current instance ID — it's re-created on infra changes, so don't hardcode it anywhere).
-- **Test/staging** (`.env.test`) — `http://ec2-3-217-173-234.compute-1.amazonaws.com:8080`, a separate, dedicated testing backend + Postgres (tagged `balisong-testing-server`, manually created, intentionally kept outside Terraform), isolated from production data. This is the instance the `23.22.127.77` staging frontend host is meant to be used against.
+- **Test/staging** (`.env.test`) — points at the old `balisong-testing-server`, which was torn down on 2026-10-05 along with the staging frontend; there is no testing environment right now. See the backend repo's `CLAUDE.md` for how to rebuild it, then update `.env.test` with the new host.
 - **Local dev** (`.env`) — `http://localhost:8080/api`
 
 The Amplify backend (`/amplify`) is a mostly-boilerplate setup (Cognito auth + a placeholder DynamoDB `Todo` model) and is **not** used for the main app functionality.
@@ -49,7 +49,7 @@ Two Axios instances are defined in `src/api/axios.ts`:
 
 > **Circular dependency fix:** `axios.ts` does not import `store` directly (that created a cycle: axios → store → authSlice → authActions → axios). Instead, the store is injected via `setStore(store)` called in `main.tsx` immediately after the store is created. Do not re-introduce a direct `store` import in `axios.ts`.
 
-On app mount (`App.tsx`), the app attempts to restore a session by calling `/auth/refresh-token-login`. The refresh token is stored in an HTTP-only cookie; the access token lives only in Redux state (never persisted to localStorage).
+On app mount (`App.tsx`), the app attempts to restore a session by calling `/auth/refresh-token-login`. The backend sets the refresh token as an HTTP-only cookie and also returns it in the response body, which `authActions.ts` writes to `localStorage` (`refreshToken`) — `App.tsx` only attempts the restore when that key is present, and logout removes it. The access token lives only in Redux state (never persisted).
 
 Google OAuth is fully implemented — wired at the root via `<GoogleOAuthProvider>` in `src/main.tsx` (client ID is public/non-secret). The login page uses `@react-oauth/google` to handle the OAuth flow, and the backend registers/logs in Google users and prompts for a display name on first sign-in.
 
@@ -150,11 +150,6 @@ This project is one little bit at a time. Claude needs to remember to plan with 
 
 Also claude needs to remember that alot of the functionality will need to be implemented on the backend. The frontend will only be used as a GUI for everything.
 
-## Known Backend Issues
-
-- **Login/refresh response profile fields** — Backend confirms fields (`profileImg`, `bio`/`profileCaption`, social links) are present in the response. Frontend has a debug log (`[auth/login] raw response.data`) to verify the exact response shape. If fields still appear empty after login, check the console log and confirm the account key path matches `response.data.account`. Fields may also be null in the DB for older test accounts — run the SQL fix to set nullable defaults.
-- **Post embedded knife reference** — Fixed in backend commit 99a0e19. Returns full object with `id`, `displayName`, `knifeMaker`, `baseKnifeModel`, `coverPhoto`. Frontend mapping in `Post.ts` (`normalizeKnifeRef`) is already ready. Will be live once the current pipeline deploys.
-
 ## Product World & Tutorial Center — Design Notes
 
 ### `/learn` page entry point
@@ -200,7 +195,7 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 - Required by law since the platform collects user data (email at minimum).
 - Must address: **COPPA** (U.S. users under 13), **GDPR** (any EU users), **CCPA** (any California users).
 - Bundle with attorney ToS review to keep costs down.
-- Once drafted, the `/privacy` page needs to be built and linked in the footer and registration flow.
+- `/privacy` (and `/terms`) are built and linked in the footer, header, and Settings; still not linked from the registration flow.
 
 ### Notes
 - Platform model (neutral connector, no payment processing) is legally similar to Reddit/Instagram and well protected under Section 230.
