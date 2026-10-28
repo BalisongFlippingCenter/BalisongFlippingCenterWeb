@@ -46,7 +46,7 @@ import ProfileConfigurationProfileBannerPage from "./pages/configuration/Profile
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import { setCredentials, setToRememberLoginInfo } from "./redux/auth/authSlice";
-import { loginWithRefreshToken } from "./redux/auth/authActions";
+import { hasStoredSession, loginWithRefreshToken } from "./redux/auth/authActions";
 import { setCollection } from "./redux/collection/collectionSlice";
 import { mapCollection } from "./redux/collection/collectionActions";
 import { setUnreadCount } from "./redux/notifications/notificationSlice";
@@ -104,9 +104,8 @@ const App = () => {
       dispatch(setToRememberLoginInfo());
     }
 
-    // attempt to restore session only if a refresh token is stored
-    const storedToken = localStorage.getItem("refreshToken");
-    if (!user && !accessToken && storedToken) {
+    // attempt to restore session only if this browser has logged in before
+    if (!user && !accessToken && hasStoredSession()) {
       dispatch(loginWithRefreshToken())
         .unwrap()
         .then((res) => {
