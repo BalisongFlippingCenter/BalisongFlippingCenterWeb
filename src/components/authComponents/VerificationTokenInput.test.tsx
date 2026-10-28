@@ -84,7 +84,9 @@ describe("VerificationTokenInput", () => {
   });
 
   it("submits the concatenated 6-digit code and shows the success screen", async () => {
-    plainMock.onGet("/auth/verify-email-token/123456").reply(200);
+    plainMock
+      .onGet("/auth/verify-email-token/123456", { params: { email: "user@example.com" } })
+      .reply(200);
     renderVerification();
     fillAllDigits();
     fireEvent.click(screen.getByRole("button", { name: "Verify" }));
