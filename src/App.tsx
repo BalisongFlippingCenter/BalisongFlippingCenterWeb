@@ -57,7 +57,6 @@ import UIToastContainer from "./components/UIToastContainer";
 import ProfileConfigurationCollectionBannerImagePage from "./pages/configuration/ProfileConfigurationCollectionBannerImagePage";
 import ProfileConfigurationCollectionKnifeCoverPage from "./pages/configuration/ProfileConfigurationCollectionKnifeCoverPage";
 import CollectionKnifePage from "./pages/CollectionKnifePage";
-import TestPage from "./pages/TestPage";
 import RegisterVerifyPage from "./pages/auth/RegisterVerifyPage";
 import PostPage from "./pages/PostPage";
 import EditPostPage from "./pages/EditPostPage";
@@ -210,7 +209,6 @@ const App = () => {
           <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
           <Route path="/google/setup" element={<GoogleSetupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/test" element={<TestPage />} />
 
           <Route path="/:account/:identifier" element={<ProfilePage />} />
 

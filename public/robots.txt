@@ -19,5 +19,4 @@ Disallow: /register$
 Disallow: /register/verify/
 Disallow: /forgot-password$
 Disallow: /unauthorized$
-Disallow: /test$
 Sitemap: https://www.balisongflippingcenter.com/sitemap.xml
