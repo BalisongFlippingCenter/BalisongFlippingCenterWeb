@@ -2,6 +2,17 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosApiInstance } from "../../api/axios";
 import { Profile } from "../../modals/User";
 
+// The refresh token lives only in the HTTP-only cookie; this flag just records that a
+// session may exist so the app knows whether to try restoring it on load
+const SESSION_FLAG_KEY = "hasSession";
+const LEGACY_REFRESH_TOKEN_KEY = "refreshToken";
+
+export const hasStoredSession = (): boolean => {
+  const legacyToken = localStorage.getItem(LEGACY_REFRESH_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+  return legacyToken !== null || localStorage.getItem(SESSION_FLAG_KEY) === "true";
+};
+
 // Maps backend field names → frontend Profile field names
 const mapAccount = (account: any): Profile => ({
   ...account,
@@ -70,9 +81,7 @@ export const login = createAsyncThunk(
         return { requiresAdminVerification: true, email: response.data.email };
       }
 
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
-      }
+      localStorage.setItem(SESSION_FLAG_KEY, "true");
 
 return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
@@ -92,9 +101,7 @@ export const verifyAdminLoginCode = createAsyncThunk(
         data: payload,
       });
 
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
-      }
+      localStorage.setItem(SESSION_FLAG_KEY, "true");
 
       return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
@@ -107,21 +114,17 @@ export const loginWithRefreshToken = createAsyncThunk(
   "auth/loginWithRefreshToken",
   async (_, thunkAPI) => {
     try {
-      const storedToken = localStorage.getItem("refreshToken");
       const response = await axiosApiInstance.request({
         url: "auth/refresh-token-login",
         method: "post",
-        data: storedToken ?? undefined,
-        headers: storedToken ? { "Content-Type": "text/plain" } : undefined,
       });
 
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
-      }
+      localStorage.setItem(SESSION_FLAG_KEY, "true");
 
 return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      localStorage.removeItem(SESSION_FLAG_KEY);
+      return thunkAPI.rejectWithValue(error.response?.data);
     }
   }
 );
@@ -140,9 +143,7 @@ export const loginWithGoogle = createAsyncThunk(
         data: { googleAccessToken },
       });
 
-      if (response.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
-      }
+      localStorage.setItem(SESSION_FLAG_KEY, "true");
 
       return { ...response.data, account: mapAccount(response.data.account) };
     } catch (error: any) {
@@ -152,7 +153,7 @@ export const loginWithGoogle = createAsyncThunk(
 );
 
 export const logout = createAsyncThunk("auth/logout", async () => {
-  localStorage.removeItem("refreshToken");
+  localStorage.removeItem(SESSION_FLAG_KEY);
   await axiosApiInstance.request({
     url: "/auth/logout",
     method: "post",

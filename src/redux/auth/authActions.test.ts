@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
 import { axiosApiInstance } from "../../api/axios";
-import { login, registerNewUser, loginWithRefreshToken, logout, verifyAdminLoginCode } from "./authActions";
+import { login, registerNewUser, loginWithRefreshToken, logout, verifyAdminLoginCode, loginWithGoogle, hasStoredSession } from "./authActions";
 import authReducer from "./authSlice";
 
 vi.mock("../../api/axios", () => ({
@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("login thunk", () => {
-  it("maps the account shape and stores the refresh token on a normal login", async () => {
+  it("maps the account shape and records a session on a normal login", async () => {
     mockedRequest.mockResolvedValue({
       data: {
         accessToken: "tok-1",
@@ -37,16 +37,17 @@ describe("login thunk", () => {
     expect(state.user?.id).toBe("42");
     expect(state.user?.profileCaption).toBe("hi there");
     expect(state.user?.measurementUnit).toBe("imperial");
-    expect(localStorage.getItem("refreshToken")).toBe("refresh-1");
+    expect(localStorage.getItem("hasSession")).toBe("true");
   });
 
-  it("does not store a refresh token when the response omits one", async () => {
+  it("never stores the refresh token, even when the response includes one", async () => {
     mockedRequest.mockResolvedValue({
-      data: { accessToken: "tok-1", account: { accountId: "42" } },
+      data: { accessToken: "tok-1", refreshToken: "refresh-1", account: { accountId: "42" } },
     });
     const store = makeStore();
     await store.dispatch(login({ email: "a@b.com", password: "pw" }) as any);
     expect(localStorage.getItem("refreshToken")).toBeNull();
+    expect(JSON.stringify(localStorage)).not.toContain("refresh-1");
   });
 
   it("pauses on requiresAdminVerification without establishing a session", async () => {
@@ -58,6 +59,7 @@ describe("login thunk", () => {
     const state = store.getState().auth;
     expect(state.pendingAdminVerificationEmail).toBe("admin@example.com");
     expect(state.accessToken).toBeNull();
+    expect(localStorage.getItem("hasSession")).toBeNull();
   });
 
   it("records the rejection value on failure", async () => {
@@ -87,7 +89,7 @@ describe("registerNewUser thunk", () => {
 });
 
 describe("verifyAdminLoginCode thunk", () => {
-  it("establishes a session and stores the refresh token", async () => {
+  it("establishes a session and records it without storing the refresh token", async () => {
     mockedRequest.mockResolvedValue({
       data: { accessToken: "tok-admin", refreshToken: "refresh-admin", account: { accountId: "1" } },
     });
@@ -95,41 +97,66 @@ describe("verifyAdminLoginCode thunk", () => {
     await store.dispatch(verifyAdminLoginCode({ email: "admin@example.com", code: "123456" }) as any);
     const state = store.getState().auth;
     expect(state.accessToken).toBe("tok-admin");
-    expect(localStorage.getItem("refreshToken")).toBe("refresh-admin");
+    expect(localStorage.getItem("hasSession")).toBe("true");
+    expect(localStorage.getItem("refreshToken")).toBeNull();
+  });
+});
+
+describe("loginWithGoogle thunk", () => {
+  it("records a session without storing the refresh token", async () => {
+    mockedRequest.mockResolvedValue({
+      data: { accessToken: "tok-g", refreshToken: "refresh-g", account: { accountId: "3" } },
+    });
+    const store = makeStore();
+    await store.dispatch(loginWithGoogle("google-token") as any);
+    expect(localStorage.getItem("hasSession")).toBe("true");
+    expect(localStorage.getItem("refreshToken")).toBeNull();
   });
 });
 
 describe("loginWithRefreshToken thunk", () => {
-  it("sends the stored refresh token as a text/plain body when present", async () => {
-    localStorage.setItem("refreshToken", "stored-refresh");
+  it("relies on the cookie and sends no body", async () => {
     mockedRequest.mockResolvedValue({ data: { accessToken: "tok-2", account: { accountId: "7" } } });
     const store = makeStore();
     await store.dispatch(loginWithRefreshToken() as any);
-    expect(mockedRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: "stored-refresh",
-        headers: { "Content-Type": "text/plain" },
-      }),
-    );
+    expect(mockedRequest).toHaveBeenCalledWith({ url: "auth/refresh-token-login", method: "post" });
+    expect(localStorage.getItem("hasSession")).toBe("true");
   });
 
-  it("omits the body and content-type header when no refresh token is stored", async () => {
-    mockedRequest.mockResolvedValue({ data: { accessToken: "tok-2", account: { accountId: "7" } } });
+  it("clears the session flag when the cookie is missing or expired", async () => {
+    localStorage.setItem("hasSession", "true");
+    mockedRequest.mockRejectedValue({ response: { data: "Unauthorized" } });
     const store = makeStore();
     await store.dispatch(loginWithRefreshToken() as any);
-    expect(mockedRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ data: undefined, headers: undefined }),
-    );
+    expect(localStorage.getItem("hasSession")).toBeNull();
+  });
+});
+
+describe("hasStoredSession", () => {
+  it("is false for a browser that has never logged in", () => {
+    expect(hasStoredSession()).toBe(false);
+  });
+
+  it("is true when the session flag is set", () => {
+    localStorage.setItem("hasSession", "true");
+    expect(hasStoredSession()).toBe(true);
+  });
+
+  it("treats a legacy stored refresh token as a session once, then deletes it", () => {
+    localStorage.setItem("refreshToken", "legacy-token");
+    expect(hasStoredSession()).toBe(true);
+    expect(localStorage.getItem("refreshToken")).toBeNull();
+    expect(hasStoredSession()).toBe(false);
   });
 });
 
 describe("logout thunk", () => {
-  it("removes the stored refresh token before calling the backend", async () => {
-    localStorage.setItem("refreshToken", "refresh-1");
+  it("clears the session flag before calling the backend", async () => {
+    localStorage.setItem("hasSession", "true");
     mockedRequest.mockResolvedValue({ data: {} });
     const store = makeStore();
     await store.dispatch(logout() as any);
-    expect(localStorage.getItem("refreshToken")).toBeNull();
+    expect(localStorage.getItem("hasSession")).toBeNull();
     expect(store.getState().auth.accessToken).toBeNull();
   });
 });
