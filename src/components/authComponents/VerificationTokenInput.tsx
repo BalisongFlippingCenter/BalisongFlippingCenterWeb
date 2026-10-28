@@ -83,6 +83,7 @@ const VerificationTokenInput = () => {
       .request({
         url: `/auth/verify-email-token/${convertVerifiedTokenToString()}`,
         method: "get",
+        params: { email: emailParam.verifiedEmail },
       })
       .then(() => {
         setIsSuccess(true);
