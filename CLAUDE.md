@@ -49,7 +49,7 @@ Two Axios instances are defined in `src/api/axios.ts`:
 
 > **Circular dependency fix:** `axios.ts` does not import `store` directly (that created a cycle: axios → store → authSlice → authActions → axios). Instead, the store is injected via `setStore(store)` called in `main.tsx` immediately after the store is created. Do not re-introduce a direct `store` import in `axios.ts`.
 
-On app mount (`App.tsx`), the app attempts to restore a session by calling `/auth/refresh-token-login`. The refresh token is stored in an HTTP-only cookie; the access token lives only in Redux state (never persisted to localStorage).
+On app mount (`App.tsx`), the app restores a session by calling `/auth/refresh-token-login`, which authenticates purely from the HTTP-only `Refresh-Token-Cookie` — the refresh token is never readable by JS or stored in `localStorage`. To avoid a pointless 401 for visitors who have never logged in, the call only happens when `hasStoredSession()` (`authActions.ts`) is true: a non-sensitive `hasSession` flag in `localStorage` that login / admin-code verification / Google sign-in / a successful restore set, and logout or a failed restore clear. `hasStoredSession()` also treats (and deletes) a leftover `refreshToken` key from builds before this change, so those users stay logged in once while the old token is purged. The access token lives only in Redux state (never persisted).
 
 Google OAuth is fully implemented — wired at the root via `<GoogleOAuthProvider>` in `src/main.tsx` (client ID is public/non-secret). The login page uses `@react-oauth/google` to handle the OAuth flow, and the backend registers/logs in Google users and prompts for a display name on first sign-in.
 
