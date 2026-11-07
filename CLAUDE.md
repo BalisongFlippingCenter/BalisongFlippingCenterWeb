@@ -150,11 +150,6 @@ This project is one little bit at a time. Claude needs to remember to plan with 
 
 Also claude needs to remember that alot of the functionality will need to be implemented on the backend. The frontend will only be used as a GUI for everything.
 
-## Known Backend Issues
-
-- **Login/refresh response profile fields** — Backend confirms fields (`profileImg`, `bio`/`profileCaption`, social links) are present in the response. Frontend has a debug log (`[auth/login] raw response.data`) to verify the exact response shape. If fields still appear empty after login, check the console log and confirm the account key path matches `response.data.account`. Fields may also be null in the DB for older test accounts — run the SQL fix to set nullable defaults.
-- **Post embedded knife reference** — Fixed in backend commit 99a0e19. Returns full object with `id`, `displayName`, `knifeMaker`, `baseKnifeModel`, `coverPhoto`. Frontend mapping in `Post.ts` (`normalizeKnifeRef`) is already ready. Will be live once the current pipeline deploys.
-
 ## Product World & Tutorial Center — Design Notes
 
 ### `/learn` page entry point
@@ -200,7 +195,7 @@ Native video uploads are capped at **90 seconds / ~150–200MB per file** — en
 - Required by law since the platform collects user data (email at minimum).
 - Must address: **COPPA** (U.S. users under 13), **GDPR** (any EU users), **CCPA** (any California users).
 - Bundle with attorney ToS review to keep costs down.
-- Once drafted, the `/privacy` page needs to be built and linked in the footer and registration flow.
+- The `/privacy` page (`PrivacyPolicyPage.tsx`) is built and linked in the footer; it still needs linking from the registration flow and attorney review of its content.
 
 ### Notes
 - Platform model (neutral connector, no payment processing) is legally similar to Reddit/Instagram and well protected under Section 230.
