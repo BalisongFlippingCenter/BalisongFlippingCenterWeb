@@ -36,7 +36,7 @@ React 18 + TypeScript + Vite, Tailwind CSS (custom config — see below), Redux 
 
 The app communicates with a **custom REST API**, base URL set per-environment via `VITE_API_BASE_URL`:
 - **Production** (`.env.production`) — `https://balisongflippingcenter.com/api`, routed by CloudFront's `/api/*` behavior to the Terraform-managed production backend EC2 instance (see `BalisongFlippingCenterServer/CLAUDE.md` for current instance ID — it's re-created on infra changes, so don't hardcode it anywhere).
-- **Test/staging** (`.env.test`) — `http://ec2-3-217-173-234.compute-1.amazonaws.com:8080`, a separate, dedicated testing backend + Postgres (tagged `balisong-testing-server`, manually created, intentionally kept outside Terraform), isolated from production data. This is the instance the `23.22.127.77` staging frontend host is meant to be used against.
+- **Test/staging** (`.env.test`) — points at the old `balisong-testing-server`, which was torn down on 2026-10-05 along with the staging frontend; there is no testing environment right now. See the backend repo's `CLAUDE.md` for how to rebuild it, then update `.env.test` with the new host.
 - **Local dev** (`.env`) — `http://localhost:8080/api`
 
 The Amplify backend (`/amplify`) is a mostly-boilerplate setup (Cognito auth + a placeholder DynamoDB `Todo` model) and is **not** used for the main app functionality.
