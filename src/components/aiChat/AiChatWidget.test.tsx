@@ -117,9 +117,49 @@ describe("AiChatWidget — sending messages", () => {
     fireEvent.change(input, { target: { value: "links please" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
-    await waitFor(() => expect(screen.getByText(/here\.$/)).toBeInTheDocument());
+    await waitFor(() => expect(document.querySelector('a[href="/knives"]')).not.toBeNull());
     expect(document.querySelector('a[href="https://example.com/knife"]')).not.toBeNull();
-    expect(document.querySelector('a[href="/knives"]')).not.toBeNull();
+  });
+
+  it("renders markdown formatting in the assistant response", async () => {
+    mockStreamAiChat.mockImplementation(async ({ onChunk }) => {
+      onChunk(
+        "## Heading\nThe **Krake Raken** is solid.\n\n- Pivot: bushings\n- Weight: 4.31 oz\n\n" +
+          "| | Krake | Tsunami |\n|---|---|---|\n| Handles | 7075 | Titanium |\n\n" +
+          "See [the page](/product-world/knife/squid-industries-krake-raken).\n/learn/handle-types",
+      );
+    });
+    renderWidget();
+    await openWidget();
+
+    const input = screen.getByPlaceholderText("Ask Latch something...");
+    fireEvent.change(input, { target: { value: "krake" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(screen.getByRole("link", { name: "/learn/handle-types" })).toBeInTheDocument(), {
+      timeout: 5000,
+    });
+    expect(screen.getByText("Krake Raken").tagName).toBe("STRONG");
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.getByText("Heading")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "the page" })).toHaveAttribute(
+      "href",
+      "/product-world/knife/squid-industries-krake-raken",
+    );
+    expect(screen.getByRole("link", { name: "/learn/handle-types" })).toHaveAttribute("href", "/learn/handle-types");
+  });
+
+  it("keeps user messages as plain text", async () => {
+    renderWidget();
+    await openWidget();
+
+    const input = screen.getByPlaceholderText("Ask Latch something...");
+    fireEvent.change(input, { target: { value: "is **this** bold?" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(screen.getByText("is **this** bold?")).toBeInTheDocument();
   });
 });
 
