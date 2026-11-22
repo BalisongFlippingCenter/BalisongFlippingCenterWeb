@@ -126,7 +126,7 @@ describe("AiChatWidget — sending messages", () => {
       onChunk(
         "## Heading\nThe **Krake Raken** is solid.\n\n- Pivot: bushings\n- Weight: 4.31 oz\n\n" +
           "| | Krake | Tsunami |\n|---|---|---|\n| Handles | 7075 | Titanium |\n\n" +
-          "See [the page](/product-world/knife/squid-industries-krake-raken).\n/learn/handle-types",
+          "See [the page](/product-world/knife/squid-industries-krake-raken) or [the Squiddy](product-world/knife/squid-industries-squiddy).\n/learn/handle-types",
       );
     });
     renderWidget();
@@ -147,6 +147,10 @@ describe("AiChatWidget — sending messages", () => {
     expect(screen.getByRole("link", { name: "the page" })).toHaveAttribute(
       "href",
       "/product-world/knife/squid-industries-krake-raken",
+    );
+    expect(screen.getByRole("link", { name: "the Squiddy" })).toHaveAttribute(
+      "href",
+      "/product-world/knife/squid-industries-squiddy",
     );
     expect(screen.getByRole("link", { name: "/learn/handle-types" })).toHaveAttribute("href", "/learn/handle-types");
   });
