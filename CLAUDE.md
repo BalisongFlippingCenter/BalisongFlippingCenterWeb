@@ -77,7 +77,7 @@ User profile pages use dynamic routes: `/:account/:identifier` for profile, `/:a
 - `/admin` — `AdminDashboardPage`, currently just a pending-reports count
 - `/admin/reports` — `AdminReportsPage`, the report review queue
 - `/admin/accounts` — `AdminAccountsPage`, search an account then ban/suspend/mute it (backend: `/admin/accounts/**`, see the backend repo's `CLAUDE.md`)
-- `/admin/catalog`, `/admin/catalog/import`, `/admin/catalog/makers/new|:slug/edit`, `/admin/catalog/knives/new|:slug/edit` — Maker/Knife CRUD + bulk-JSON import (backend: `/admin/catalog/**`)
+- `/admin/catalog`, `/admin/catalog/import`, `/admin/catalog/makers/new|:slug/edit`, `/admin/catalog/knives/new|:slug/edit` — Maker/Knife CRUD + bulk-JSON import (backend: `/admin/catalog/**`). The catalog page groups knives by maker (collapsible, A–Z), then by the knife's optional `family` (`utils/groupCatalogKnives.ts`); the knife form suggests the maker's existing families
 
 ### Data Models (`src/modals/`)
 

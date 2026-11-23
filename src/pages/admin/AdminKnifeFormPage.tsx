@@ -3,8 +3,8 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faPlus, faTrash, faImage } from "@fortawesome/free-solid-svg-icons";
 import {
-  getKnife, createKnife, updateKnife, listMakers,
-  KnifeFormData, VersionFormData, VariantFormData, WhereToFindFormData, MakerSummary,
+  getKnife, createKnife, updateKnife, listMakers, listKnives,
+  KnifeFormData, VersionFormData, VariantFormData, WhereToFindFormData, MakerSummary, KnifeSummary,
 } from "../../api/adminCatalogApi";
 import { uploadCatalogImageDirect } from "../../api/directUpload";
 import { addUIToast } from "../../redux/uiToast/uiToastSlice";
@@ -44,7 +44,7 @@ const emptyVersion = (): VersionFormData => ({
   variants: [emptyVariant()], whereToFind: [],
 });
 const emptyKnife = (): KnifeFormData => ({
-  slug: "", name: "", maker: "", makerSlug: "", bladeStyle: "", priceRange: "",
+  slug: "", name: "", maker: "", makerSlug: "", family: "", bladeStyle: "", priceRange: "",
   coverPhotoUrl: "", description: "", versions: [],
 });
 
@@ -53,6 +53,7 @@ const mapDetailToForm = (data: any): KnifeFormData => ({
   name: data.name,
   maker: data.makerName ?? "",
   makerSlug: data.makerSlug,
+  family: data.family ?? "",
   bladeStyle: "",
   priceRange: "",
   coverPhotoUrl: data.coverPhotoUrl ?? "",
@@ -164,6 +165,7 @@ const AdminKnifeFormPage = () => {
 
   const [form, setForm] = useState<KnifeFormData>(emptyKnife());
   const [makers, setMakers] = useState<MakerSummary[]>([]);
+  const [knives, setKnives] = useState<KnifeSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -171,12 +173,17 @@ const AdminKnifeFormPage = () => {
 
   useEffect(() => {
     const makersPromise = listMakers().then(setMakers);
+    const knivesPromise = listKnives().then(setKnives);
     const knifePromise = isEdit && slug ? getKnife(slug).then((data) => setForm(mapDetailToForm(data))) : Promise.resolve();
 
-    Promise.all([makersPromise, knifePromise])
+    Promise.all([makersPromise, knivesPromise, knifePromise])
       .catch(() => dispatch(addUIToast({ type: "error", message: "Failed to load form data." })))
       .finally(() => setIsLoading(false));
   }, [isEdit, slug]);
+
+  const familiesForMaker = [...new Set(
+    knives.filter((k) => k.makerSlug === form.makerSlug && k.family).map((k) => k.family as string)
+  )].sort();
 
   const updateVersion = (vi: number, patch: Partial<VersionFormData>) => {
     setForm((prev) => ({
@@ -294,6 +301,22 @@ const AdminKnifeFormPage = () => {
               onUpload={handleCoverUpload}
               onClear={() => setForm((p) => ({ ...p, coverPhotoUrl: "" }))}
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-1/2 pr-2">
+            <label htmlFor="knife-family" className={FIELD_LABEL}>Family (optional)</label>
+            <input
+              id="knife-family"
+              list="knife-family-options"
+              value={form.family}
+              onChange={(e) => setForm((p) => ({ ...p, family: e.target.value }))}
+              className={FIELD_INPUT}
+              placeholder="Squiddy"
+            />
+            <datalist id="knife-family-options">
+              {familiesForMaker.map((f) => <option key={f} value={f} />)}
+            </datalist>
+            <p className="text-white/30 text-xs">Groups related knives on the admin catalog page.</p>
           </div>
 
           <div className="flex flex-col gap-1.5">
