@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faPaperPlane, faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -13,40 +13,13 @@ interface ChatMessage {
   content: string;
 }
 
-const LINK_PATTERN = /(?<=^|\s|\()(https?:\/\/[^\s]+|\/[\w-]+(?:\/[\w-]+)*\/?)/g;
-const TRAILING_PUNCTUATION = /[.,!?;:)\]]+$/;
+const LatchMarkdown = lazy(() => import("./LatchMarkdown"));
 
-const renderMessageContent = (content: string) => {
-  const sanitized = content.replace(/\*\*/g, "").replace(/`/g, "");
-  const segments = sanitized.split(LINK_PATTERN);
-  return segments.map((segment, i) => {
-    if (i % 2 === 0) return segment;
-
-    const trailingMatch = segment.match(TRAILING_PUNCTUATION);
-    const trailing = trailingMatch ? trailingMatch[0] : "";
-    const link = trailing ? segment.slice(0, -trailing.length) : segment;
-
-    return (
-      <Fragment key={i}>
-        {link.startsWith("http") ? (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-latch underline hover:text-latch/80"
-          >
-            {link}
-          </a>
-        ) : (
-          <Link to={link} className="text-latch underline hover:text-latch/80">
-            {link}
-          </Link>
-        )}
-        {trailing}
-      </Fragment>
-    );
-  });
-};
+const renderAssistantContent = (content: string) => (
+  <Suspense fallback={<span className="whitespace-pre-wrap">{content}</span>}>
+    <LatchMarkdown content={content} />
+  </Suspense>
+);
 
 const WORD_REVEAL_INTERVAL_MS = 40;
 
@@ -225,14 +198,16 @@ const AiChatWidget = () => {
                   return (
                     <div
                       key={i}
-                      className={`max-w-[85%] px-4 py-2.5 rounded-xl text-base leading-relaxed whitespace-pre-wrap ${
+                      className={`max-w-[85%] px-4 py-2.5 rounded-xl text-base leading-relaxed break-words ${
                         msg.role === "user"
-                          ? "self-end bg-white/10 text-white"
+                          ? "self-end bg-white/10 text-white whitespace-pre-wrap"
                           : "self-start bg-latch/10 text-white/80"
                       }`}
                     >
                       {displayContent
-                        ? renderMessageContent(displayContent)
+                        ? msg.role === "assistant"
+                          ? renderAssistantContent(displayContent)
+                          : displayContent
                         : msg.role === "assistant" && isStreaming
                           ? "…"
                           : ""}
