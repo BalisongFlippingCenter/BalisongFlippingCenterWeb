@@ -63,10 +63,11 @@ function makeKnifeData(overrides: Partial<any> = {}) {
   };
 }
 
-function renderPage(makers: typeof MAKERS = MAKERS) {
+function renderPage(makers: typeof MAKERS = MAKERS, knives: any[] = []) {
   const store = makeTestStore("tok", makeProfile({ role: "ADMIN" }));
   setStore(store as any);
   authMock.onGet("/catalog/any/makers").reply(200, makers);
+  authMock.onGet("/catalog/any/knives").reply(200, knives);
   return renderWithProviders(<AdminKnifeFormPage />, store as any);
 }
 
@@ -141,6 +142,33 @@ describe("AdminKnifeFormPage — create mode", () => {
     expect(body).toMatchObject({ slug: "new-knife", name: "New Knife", makerSlug: "acme", versions: [] });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/admin/catalog"));
   });
+
+  it("suggests the selected maker's existing families and submits the chosen family", async () => {
+    authMock.onPost("/admin/catalog/knives").reply(200);
+    renderPage(
+      [...MAKERS, { slug: "other", name: "Other Co", country: "USA", logoUrl: null }],
+      [
+        { slug: "squiddy", name: "Squiddy", makerName: "Acme Knives", makerSlug: "acme", family: "Squiddy", coverPhotoUrl: null, hasActiveVersion: true },
+        { slug: "squiddy-b", name: "Squiddy-B", makerName: "Acme Knives", makerSlug: "acme", family: "Squiddy", coverPhotoUrl: null, hasActiveVersion: true },
+        { slug: "hydro", name: "Hydro", makerName: "Acme Knives", makerSlug: "acme", family: null, coverPhotoUrl: null, hasActiveVersion: true },
+        { slug: "beast", name: "Beast", makerName: "Other Co", makerSlug: "other", family: "Beast", coverPhotoUrl: null, hasActiveVersion: true },
+      ],
+    );
+    await screen.findByText("Acme Knives");
+
+    fireEvent.change(screen.getByDisplayValue("Select a maker..."), { target: { value: "acme" } });
+    const suggestions = [...document.querySelectorAll("#knife-family-options option")].map((o) => o.getAttribute("value"));
+    expect(suggestions).toEqual(["Squiddy"]);
+
+    fireEvent.change(screen.getByPlaceholderText("krake-raken"), { target: { value: "squiddy-xl" } });
+    fireEvent.change(screen.getByPlaceholderText("Krake Raken"), { target: { value: "Squiddy-XL" } });
+    fireEvent.change(screen.getByLabelText("Family (optional)"), { target: { value: "Squiddy" } });
+    fireEvent.click(screen.getByText("Create Knife"));
+
+    await waitFor(() => expect(authMock.history.post.filter((r) => r.url === "/admin/catalog/knives").length).toBe(1));
+    const body = JSON.parse(authMock.history.post.find((r) => r.url === "/admin/catalog/knives")!.data);
+    expect(body).toMatchObject({ slug: "squiddy-xl", makerSlug: "acme", family: "Squiddy" });
+  });
 });
 
 describe("AdminKnifeFormPage — edit mode", () => {
@@ -165,6 +193,14 @@ describe("AdminKnifeFormPage — edit mode", () => {
     expect(screen.getAllByPlaceholderText("label")[0]).toHaveValue("Tanto");
     expect(screen.getByDisplayValue("M390")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Official Store")).toBeInTheDocument();
+    expect(screen.getByLabelText("Family (optional)")).toHaveValue("");
+  });
+
+  it("loads the knife's family into the form", async () => {
+    authMock.onGet("/catalog/any/knives/krake-raken").reply(200, makeKnifeData({ family: "Krake Raken" }));
+    renderPage();
+
+    await waitFor(() => expect(screen.getByLabelText("Family (optional)")).toHaveValue("Krake Raken"));
   });
 
   it("BUG: a handleConstruction of CHANNEL maps to a label with no matching dropdown option", async () => {

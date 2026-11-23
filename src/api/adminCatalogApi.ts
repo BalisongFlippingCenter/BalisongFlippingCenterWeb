@@ -31,6 +31,7 @@ export interface KnifeSummary {
   name: string;
   makerName: string;
   makerSlug: string;
+  family: string | null;
   coverPhotoUrl: string | null;
   hasActiveVersion: boolean;
 }
@@ -78,6 +79,7 @@ export interface KnifeFormData {
   name: string;
   maker: string;
   makerSlug: string;
+  family: string;
   bladeStyle: string;
   priceRange: string;
   coverPhotoUrl: string;
