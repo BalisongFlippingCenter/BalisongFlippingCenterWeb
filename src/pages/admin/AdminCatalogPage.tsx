@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass, faDesktop } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faTrash, faIndustry, faTag, faMagnifyingGlass, faDesktop, faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import {
   listMakers, deleteMaker, MakerSummary,
   listKnives, deleteKnife, KnifeSummary,
 } from "../../api/adminCatalogApi";
 import { addUIToast } from "../../redux/uiToast/uiToastSlice";
 import { useAppDispatch } from "../../redux/hooks";
+import { groupKnivesByMakerAndFamily } from "../../utils/groupCatalogKnives";
 
 const AdminCatalogPage = () => {
   const dispatch = useAppDispatch();
@@ -23,9 +24,18 @@ const AdminCatalogPage = () => {
     [makers, query]
   );
   const filteredKnives = useMemo(
-    () => knives.filter((k) => !query || k.name.toLowerCase().includes(query) || k.slug.toLowerCase().includes(query) || k.makerName.toLowerCase().includes(query)),
+    () => knives.filter((k) => !query || k.name.toLowerCase().includes(query) || k.slug.toLowerCase().includes(query) || k.makerName.toLowerCase().includes(query) || k.family?.toLowerCase().includes(query)),
     [knives, query]
   );
+  const knifeGroups = useMemo(() => groupKnivesByMakerAndFamily(filteredKnives), [filteredKnives]);
+  const [collapsedMakers, setCollapsedMakers] = useState<Set<string>>(new Set());
+  const toggleMaker = (makerSlug: string) =>
+    setCollapsedMakers((prev) => {
+      const next = new Set(prev);
+      if (next.has(makerSlug)) next.delete(makerSlug);
+      else next.add(makerSlug);
+      return next;
+    });
 
   const fetchAll = () => {
     setIsLoading(true);
@@ -79,6 +89,49 @@ const AdminCatalogPage = () => {
       })
       .finally(() => setDeletingSlug(null));
   };
+
+  const renderKnifeCard = (knife: KnifeSummary) => (
+    <Link
+      key={knife.slug}
+      to={`/admin/catalog/knives/${knife.slug}/edit`}
+      className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4 hover:border-white/20 transition-colors duration-150"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {knife.coverPhotoUrl ? (
+            <img src={knife.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <FontAwesomeIcon icon={faTag} className="text-white/20" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-white text-sm font-semibold truncate">{knife.name}</p>
+          <p className="text-white/40 text-xs truncate">
+            {knife.slug} {!knife.hasActiveVersion && "· All discontinued"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          type="button"
+          onClick={(e) => handleViewPublicPage(e, `/product-world/knife/${knife.slug}`)}
+          title="View public page"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
+        >
+          <FontAwesomeIcon icon={faDesktop} className="text-xs" />
+        </button>
+        <button
+          type="button"
+          disabled={deletingSlug === knife.slug}
+          onClick={(e) => handleDeleteKnife(e, knife.slug)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
+        >
+          <FontAwesomeIcon icon={faTrash} className="text-xs" />
+        </button>
+      </div>
+    </Link>
+  );
 
   return (
     <div className="px-8 py-8">
@@ -186,48 +239,35 @@ const AdminCatalogPage = () => {
         ) : filteredKnives.length === 0 ? (
           <p className="text-white/40 text-sm">{query ? "No knives match your search." : "No knives yet."}</p>
         ) : (
-          filteredKnives.map((knife) => (
-            <Link
-              key={knife.slug}
-              to={`/admin/catalog/knives/${knife.slug}/edit`}
-              className="px-5 py-4 rounded-xl border border-white/[0.08] bg-dark-neutral-offset flex items-center justify-between gap-4 hover:border-white/20 transition-colors duration-150"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {knife.coverPhotoUrl ? (
-                    <img src={knife.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+          knifeGroups.map((maker) => {
+            const isOpen = !!query || !collapsedMakers.has(maker.makerSlug);
+            return (
+              <section key={maker.makerSlug} className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => toggleMaker(maker.makerSlug)}
+                  aria-expanded={isOpen}
+                  className="flex items-center gap-2 w-fit text-white/70 hover:text-white text-sm font-semibold transition-colors duration-150"
+                >
+                  <FontAwesomeIcon icon={isOpen ? faChevronDown : faChevronRight} className="text-[10px] w-3" />
+                  {maker.makerName}
+                  <span className="text-white/30 font-normal">· {maker.count}</span>
+                </button>
+                {isOpen && maker.entries.map((entry) =>
+                  entry.kind === "family" ? (
+                    <div key={`family-${entry.name}`} className="flex flex-col gap-2 pl-4 border-l-2 border-white/[0.08]">
+                      <p className="text-white/50 text-xs font-semibold uppercase tracking-wide">
+                        {entry.name} <span className="text-white/25 font-normal normal-case">· {entry.knives.length}</span>
+                      </p>
+                      {entry.knives.map(renderKnifeCard)}
+                    </div>
                   ) : (
-                    <FontAwesomeIcon icon={faTag} className="text-white/20" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-white text-sm font-semibold truncate">{knife.name}</p>
-                  <p className="text-white/40 text-xs truncate">
-                    {knife.makerName} · {knife.slug} {!knife.hasActiveVersion && "· All discontinued"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => handleViewPublicPage(e, `/product-world/knife/${knife.slug}`)}
-                  title="View public page"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-primary hover:bg-blue-primary/10 transition-colors duration-150"
-                >
-                  <FontAwesomeIcon icon={faDesktop} className="text-xs" />
-                </button>
-                <button
-                  type="button"
-                  disabled={deletingSlug === knife.slug}
-                  onClick={(e) => handleDeleteKnife(e, knife.slug)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red hover:bg-red/10 transition-colors duration-150 disabled:opacity-40"
-                >
-                  <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                </button>
-              </div>
-            </Link>
-          ))
+                    renderKnifeCard(entry.knife)
+                  )
+                )}
+              </section>
+            );
+          })
         )}
       </div>
     </div>

@@ -36,7 +36,7 @@ describe("AdminCatalogPage — loading/listing", () => {
     renderPage();
     expect(screen.getAllByText("Loading...")).toHaveLength(2);
 
-    await screen.findByText("Acme Knives");
+    await screen.findByText("Acme Knives", { selector: "p" });
     expect(screen.getByText("Krake Raken")).toBeInTheDocument();
     expect(screen.queryByText(/All discontinued/)).not.toBeInTheDocument();
   });
@@ -64,13 +64,54 @@ describe("AdminCatalogPage — loading/listing", () => {
   });
 });
 
+describe("AdminCatalogPage — grouping", () => {
+  const groupedKnives = () => [
+    makeKnife({ slug: "squiddy-b", name: "Squiddy-B", makerName: "Squid Industries", makerSlug: "squid", family: "Squiddy" }),
+    makeKnife({ slug: "hydro", name: "Hydro", makerName: "Squid Industries", makerSlug: "squid", family: null }),
+    makeKnife({ slug: "squiddy", name: "Squiddy", makerName: "Squid Industries", makerSlug: "squid", family: "Squiddy" }),
+    makeKnife({ slug: "alpha-beast", name: "Alpha Beast", makerName: "BRS", makerSlug: "brs", family: null }),
+  ];
+
+  it("groups knives under collapsible maker headers with family subgroups", async () => {
+    renderPage([], groupedKnives());
+    const squid = await screen.findByRole("button", { name: /Squid Industries/ });
+    const brs = screen.getByRole("button", { name: /BRS/ });
+
+    expect(squid).toHaveTextContent("· 3");
+    expect(brs.compareDocumentPosition(squid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const familyHeader = screen.getByText(/^Squiddy/, { selector: "p.uppercase" });
+    expect(familyHeader).toHaveTextContent("· 2");
+    const familyGroup = familyHeader.parentElement!;
+    const familyNames = [...familyGroup.querySelectorAll("a p:first-child")].map((p) => p.textContent);
+    expect(familyNames).toEqual(["Squiddy", "Squiddy-B"]);
+    expect(familyGroup).not.toContainElement(screen.getByText("Hydro"));
+
+    fireEvent.click(squid);
+    expect(squid).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Hydro")).not.toBeInTheDocument();
+    expect(screen.getByText("Alpha Beast")).toBeInTheDocument();
+  });
+
+  it("matches a search on the family name and keeps collapsed makers open while searching", async () => {
+    renderPage([], groupedKnives());
+    fireEvent.click(await screen.findByRole("button", { name: /Squid Industries/ }));
+
+    fireEvent.change(screen.getByPlaceholderText("Search makers or knives..."), { target: { value: "squiddy" } });
+
+    expect(screen.getByText("Squiddy-B")).toBeInTheDocument();
+    expect(screen.queryByText("Hydro")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /BRS/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("AdminCatalogPage — search", () => {
   it("filters makers and knives by the search query independently", async () => {
     renderPage(
       [makeMaker({ slug: "acme", name: "Acme Knives" }), makeMaker({ slug: "other", name: "Other Co" })],
       [makeKnife({ slug: "krake-raken", name: "Krake Raken", makerName: "Acme Knives" })],
     );
-    await screen.findByText("Acme Knives");
+    await screen.findByText("Acme Knives", { selector: "p" });
 
     fireEvent.change(screen.getByPlaceholderText("Search makers or knives..."), { target: { value: "krake" } });
 
@@ -83,23 +124,23 @@ describe("AdminCatalogPage — delete", () => {
   it("deletes a maker and removes it from the list on success", async () => {
     authMock.onDelete("/admin/catalog/makers/acme").reply(200);
     const { store } = renderPage();
-    await screen.findByText("Acme Knives");
+    await screen.findByText("Acme Knives", { selector: "p" });
 
     fireEvent.click(document.querySelector(".fa-trash")!.closest("button")!);
 
-    await waitFor(() => expect(screen.queryByText("Acme Knives")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("Acme Knives", { selector: "p" })).not.toBeInTheDocument());
     expect(store.getState().uiToast.toasts[0]).toMatchObject({ type: "success", message: "Maker deleted." });
   });
 
   it("shows an error toast and keeps the maker listed when delete fails", async () => {
     authMock.onDelete("/admin/catalog/makers/acme").reply(500, "In use");
     const { store } = renderPage();
-    await screen.findByText("Acme Knives");
+    await screen.findByText("Acme Knives", { selector: "p" });
 
     fireEvent.click(document.querySelector(".fa-trash")!.closest("button")!);
 
     await waitFor(() => expect(store.getState().uiToast.toasts[0]).toMatchObject({ type: "error", message: "In use" }));
-    expect(screen.getByText("Acme Knives")).toBeInTheDocument();
+    expect(screen.getByText("Acme Knives", { selector: "p" })).toBeInTheDocument();
   });
 
   it("deletes a knife and removes it from the list on success", async () => {
